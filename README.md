@@ -215,6 +215,8 @@ from 80 %, red from 95 %. Nothing is shown when a tab is off, or when the agent 
   and Max subscribers, and only after the first answer of a session. The figures belong to the account, so any session
   updates them. The app keeps the percentages and reset times in memory; the rest of what the status line receives
   (folder, model, session) is dropped. Measured with Claude Code 2.1.304: nothing before the first answer, then both windows.
+  The quota shows up when Claude Code runs in a terminal (`claude`). The Claude app (its Code tab included) does not
+  pass it on: it never runs the `statusLine`.
 - **Codex** (Settings › Codex › Show quota, on by default). Nothing to install: while the panel is open, the app asks Codex
   itself (`codex app-server`, request `account/rateLimits/read`, about 1 s) at most once a minute, then every 5 minutes.
   Measured with the Codex command 0.154 and the ChatGPT app's Codex 0.162. It needs a ChatGPT sign-in: with an API key Codex
@@ -504,9 +506,8 @@ hooks it already receives:
   do (measured with the app's own Codex 0.162). The ChatGPT app window itself was not driven; the link that opens a
   conversation (`codex://threads/<id>`) comes from the app's own routing. No free message to a running session, no answer to Codex's own questions (no hook for them), and a card
   stays on "needs your approval" after an approval given in the terminal until the tool ends.
-- Quota gauges: Claude's figure only arrives when a session that has the relay answers (Pro and Max, terminal sessions;
-  whether the Code tab of Claude Desktop runs the `statusLine` was not checked, the documentation only describes it for
-  the terminal), and is lost when the app restarts until the next answer. A project or local `settings.json` that sets its
+- Quota gauges: Claude's figure only arrives when a session that has the relay answers (Pro and Max, terminal sessions
+  only: the Code tab of the Claude app never runs the `statusLine`), and is lost when the app restarts until the next answer. A project or local `settings.json` that sets its
   own `statusLine` bypasses the relay. Codex's figure is read when the panel opens, so it can be a few minutes old.
 - Esc while Claude is thinking, before any text: Claude writes nothing to the transcript, so the card stays on
   "thinking" until the next event.
@@ -815,6 +816,8 @@ chiffre.
   Pro et Max de claude.ai, et seulement après la première réponse d'une session. Les chiffres sont ceux du compte : n'importe
   quelle session les met à jour. L'app garde les pourcentages et les heures en mémoire ; le reste de ce que reçoit la ligne
   d'état (dossier, modèle, session) est jeté. Mesuré avec Claude Code 2.1.304 : rien avant la première réponse, puis les deux fenêtres.
+  Le quota s'affiche quand Claude Code tourne dans un terminal (`claude`). L'app Claude (onglet Code compris) ne le
+  transmet pas : elle n'exécute jamais la `statusLine`.
 - **Codex** (Réglages › Codex › Afficher le quota, activé par défaut). Rien à installer : panneau ouvert, l'app interroge
   Codex lui-même (`codex app-server`, requête `account/rateLimits/read`, environ 1 s) au plus une fois par minute, puis toutes
   les 5 minutes. Mesuré avec la commande Codex 0.154 et le Codex de l'app ChatGPT 0.162. Il faut un compte ChatGPT : avec une clé
@@ -1120,8 +1123,7 @@ partir de hooks qu'elle reçoit déjà :
   n'a pas été pilotée ; le lien qui ouvre une conversation (`codex://threads/<id>`) vient du routage de l'app. Pas de message libre à une session en cours, pas de réponse aux questions propres de Codex (aucun hook), et
   la carte reste sur « Attend ton approbation » après une approbation donnée dans le terminal, jusqu'à la fin de l'outil.
 - Jauges de quota : le chiffre de Claude n'arrive que quand une session munie du relais répond (Pro et Max, sessions de
-  terminal ; on n'a pas vérifié si l'onglet Code de Claude Desktop exécute la `statusLine`, la documentation ne la décrit que
-  pour le terminal), et il est perdu au redémarrage de l'app jusqu'à la réponse suivante. Un `settings.json` de projet ou local
+  terminal seulement : l'onglet Code de l'app Claude n'exécute jamais la `statusLine`), et il est perdu au redémarrage de l'app jusqu'à la réponse suivante. Un `settings.json` de projet ou local
   qui impose sa propre `statusLine` contourne le relais. Le chiffre de Codex est lu à l'ouverture du panneau : il peut avoir
   quelques minutes.
 - Esc pendant la réflexion, avant le moindre texte : Claude n'écrit rien dans le transcript, la carte reste en

@@ -78,6 +78,7 @@
 "Afficher le quota (5 h et 7 jours)" = "Afficher le quota (5 h et 7 jours)";
 "Quota" = "Quota";
 "Claude Code ne donne le quota qu'à sa « statusLine » (une seule commande possible, abonnés Pro et Max)." = "Claude Code ne donne le quota qu'à sa « statusLine » (une seule commande possible, abonnés Pro et Max).";
+"Le quota s'affiche quand Claude Code tourne dans un terminal (`claude`). L'app Claude ne le transmet pas." = "Le quota s'affiche quand Claude Code tourne dans un terminal (`claude`). L'app Claude ne le transmet pas.";
 "Ta commande de statusLine continue de tourner : le relais la relance avec les mêmes données." = "Ta commande de statusLine continue de tourner : le relais la relance avec les mêmes données.";
 "Sans statusLine existante, le relais affiche seulement « 5h 39% · 7d 63% »." = "Sans statusLine existante, le relais affiche seulement « 5h 39% · 7d 63% ».";
 "Sauvegarde horodatée de settings.json, retrait en un clic. Seuls les pourcentages sont gardés, en mémoire." = "Sauvegarde horodatée de settings.json, retrait en un clic. Seuls les pourcentages sont gardés, en mémoire.";

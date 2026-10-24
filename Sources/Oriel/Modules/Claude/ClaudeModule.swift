@@ -454,6 +454,7 @@ struct ClaudeSettingsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 SettingsNote(L("Claude Code ne donne le quota qu'à sa « statusLine » (une seule commande possible, abonnés Pro et Max).",
                                table: "Claude"))
+                SettingsNote(L("Le quota s'affiche quand Claude Code tourne dans un terminal (`claude`). L'app Claude ne le transmet pas.", table: "Claude"))
                 SettingsNote(quota.chainsPrevious
                              ? L("Ta commande de statusLine continue de tourner : le relais la relance avec les mêmes données.",
                                  table: "Claude")
