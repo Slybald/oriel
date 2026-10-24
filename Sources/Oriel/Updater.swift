@@ -16,7 +16,6 @@ import SwiftUI
 final class Updater: ObservableObject, @unchecked Sendable {
     static let shared = Updater()
 
-    /// Dépôt renommé : les versions jusqu'à 1.9.0 lisent encore oriel, que GitHub redirige ici.
     static let latestReleaseURL = URL(string: "https://api.github.com/repos/Slybald/oriel/releases/latest")!
     /// Clé publique Ed25519 (base64). La privée signe les DMG dans la CI (scripts/update-signing.swift).
     static let publicKey = "KKwGDnHEGrzmG6F26Dco+/RUrliwrPPztW0ceaG5/UA="
@@ -336,10 +335,9 @@ extension Updater {
         return busy && !atLaunch ? .wait : .install
     }
 
-    /// « Oriel-<v>.dmg » et sa signature « .dmg.sig », en HTTPS. Les versions jusqu'à 1.9.0 prennent
-    /// « Oriel-<v>.dmg », publiée à côté (`appName` les simule dans les tests).
-    static func updateAssets(in release: Release, appName: String = AppIdentity.name) throws -> (dmg: URL, signature: URL) {
-        let name = "\(appName)-\(release.version).dmg"
+    /// « Oriel-<v>.dmg » et sa signature « .dmg.sig », en HTTPS.
+    static func updateAssets(in release: Release) throws -> (dmg: URL, signature: URL) {
+        let name = "\(AppIdentity.name)-\(release.version).dmg"
         func url(_ assetName: String) -> URL? {
             release.assets.first { $0.name == assetName && $0.browserDownloadUrl.scheme == "https" }?.browserDownloadUrl
         }
@@ -427,7 +425,7 @@ extension Updater {
     }
 
     /// Monte le DMG, copie l'app à côté de l'app installée (même volume), démonte, puis échange les deux apps.
-    /// L'app garde son chemin : une Oriel.app prend le nom Oriel.app à son lancement (`AppIdentity`).
+    /// L'app garde son chemin.
     static func installUpdate(dmg: URL, version: String, over app: URL, bundleId: String = AppIdentity.bundleId,
                               bundleName: String = AppIdentity.bundleName) throws {
         let manager = FileManager.default
