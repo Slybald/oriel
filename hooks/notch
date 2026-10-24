@@ -1,13 +1,13 @@
 #!/bin/sh
-# claude-notch-cli
+# oriel-cli
 # notch : pose des intercalaires dans la notch d'Oriel depuis un terminal ou un script (API locale,
 # docs/API.md). Le jeton est lu dans le fichier 0600 que l'app écrit tant que l'API est activée, et passé à curl
 # par -H @fichier, jamais en argument (invisible dans ps). Chaque texte est échappé pour JSON ici ; l'app le valide
 # ensuite (schéma strict, tailles bornées). Rien de ce que reçoit l'app n'est exécuté.
 
-PORT=${CLAUDE_NOTCH_PORT:-47823}
+PORT=${ORIEL_PORT:-47823}
 URL="http://127.0.0.1:$PORT/api/v1/ears"
-TOKEN="$HOME/Library/Application Support/ClaudeNotch/api-token"
+TOKEN="$HOME/Library/Application Support/Oriel/api-token"
 
 usage() {
     cat <<'EOF'
@@ -144,7 +144,7 @@ done
 # Des chiffres seulement (rien ne s'ajoute au JSON ni à l'URL, dont l'hôte reste 127.0.0.1), et un identifiant sûr
 # dans une URL.
 case "$PORT" in
-'' | *[!0-9]*) die "CLAUDE_NOTCH_PORT: digits only" ;;
+'' | *[!0-9]*) die "ORIEL_PORT: digits only" ;;
 esac
 case "$TTL" in
 '' | [1-9] | [1-9][0-9] | [1-9][0-9][0-9] | [1-9][0-9][0-9][0-9] | [1-9][0-9][0-9][0-9][0-9]) ;;

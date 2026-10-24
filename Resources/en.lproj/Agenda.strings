@@ -1,4 +1,4 @@
-/* Claude Notch: English texts of the Agenda module. The key is the French text used in the code. */
+/* Oriel: English texts of the Agenda module. The key is the French text used in the code. */
 "Agenda" = "Agenda";
 "en cours" = "now";
 "%d min" = "%d min";

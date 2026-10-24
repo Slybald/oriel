@@ -1,7 +1,7 @@
 import FanControl
 import Foundation
 
-// fanctl : outil d'aide de Claude Notch qui écrit le mode des ventilateurs dans le SMC. Installé par l'app dans
+// fanctl : outil d'aide de Oriel qui écrit le mode des ventilateurs dans le SMC. Installé par l'app dans
 // /Library/PrivilegedHelperTools (root:wheel 0755) et lancé par `sudo -n` grâce à une règle sudoers qui
 // n'autorise que lui. Deux usages seulement :
 //

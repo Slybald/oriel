@@ -56,7 +56,7 @@ jobs:
       # L'Updater de l'app lit les releases de ce dépôt : une app publiée ailleurs ne verrait jamais ses mises à jour.
       - name: Check update repository
         run: |
-          REPOSITORY=$(sed -n 's|.*static let latestReleaseURL = URL(string: "https://api.github.com/repos/\([^/]*/[^/]*\)/releases/latest").*|\1|p' Sources/ClaudeNotch/Updater.swift)
+          REPOSITORY=$(sed -n 's|.*static let latestReleaseURL = URL(string: "https://api.github.com/repos/\([^/]*/[^/]*\)/releases/latest").*|\1|p' Sources/Oriel/Updater.swift)
           if [ "$REPOSITORY" != "$GITHUB_REPOSITORY" ]; then
             echo "::error::Updater.swift lit les releases de « $REPOSITORY », la release part sur « $GITHUB_REPOSITORY »."
             exit 1
@@ -68,8 +68,8 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           RELEASE_CHANNEL=1 VERSION="$VERSION" scripts/build.sh
-          lipo -archs build/Oriel.app/Contents/MacOS/ClaudeNotch
-          test "$(/usr/libexec/PlistBuddy -c 'Print :ClaudeNotchUpdateChannel' build/Oriel.app/Contents/Info.plist)" = release
+          lipo -archs build/Oriel.app/Contents/MacOS/Oriel
+          test "$(/usr/libexec/PlistBuddy -c 'Print :OrielUpdateChannel' build/Oriel.app/Contents/Info.plist)" = release
 
       # Une exigence désignée « certificate leaf = H"…" » ne dépend que du certificat ; « cdhash » voudrait dire
       # que la signature est ad hoc (autorisations perdues à chaque mise à jour).
@@ -88,20 +88,18 @@ jobs:
       - name: Build DMG
         run: scripts/make-dmg.sh
 
-      # Signature Ed25519 des deux DMG, vérifiée avec la clé publique intégrée à l'app : un secret absent ou qui ne
+      # Signature Ed25519 du DMG, vérifiée avec la clé publique intégrée à l'app : un secret absent ou qui ne
       # correspond pas à cette clé fait échouer le job (les installations existantes refuseraient la mise à jour).
-      # ClaudeNotch-<v>.dmg sert la mise à jour automatique des versions 1.1.0 à 1.9.0.
       - name: Sign DMG
         env:
           UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
         run: |
-          PUBLIC_KEY=$(sed -n 's/.*static let publicKey = "\([^"]*\)".*/\1/p' Sources/ClaudeNotch/Updater.swift)
+          PUBLIC_KEY=$(sed -n 's/.*static let publicKey = "\([^"]*\)".*/\1/p' Sources/Oriel/Updater.swift)
           test -n "$PUBLIC_KEY"
-          for DMG in "build/Oriel-$VERSION.dmg" "build/ClaudeNotch-$VERSION.dmg"; do
-            swift scripts/update-signing.swift sign "$DMG" > "$DMG.sig"
-            test -s "$DMG.sig"
-            swift scripts/update-signing.swift verify "$DMG" "$(cat "$DMG.sig")" "$PUBLIC_KEY"
-          done
+          DMG="build/Oriel-$VERSION.dmg"
+          swift scripts/update-signing.swift sign "$DMG" > "$DMG.sig"
+          test -s "$DMG.sig"
+          swift scripts/update-signing.swift verify "$DMG" "$(cat "$DMG.sig")" "$PUBLIC_KEY"
 
       - name: Create GitHub release
         env:
@@ -111,11 +109,8 @@ jobs:
             "build/Oriel-$VERSION.dmg" \
             "build/Oriel-$VERSION.dmg.sha256" \
             "build/Oriel-$VERSION.dmg.sig" \
-            "build/ClaudeNotch-$VERSION.dmg" \
-            "build/ClaudeNotch-$VERSION.dmg.sha256" \
-            "build/ClaudeNotch-$VERSION.dmg.sig" \
             --title "Oriel $VERSION" \
-            --notes "Download **Oriel-$VERSION.dmg**. \`ClaudeNotch-$VERSION.dmg\` is the same app, kept for the automatic update of Claude Notch 1.9.0 and earlier." \
+            --notes "Download **Oriel-$VERSION.dmg**. First launch: see the *First launch* file inside the image, or the README." \
             --generate-notes
 
       - name: Remove signing keychain

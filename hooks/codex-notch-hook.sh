@@ -1,5 +1,5 @@
 #!/bin/sh
-# Hook Codex de Claude Notch : parle à l'app sur http://127.0.0.1:47823, avec le jeton qu'elle écrit dans un fichier
+# Hook Codex de Oriel : parle à l'app sur http://127.0.0.1:47823, avec le jeton qu'elle écrit dans un fichier
 # 0600 (passé à curl par -H @fichier, jamais en argument). Deux modes :
 #   (sans argument)  relaie l'événement vers /codex/hook. Lancé en `async: true` : aucune latence. Sort avec 0.
 #   permission       PermissionRequest synchrone : la décision prise dans la notch (JSON) part sur la sortie
@@ -8,14 +8,14 @@
 # Une décision n'est appliquée que si elle porte la preuve de l'app (second fichier 0600, jamais envoyé) :
 # un autre programme qui occuperait le port, app fermée, ne décide rien.
 
-URL="http://127.0.0.1:${CLAUDE_NOTCH_PORT:-47823}"
-TOKEN="$HOME/Library/Application Support/ClaudeNotch/hook-token"
-PROOF="$HOME/Library/Application Support/ClaudeNotch/hook-proof"
+URL="http://127.0.0.1:${ORIEL_PORT:-47823}"
+TOKEN="$HOME/Library/Application Support/Oriel/hook-token"
+PROOF="$HOME/Library/Application Support/Oriel/hook-proof"
 
 case "${1:-}" in
 permission)
     [ -r "$TOKEN" ] && [ -r "$PROOF" ] || exit 0
-    WORK=$(mktemp -d "${TMPDIR:-/tmp}/claude-notch.XXXXXX") || exit 0
+    WORK=$(mktemp -d "${TMPDIR:-/tmp}/oriel.XXXXXX") || exit 0
     trap 'rm -rf "$WORK"' EXIT
     # Hook arrêté (Ctrl-C, timeout) : curl part avec lui, l'app voit la connexion se fermer et retire sa carte.
     CURL=
@@ -39,7 +39,7 @@ permission)
     CR=$(printf '\r')
     GENUINE=
     while IFS= read -r LINE; do
-        if [ "$LINE" = "X-Claude-Notch-Proof: $EXPECTED$CR" ]; then GENUINE=1; fi
+        if [ "$LINE" = "X-Oriel-Proof: $EXPECTED$CR" ]; then GENUINE=1; fi
     done < "$WORK/head"
     [ -n "$GENUINE" ] || exit 0
     cat "$WORK/out"
@@ -47,7 +47,7 @@ permission)
     ;;
 esac
 
-TMP=$(mktemp "${TMPDIR:-/tmp}/claude-notch.XXXXXX") || exit 0
+TMP=$(mktemp "${TMPDIR:-/tmp}/oriel.XXXXXX") || exit 0
 trap 'rm -f "$TMP"' EXIT
 trap 'exit 0' HUP INT TERM
 cat > "$TMP"
@@ -67,7 +67,7 @@ send() {
 if ! send; then
     # App fermée (ou jeton pas encore écrit) : on la relance au début d'une session ou d'un tour, puis on réessaie.
     if grep -Eq '"hook_event_name"[[:space:]]*:[[:space:]]*"(SessionStart|UserPromptSubmit)"' "$TMP"; then
-        open -g -b io.github.slybald.claudenotch >/dev/null 2>&1 || exit 0
+        open -g -b io.github.slybald.oriel >/dev/null 2>&1 || exit 0
         i=0
         while [ "$i" -lt 10 ]; do
             sleep 0.3

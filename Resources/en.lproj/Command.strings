@@ -1,4 +1,4 @@
-/* Claude Notch: English texts of the command bar. The key is the French text used in the code. */
+/* Oriel: English texts of the command bar. The key is the French text used in the code. */
 "Barre de commande" = "Command bar";
 "Préfixe %@" = "Prefix %@";
 "Que veux-tu faire ?" = "What do you want to do?";

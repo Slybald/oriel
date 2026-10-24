@@ -1,4 +1,4 @@
-/* Claude Notch : textes français du module QuickSettings (la clé est le texte). */
+/* Oriel : textes français du module QuickSettings (la clé est le texte). */
 "%d %%" = "%d %%";
 "%d h %02d" = "%d h %02d";
 "%d min" = "%d min";

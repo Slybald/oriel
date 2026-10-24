@@ -7,9 +7,9 @@
 	<key>CFBundleDisplayName</key>
 	<string>Oriel</string>
 	<key>CFBundleExecutable</key>
-	<string>ClaudeNotch</string>
+	<string>Oriel</string>
 	<key>CFBundleIdentifier</key>
-	<string>io.github.slybald.claudenotch</string>
+	<string>io.github.slybald.oriel</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLocalizations</key>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pilote un vrai `codex app-server` pour CodexLiveTests (jamais lancé sans CLAUDE_NOTCH_CODEX_LIVE=1).
+"""Pilote un vrai `codex app-server` pour CodexLiveTests (jamais lancé sans ORIEL_CODEX_LIVE=1).
 
     codex_live_driver.py <CODEX_HOME jetable> <HOME jetable> <port> <dossier de travail> <accept|decline>
 
@@ -21,7 +21,7 @@ import time
 codex_home, fake_home, port, work, reply = sys.argv[1:6]
 MARKER = "codex-notch-hook.sh"
 env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")}
-env.update(CODEX_HOME=codex_home, HOME=fake_home, CLAUDE_NOTCH_PORT=port)
+env.update(CODEX_HOME=codex_home, HOME=fake_home, ORIEL_PORT=port)
 
 
 class Client:

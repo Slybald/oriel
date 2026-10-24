@@ -1,4 +1,4 @@
-/* Claude Notch: English texts of the Messages module. The key is the French text used in the code. */
+/* Oriel: English texts of the Messages module. The key is the French text used in the code. */
 "%d message non lu" = "%d unread message";
 "%d messages non lus" = "%d unread messages";
 "Accès complet au disque requis" = "Full Disk Access required";

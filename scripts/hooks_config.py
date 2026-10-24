@@ -5,7 +5,7 @@
     hooks_config.py uninstall
 
 Respecte CLAUDE_CONFIG_DIR. Sauvegarde horodatée avant toute écriture.
-Idempotent : nos entrées (repérées par « claude-notch-hook.sh ») sont retirées puis rajoutées.
+Idempotent : nos entrées (repérées par « oriel-hook.sh ») sont retirées puis rajoutées.
 Les hooks existants et l'ordre des clés sont conservés. JSON invalide : abandon sans rien toucher.
 
 Un groupe par événement : le relais async ; plus, pour « Répondre depuis la notch », le hook PermissionRequest
@@ -20,7 +20,9 @@ import sys
 import tempfile
 import time
 
-MARKER = "claude-notch-hook.sh"
+MARKER = "oriel-hook.sh"
+# Nom d'avant le renommage en Oriel : ces entrées sont à nous aussi.
+LEGACY_MARKER = "claude-notch-hook.sh"
 EVENTS = [
     "SessionStart",
     "SessionEnd",
@@ -85,7 +87,7 @@ def load(path):
 
 
 def is_ours(hook):
-    return isinstance(hook, dict) and MARKER in str(hook.get("command", ""))
+    return isinstance(hook, dict) and any(m in str(hook.get("command", "")) for m in (MARKER, LEGACY_MARKER))
 
 
 def strip(settings, drop_empty_root):
@@ -130,7 +132,7 @@ def install(settings, hook_path):
 def write(path, settings):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if os.path.exists(path):
-        stem = f"{path}.claude-notch-{time.strftime('%Y%m%d-%H%M%S')}"
+        stem = f"{path}.oriel-{time.strftime('%Y%m%d-%H%M%S')}"
         backup, n = f"{stem}.bak", 1
         while os.path.exists(backup):
             backup, n = f"{stem}-{n}.bak", n + 1

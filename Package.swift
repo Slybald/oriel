@@ -2,13 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClaudeNotch",
+    name: "Oriel",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(
-            name: "ClaudeNotch",
+            name: "Oriel",
             dependencies: ["FanControl"],
-            path: "Sources/ClaudeNotch"
+            path: "Sources/Oriel"
         ),
         // Accès au SMC, partagé par l'app (lecture) et l'outil d'aide `fanctl` (écriture, en root).
         .target(
@@ -21,9 +21,9 @@ let package = Package(
             path: "Sources/fanctl"
         ),
         .testTarget(
-            name: "ClaudeNotchTests",
-            dependencies: ["ClaudeNotch", "FanControl"],
-            path: "Tests/ClaudeNotchTests"
+            name: "OrielTests",
+            dependencies: ["Oriel", "FanControl"],
+            path: "Tests/OrielTests"
         ),
     ],
     swiftLanguageVersions: [.v5]

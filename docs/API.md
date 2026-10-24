@@ -34,7 +34,7 @@ notch help
   cross; if `notch` itself is killed outright, the hourglass goes away at the end of its hour.
 - `clear` removes one ear tab (`--id`) or all of them.
 - `--client` is the name shown on the card ("via make.sh") and in Settings › Scripts. Default: `notch`.
-- `CLAUDE_NOTCH_PORT` changes the port (tests).
+- `ORIEL_PORT` changes the port (tests).
 
 ## HTTP API
 
@@ -42,7 +42,7 @@ Base URL: `http://127.0.0.1:47823/api/v1/ears`.
 
 ### Authentication
 
-While the API is on, the app writes `~/Library/Application Support/ClaudeNotch/api-token` (mode 0600, readable by your
+While the API is on, the app writes `~/Library/Application Support/Oriel/api-token` (mode 0600, readable by your
 account only). It holds one header line, `Authorization: Bearer <32 hex>`, so curl can read it with `-H @file`: the
 token never appears on a command line or in `ps`. The token is new at each launch of the app and each time the API is
 turned on: read the file at each call, do not copy the token.
@@ -100,7 +100,7 @@ Errors come as `{"error": "<code>", "message": "<explanation>"}`.
 ### Examples
 
 ```sh
-TOKEN="$HOME/Library/Application Support/ClaudeNotch/api-token"
+TOKEN="$HOME/Library/Application Support/Oriel/api-token"
 
 curl -q -s --noproxy '*' -H @"$TOKEN" -H 'Content-Type: application/json' \
   -d '{"id":"backup","title":"Backup done","text":"OK","icon":"externaldrive.fill","color":"green","ttl":300,"client":"backup.sh"}' \
@@ -117,7 +117,7 @@ Python (standard library only):
 ```python
 import json, pathlib, urllib.request
 
-header = (pathlib.Path.home() / "Library/Application Support/ClaudeNotch/api-token").read_text().strip()
+header = (pathlib.Path.home() / "Library/Application Support/Oriel/api-token").read_text().strip()
 name, value = header.split(": ", 1)
 request = urllib.request.Request(
     "http://127.0.0.1:47823/api/v1/ears",
@@ -166,6 +166,6 @@ only), so you can see who uses the API.
 
 ## Not included
 
-- **A `claude-notch://` link.** Any web page can open a custom URL scheme; the API stays reachable from local programs
+- **A `oriel://` link.** Any web page can open a custom URL scheme; the API stays reachable from local programs
   only.
 - **Shortcuts actions (App Intents).** A shortcut can call the API with "Run Shell Script" and `notch`.

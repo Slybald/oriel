@@ -1,4 +1,4 @@
-/* Claude Notch : textes français des jauges de quota (onglets Claude et Codex). La clé est le texte du code. */
+/* Oriel : textes français des jauges de quota (onglets Claude et Codex). La clé est le texte du code. */
 
 "%d h" = "%d h";
 "%d j" = "%d j";

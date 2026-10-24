@@ -1,4 +1,4 @@
-/* Claude Notch : français. Les clés sont déjà le texte français ; ce fichier dit à macOS que la langue est prise en charge. */
+/* Oriel : français. Les clés sont déjà le texte français ; ce fichier dit à macOS que la langue est prise en charge. */
 
 /* Panel menu */
 "Lancer à l'ouverture de session" = "Lancer à l'ouverture de session";
@@ -117,7 +117,7 @@
 /* Alerts */
 "Mise à jour des hooks impossible" = "Mise à jour des hooks impossible";
 "Désinstaller Oriel ?" = "Désinstaller Oriel ?";
-"Les hooks d'Oriel seront retirés de ~/.claude/settings.json (sauvegarde horodatée à côté, tes autres hooks restent en place), ainsi que ~/.claude/hooks/claude-notch-hook.sh et le lancement à l'ouverture de session. L'app se fermera ensuite." = "Les hooks d'Oriel seront retirés de ~/.claude/settings.json (sauvegarde horodatée à côté, tes autres hooks restent en place), ainsi que ~/.claude/hooks/claude-notch-hook.sh et le lancement à l'ouverture de session. L'app se fermera ensuite.";
+"Les hooks d'Oriel seront retirés de ~/.claude/settings.json (sauvegarde horodatée à côté, tes autres hooks restent en place), ainsi que ~/.claude/hooks/oriel-hook.sh et le lancement à l'ouverture de session. L'app se fermera ensuite." = "Les hooks d'Oriel seront retirés de ~/.claude/settings.json (sauvegarde horodatée à côté, tes autres hooks restent en place), ainsi que ~/.claude/hooks/oriel-hook.sh et le lancement à l'ouverture de session. L'app se fermera ensuite.";
 "Le lancement à l'ouverture de session sera retiré. L'app se fermera ensuite." = "Le lancement à l'ouverture de session sera retiré. L'app se fermera ensuite.";
 "Désinstaller" = "Désinstaller";
 "Annuler" = "Annuler";
@@ -320,7 +320,7 @@
 "Invisible dans les captures et le partage d'écran" = "Invisible dans les captures et le partage d'écran";
 "Tu vois toujours la notch ; captures, enregistrements et partages d'écran ne la montrent pas (selon l'app qui capture)." = "Tu vois toujours la notch ; captures, enregistrements et partages d'écran ne la montrent pas (selon l'app qui capture).";
 "La règle d'économie d'énergie reste en place" = "La règle d'économie d'énergie reste en place";
-"Pour la retirer : sudo rm /etc/sudoers.d/claude-notch-lowpower" = "Pour la retirer : sudo rm /etc/sudoers.d/claude-notch-lowpower";
+"Pour la retirer : sudo rm /etc/sudoers.d/oriel-lowpower" = "Pour la retirer : sudo rm /etc/sudoers.d/oriel-lowpower";
 
 /* Setup assistant */
 "Passer" = "Passer";

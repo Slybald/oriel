@@ -1,4 +1,4 @@
-/* Claude Notch: English texts of the Mail module. The key is the French text used in the code. */
+/* Oriel: English texts of the Mail module. The key is the French text used in the code. */
 "%d message non lu" = "%d unread message";
 "%d messages non lus" = "%d unread messages";
 "(sans objet)" = "(no subject)";

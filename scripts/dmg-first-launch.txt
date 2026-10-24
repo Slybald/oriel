@@ -1,0 +1,44 @@
+ORIEL - PREMIÈRE OUVERTURE / FIRST LAUNCH
+=========================================
+
+Français
+--------
+1. Glisse Oriel dans le dossier Applications (à droite dans cette fenêtre).
+2. Ouvre Oriel depuis le dossier Applications.
+
+macOS bloque la première ouverture, parce qu'Oriel n'est pas notarisée par Apple
+(pas de compte développeur Apple). Ce n'est pas un virus. Il faut le dire à macOS une seule fois :
+
+  macOS 13 et 14 (Ventura, Sonoma)
+    Clic droit (ou Ctrl + clic) sur Oriel dans Applications > Ouvrir > Ouvrir.
+
+  macOS 15 et après (Sequoia et suivants)
+    a. Ouvre Oriel, puis ferme l'alerte (« Terminé »).
+    b. Ouvre Réglages Système > Confidentialité et sécurité.
+    c. En bas, à côté du message sur Oriel, clique sur « Ouvrir quand même ».
+    d. Confirme avec ton mot de passe ou Touch ID, puis « Ouvrir ».
+
+Ensuite, Oriel s'ouvre normalement, et se met à jour tout seul.
+Mise à jour depuis la 2.1 ou avant : installe celle-ci à la main (elle remplace l'ancienne app), puis
+redonne les accès macOS demandés. Réglages, notes et hooks sont repris.
+
+English
+-------
+1. Drag Oriel into the Applications folder (on the right in this window).
+2. Open Oriel from the Applications folder.
+
+macOS blocks the first launch because Oriel is not notarized by Apple (there is no Apple developer
+account behind it). It is not malware. You only have to tell macOS once:
+
+  macOS 13 and 14 (Ventura, Sonoma)
+    Right-click (or Control-click) Oriel in Applications > Open > Open.
+
+  macOS 15 and later (Sequoia and newer)
+    a. Open Oriel, then dismiss the alert ("Done").
+    b. Open System Settings > Privacy & Security.
+    c. Scroll down to the message about Oriel and click "Open Anyway".
+    d. Confirm with your password or Touch ID, then "Open".
+
+After that, Oriel opens normally and updates itself.
+Updating from 2.1 or earlier: install this one by hand (it replaces the old app), then grant the
+macOS permissions it asks for again. Settings, notes and hooks carry over.

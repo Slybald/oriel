@@ -1,4 +1,4 @@
-/* Claude Notch: English texts of Info.plist (privacy prompts). */
+/* Oriel: English texts of Info.plist (privacy prompts). */
 "NSDesktopFolderUsageDescription" = "Oriel runs optional companion tools that read files on your Desktop.";
 "NSDocumentsFolderUsageDescription" = "Oriel runs optional companion tools that read files in your Documents folder.";
 "NSDownloadsFolderUsageDescription" = "Oriel runs optional companion tools that sort files from your Downloads folder.";

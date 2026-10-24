@@ -5,10 +5,8 @@ unfolds with a player, your agenda and its meetings, quick settings, a shelf, a 
 If you use Claude Code or Codex, two optional tabs follow their sessions too: state, current tool, task list,
 subagents, and permissions you can answer from the notch. Neither is needed to use the app.
 
-> **Formerly Claude Notch.** If you already have it, there is nothing to do: the automatic update installs the new
-> version, which becomes `Oriel.app` in Applications. Your macOS permissions, settings, hooks and data are kept.
-> To download it by hand, take `Oriel-<version>.dmg`; `ClaudeNotch-<version>.dmg` is published only so that versions
-> up to 1.9.0 can update themselves.
+> **First time opening it?** macOS blocks the first launch: see [First launch](#first-launch) (30 seconds).
+> **Formerly Claude Notch.** Updating from 2.1 or earlier: see [the note below](#updates).
 
 <p align="center">
   <img src="docs/collapsed.png" width="380" alt="Collapsed notch: a raised hand on the left ear, 2·2 on the right ear">
@@ -264,11 +262,13 @@ Open **…** › **Settings…** (⌘,).
 
 ### First launch
 
-Oriel is not notarized (there is no Apple Developer ID behind it; releases are signed with a
-self-signed certificate), so macOS blocks it the first time you open it. Two ways around it:
+Oriel is not notarized (there is no Apple Developer account behind it; releases are signed with a
+self-signed certificate), so macOS blocks it the first time you open it. This is not malware: you only have to
+tell macOS once. The same steps are in a text file inside the DMG.
 
-- Open the app once, dismiss the warning, then go to **System Settings › Privacy & Security**, scroll down
-  and click **Open Anyway** next to the message about Oriel. Confirm.
+- **macOS 13 and 14**: right-click (or Control-click) **Oriel** in Applications › **Open** › **Open**.
+- **macOS 15 and later**: open Oriel, dismiss the alert, go to **System Settings › Privacy & Security**,
+  scroll down and click **Open Anyway** next to the message about Oriel, then confirm.
 - Or, in Terminal:
 
   ```sh
@@ -328,11 +328,13 @@ Oriel updates itself from the [Releases](https://github.com/Slybald/oriel/releas
   menu, with an **Install** button. **Check for Updates** checks right away.
 - Apps built from source (`scripts/build.sh`, `scripts/install.sh`) never update themselves: the menu shows
   "Development build: updates disabled".
-- Coming from Claude Notch (1.9.0 or older): the update installs the new version in `ClaudeNotch.app`, which renames
-  itself `Oriel.app` at its first launch, points open-at-login to the new path and restarts (one instance only).
-  If an older `ClaudeNotch.app` is still next to `Oriel.app` (a manual install), it goes to the Trash. The data
-  folder and the hook scripts keep their old names (`ClaudeNotch`, `claude-notch-hook.sh`): that is on purpose, so
-  that nothing has to be moved or approved again.
+- **Updating from 2.1 or earlier** (when the app was still called Claude Notch): the automatic update cannot
+  cross the rename. Download `Oriel-<version>.dmg` once by hand and drag **Oriel** onto Applications (it replaces
+  the old app), then grant again the macOS accesses it asks for. Your settings, notes and hooks are picked up
+  at the first launch (the data folder, the open-at-login option and the Claude Code hooks are
+  moved to the new names; the Codex hooks keep their approval). From then on, updates are automatic again. If you had turned on the fan or low-power
+  authorization, do it again in Settings; the old rules can be removed with
+  `sudo rm /etc/sudoers.d/claude-notch-*` and `sudo rm /Library/PrivilegedHelperTools/io.github.slybald.claudenotch.fanctl`.
 
 ## Privacy
 
@@ -341,7 +343,7 @@ Oriel updates itself from the [Releases](https://github.com/Slybald/oriel/releas
   (see [Updates](#updates)).
 - The app listens on `127.0.0.1:47823` only, on the loopback interface: it cannot be reached from the network.
 - The hook script only talks to that local address, with `curl`. Every request carries a token that the app
-  generates at each launch and writes to `~/Library/Application Support/ClaudeNotch/hook-token` (readable by
+  generates at each launch and writes to `~/Library/Application Support/Oriel/hook-token` (readable by
   your account only); curl reads it from that file, so it never shows in the process list. The app refuses any
   request without it, with another `Host` than `127.0.0.1:47823`, or with an `Origin` header (a web page).
   The other way round, a decision or a message from the app carries a second secret (`hook-proof`, same
@@ -362,16 +364,16 @@ Oriel updates itself from the [Releases](https://github.com/Slybald/oriel/releas
   the events of the calendars you chose to show, the state of Wi-Fi and Bluetooth, and the battery level. With the quota on:
   the percentages and reset times that Claude Code gives to its status line (relayed, kept in memory) and that Codex
   returns when asked.
-- What the app writes: the logs and token files in `~/Library/Application Support/ClaudeNotch/` (see
+- What the app writes: the logs and token files in `~/Library/Application Support/Oriel/` (see
   [Shared logs](#shared-logs)), and the data of the tabs in the same folder: `shelf.json` (references to your
   files), `notes.json`, `timer.json`, and `clipboard-history.json` only if you keep the history. These files are
   readable by your account only. Also the hooks in `~/.claude` when you ask for it, and the Codex hooks (`~/.codex/hooks.json` and
-  `~/.codex/hooks/codex-notch-hook.sh`) when you ask for it, and, when you turn the Claude quota on, `claude-notch-statusline.sh`
+  `~/.codex/hooks/codex-notch-hook.sh`) when you ask for it, and, when you turn the Claude quota on, `oriel-statusline.sh`
   and a copy of your previous status line command (readable by you only) in `~/.claude/hooks/` and the `statusLine` of
   `~/.claude/settings.json`; `~/.codex/config.toml` is only read (to show the state of the
   hooks), never written by the app: the approval of the hooks, when you click **Approve in Codex**, is written by Codex
   itself (the app starts `codex app-server` for a moment, with a minimal environment). During an update the DMG in
-  `~/Library/Caches/io.github.slybald.claudenotch/updates/` (deleted afterwards) and the new app in place of
+  `~/Library/Caches/io.github.slybald.oriel/updates/` (deleted afterwards) and the new app in place of
   the old one. The messages you type are sent to the Claude Code session only, never stored.
 
 ## macOS permissions
@@ -400,11 +402,11 @@ Oriel asks for a permission only when you use the feature that needs it. Nothing
   the tile says so.
 - Low Power Mode needs administrator rights (`pmset`). The first change asks for your password or Touch ID once
   and, in the same prompt, adds a system rule limited to turning this mode on and off
-  (`/etc/sudoers.d/claude-notch-lowpower`); later changes need no password. "Remove the authorization" in Settings
+  (`/etc/sudoers.d/oriel-lowpower`); later changes need no password. "Remove the authorization" in Settings
   or uninstalling removes it.
 - Fixed fan speed needs root to write to the SMC. The first fixed speed asks for your password once and installs a
-  small helper (`/Library/PrivilegedHelperTools/io.github.slybald.claudenotch.fanctl`) and a system rule that allows
-  only this helper (`/etc/sudoers.d/claude-notch-fans`). Reading speeds and temperatures needs nothing. "Remove the
+  small helper (`/Library/PrivilegedHelperTools/io.github.slybald.oriel.fanctl`) and a system rule that allows
+  only this helper (`/etc/sudoers.d/oriel-fans`). Reading speeds and temperatures needs nothing. "Remove the
   authorization" in Settings or uninstalling removes both.
 
 ## How it works
@@ -443,7 +445,7 @@ Oriel asks for a permission only when you use the feature that needs it. Nothing
   switches the session back to "ready" when it finds the interruption.
 - Diagnostics: `GET http://127.0.0.1:47823/state` returns the state of the sessions and of the notch as JSON
   (read only, local only, with the token:
-  `curl -H @"$HOME/Library/Application Support/ClaudeNotch/hook-token" http://127.0.0.1:47823/state`).
+  `curl -H @"$HOME/Library/Application Support/Oriel/hook-token" http://127.0.0.1:47823/state`).
 
 ## Tools section
 
@@ -466,13 +468,13 @@ If companion tools are installed in `~/.local/share/<tool>/` (`git-radar`, `clau
 `claude-recap`), Oriel runs their background jobs itself instead of LaunchAgents: macOS denies
 `~/Documents`, `~/Desktop` and `~/Downloads` to scripts started by launchd, while the access granted once to
 an app is inherited by the processes it starts. A missing tool is skipped. Logs:
-`~/Library/Logs/ClaudeNotch/<tool>.log`; state: `jobs` key of `/state`. Releases keep the same signing
+`~/Library/Logs/Oriel/<tool>.log`; state: `jobs` key of `/state`. Releases keep the same signing
 certificate, so these accesses survive updates. An app built from source is signed ad hoc and loses them at
 each build.
 
 ## Shared logs
 
-The app appends one JSON line per event to two files in `~/Library/Application Support/ClaudeNotch/`, from
+The app appends one JSON line per event to two files in `~/Library/Application Support/Oriel/`, from
 hooks it already receives:
 
 - `files.jsonl`: every file written by Claude (successful `PostToolUse` of Write, Edit, MultiEdit,
@@ -552,7 +554,7 @@ scripts/make-dmg.sh   # build/Oriel-<version>.dmg and its .sha256, checked after
 
 - `VERSION=1.2.3 scripts/build.sh` sets the app version (default: `CFBundleShortVersionString` of
   `Resources/Info.plist`). `RELEASE_CHANNEL=1` marks the app as a release build
-  (`ClaudeNotchUpdateChannel = release` in its Info.plist): only those update themselves.
+  (`OrielUpdateChannel = release` in its Info.plist): only those update themselves.
 - `SIGN_KEYCHAIN=<keychain> SIGN_IDENTITY=<certificate name> scripts/build.sh` signs with that certificate
   instead of ad hoc (both variables or neither). This is what the release workflow does; local builds stay ad
   hoc, and macOS asks again for its accesses after each one.
@@ -561,7 +563,7 @@ scripts/make-dmg.sh   # build/Oriel-<version>.dmg and its .sha256, checked after
 - `scripts/install.sh` builds and installs from source; `scripts/uninstall.sh` removes it.
 - Translations: `Resources/en.lproj` and `Resources/fr.lproj`. The French text in the code is the key;
   `LocalizationTests` checks that every key used in the code has an English translation.
-- PNG snapshots of the panel, with sample data: `CLAUDE_NOTCH_SNAPSHOT_DIR=/some/folder swift test --filter SnapshotTests`.
+- PNG snapshots of the panel, with sample data: `ORIEL_SNAPSHOT_DIR=/some/folder swift test --filter SnapshotTests`.
 - **Publishing a release** = pushing a `vX.Y.Z` tag. GitHub Actions runs the tests, builds the universal app
   in version X.Y.Z with `RELEASE_CHANNEL=1`, makes the DMG, signs it with the `UPDATE_SIGNING_KEY` secret
   (`scripts/update-signing.swift`, the job fails if signing fails or if the key does not match the one built
@@ -610,10 +612,8 @@ sessions : état, outil en cours, liste de tâches, sous-agents, et permissions 
 notch. Ni l'un ni l'autre n'est nécessaire pour utiliser l'app. Interface disponible en anglais et en
 français (suit la langue du système). Les captures ci-dessus utilisent des données fictives.
 
-> **Anciennement Claude Notch.** Si tu l'as déjà, il n'y a rien à faire : la mise à jour automatique installe la
-> nouvelle version, qui devient `Oriel.app` dans Applications. Tes autorisations macOS, tes réglages, tes hooks et
-> tes données sont gardés. Pour un téléchargement manuel, prends `Oriel-<version>.dmg` ; `ClaudeNotch-<version>.dmg`
-> ne sert qu'à la mise à jour automatique des versions jusqu'à 1.9.0.
+> **Première ouverture ?** macOS bloque le premier lancement : voir [Premier lancement](#premier-lancement) (30 secondes).
+> **Anciennement Claude Notch.** Mise à jour depuis la 2.1 ou avant : voir [la note plus bas](#mises-à-jour).
 
 *Projet indépendant, ni affilié à Anthropic ni approuvé par Anthropic. Claude est une marque d'Anthropic.*
 
@@ -864,11 +864,13 @@ Ouvre **…** › **Réglages…** (⌘,).
 
 #### Premier lancement
 
-Oriel n'est pas notarisée (pas de compte Apple Developer ID ; les releases sont signées avec un
-certificat auto-signé) : macOS la bloque à la première ouverture. Deux façons de passer outre :
+Oriel n'est pas notarisée (pas de compte Apple Developer ; les releases sont signées avec un
+certificat auto-signé) : macOS la bloque à la première ouverture. Ce n'est pas un virus, il faut juste le dire à
+macOS une fois. Les mêmes étapes sont dans un fichier texte à l'intérieur du DMG.
 
-- Ouvre l'app une fois, ferme l'avertissement, puis va dans **Réglages Système › Confidentialité et
-  sécurité**, descends et clique sur **Ouvrir quand même** à côté du message sur Oriel. Confirme.
+- **macOS 13 et 14** : clic droit (ou Ctrl + clic) sur **Oriel** dans Applications › **Ouvrir** › **Ouvrir**.
+- **macOS 15 et après** : ouvre Oriel, ferme l'alerte, va dans **Réglages Système › Confidentialité et
+  sécurité**, descends et clique sur **Ouvrir quand même** à côté du message sur Oriel, puis confirme.
 - Ou, dans le Terminal :
 
   ```sh
@@ -931,12 +933,14 @@ Oriel se met à jour seule depuis la page [Releases](https://github.com/Slybald/
   tout de suite.
 - Une app compilée depuis les sources (`scripts/build.sh`, `scripts/install.sh`) ne se met jamais à jour
   seule : le menu affiche « Build de développement : mises à jour désactivées ».
-- Si tu viens de Claude Notch (1.9.0 ou plus ancienne) : la mise à jour installe la nouvelle version dans
-  `ClaudeNotch.app`, qui se renomme `Oriel.app` à son premier lancement, repointe l'ouverture à la connexion vers
-  le nouveau chemin et redémarre (une seule instance). Si une ancienne `ClaudeNotch.app` traîne encore à côté
-  d'`Oriel.app` (installation manuelle), elle part à la Corbeille. Le dossier de données et les scripts de hook
-  gardent leurs anciens noms (`ClaudeNotch`, `claude-notch-hook.sh`) : c'est voulu, pour ne rien déplacer ni
-  faire réapprouver.
+- **Mise à jour depuis la 2.1 ou avant** (quand l'app s'appelait encore Claude Notch) : la mise à jour
+  automatique ne peut pas passer le renommage. Télécharge `Oriel-<version>.dmg` une fois à la main et glisse **Oriel**
+  sur Applications (elle remplace l'ancienne app), puis redonne les accès macOS demandés. Tes réglages, tes notes et
+  tes hooks sont repris au premier lancement (dossier de données, ouverture à la connexion, hooks de Claude Code
+  déplacés vers les nouveaux noms ; les hooks Codex gardent leur approbation). Ensuite, les mises à jour redeviennent automatiques. Si tu avais activé
+  l'autorisation des ventilateurs ou de l'économie d'énergie, refais-le dans les Réglages ; les anciennes règles se
+  retirent avec `sudo rm /etc/sudoers.d/claude-notch-*` et
+  `sudo rm /Library/PrivilegedHelperTools/io.github.slybald.claudenotch.fanctl`.
 
 ### Confidentialité
 
@@ -945,7 +949,7 @@ Oriel se met à jour seule depuis la page [Releases](https://github.com/Slybald/
   téléchargement des nouvelles versions depuis GitHub (voir [Mises à jour](#mises-à-jour)).
 - L'app n'écoute que sur `127.0.0.1:47823`, sur l'interface de bouclage : elle est injoignable depuis le réseau.
 - Le script de hook ne parle qu'à cette adresse locale, avec `curl`. Chaque requête porte un jeton que l'app
-  génère à chaque lancement et écrit dans `~/Library/Application Support/ClaudeNotch/hook-token` (lisible par
+  génère à chaque lancement et écrit dans `~/Library/Application Support/Oriel/hook-token` (lisible par
   ton compte seulement) ; curl le lit dans ce fichier, il n'apparaît donc jamais dans la liste des processus.
   L'app refuse toute requête sans lui, avec un autre `Host` que `127.0.0.1:47823` ou avec un en-tête `Origin`
   (une page web). Dans l'autre sens, une décision ou un message de l'app porte un second secret (`hook-proof`,
@@ -967,16 +971,16 @@ Oriel se met à jour seule depuis la page [Releases](https://github.com/Slybald/
   et sa pochette (Lecteur), les événements des calendriers que tu as choisi d'afficher, l'état du Wi-Fi et du
   Bluetooth, et le niveau de la batterie. Avec le quota activé : les pourcentages et heures de remise à zéro que Claude Code
   donne à sa ligne d'état (relayés, gardés en mémoire) et que Codex renvoie quand on le lui demande.
-- Ce que l'app écrit : les journaux et les fichiers du jeton dans `~/Library/Application Support/ClaudeNotch/`
+- Ce que l'app écrit : les journaux et les fichiers du jeton dans `~/Library/Application Support/Oriel/`
   (voir [Registres partagés](#registres-partagés)), et les données des onglets dans le même dossier :
   `shelf.json` (les références à tes fichiers), `notes.json`, `timer.json`, et `clipboard-history.json` seulement
   si tu gardes l'historique. Ces fichiers ne sont lisibles que par ton compte. Il y a aussi les hooks dans
   `~/.claude` quand tu le demandes, les hooks Codex (`~/.codex/hooks.json` et `~/.codex/hooks/codex-notch-hook.sh`) quand tu
-  le demandes, `claude-notch-statusline.sh` et une copie de ta commande de ligne d'état précédente (lisible par toi seul) dans
+  le demandes, `oriel-statusline.sh` et une copie de ta commande de ligne d'état précédente (lisible par toi seul) dans
   `~/.claude/hooks/`, et la `statusLine` de `~/.claude/settings.json`, quand tu actives le quota de Claude (`~/.codex/config.toml` n'est que lu, pour montrer l'état des hooks, jamais écrit par l'app : l'approbation des
   hooks, quand tu cliques sur **Approuver dans Codex**, est écrite par Codex lui-même, que l'app lance un instant avec un
   environnement minimal) et, pendant une mise à jour, le DMG dans
-  `~/Library/Caches/io.github.slybald.claudenotch/updates/` (supprimé ensuite) et la nouvelle app à la place de
+  `~/Library/Caches/io.github.slybald.oriel/updates/` (supprimé ensuite) et la nouvelle app à la place de
   l'ancienne. Les messages que tu tapes partent à la session Claude Code seulement, sans être enregistrés.
 
 ### Autorisations macOS
@@ -1010,12 +1014,12 @@ lancement.
   du Wi-Fi, la tuile l'indique.
 - L'économie d'énergie exige les droits administrateur (`pmset`). Le premier changement demande ton mot de passe ou
   Touch ID une fois et, dans la même fenêtre, pose une règle système limitée à l'activation et la désactivation de
-  ce mode (`/etc/sudoers.d/claude-notch-lowpower`) ; ensuite, plus de mot de passe. Retirée par « Retirer
+  ce mode (`/etc/sudoers.d/oriel-lowpower`) ; ensuite, plus de mot de passe. Retirée par « Retirer
   l'autorisation » dans les réglages ou à la
   désinstallation.
 - La vitesse fixe des ventilateurs exige root pour écrire dans le SMC. La première vitesse fixe demande ton mot de
-  passe une fois et installe un petit outil (`/Library/PrivilegedHelperTools/io.github.slybald.claudenotch.fanctl`) et
-  une règle système qui n'autorise que lui (`/etc/sudoers.d/claude-notch-fans`). Lire les vitesses et les températures
+  passe une fois et installe un petit outil (`/Library/PrivilegedHelperTools/io.github.slybald.oriel.fanctl`) et
+  une règle système qui n'autorise que lui (`/etc/sudoers.d/oriel-fans`). Lire les vitesses et les températures
   ne demande rien. « Retirer l'autorisation » dans les réglages ou la désinstallation retire les deux.
 
 ### Fonctionnement
@@ -1055,7 +1059,7 @@ lancement.
   seconde et repasse la session en « Prête » si elle y trouve l'interruption.
 - Diagnostic : `GET http://127.0.0.1:47823/state` renvoie l'état des sessions et de la notch en JSON
   (lecture seule, local uniquement, avec le jeton :
-  `curl -H @"$HOME/Library/Application Support/ClaudeNotch/hook-token" http://127.0.0.1:47823/state`).
+  `curl -H @"$HOME/Library/Application Support/Oriel/hook-token" http://127.0.0.1:47823/state`).
 
 ### Section outils
 
@@ -1079,13 +1083,13 @@ Si des outils compagnons sont installés dans `~/.local/share/<outil>/` (`git-ra
 `course-sorter`, `claude-recap`), Oriel lance lui-même leurs tâches de fond à la place de
 LaunchAgents : macOS refuse `~/Documents`, `~/Desktop` et `~/Downloads` aux scripts démarrés par launchd,
 alors que l'accès accordé une fois à une app est hérité par les processus qu'elle lance. Un outil absent est
-ignoré. Journaux : `~/Library/Logs/ClaudeNotch/<outil>.log` ; état : clé `jobs` de `/state`. Les releases
+ignoré. Journaux : `~/Library/Logs/Oriel/<outil>.log` ; état : clé `jobs` de `/state`. Les releases
 gardent le même certificat de signature, ces accès survivent donc aux mises à jour. Une app compilée depuis
 les sources est signée ad hoc et les perd à chaque build.
 
 ### Registres partagés
 
-L'app ajoute une ligne JSON par événement à deux fichiers de `~/Library/Application Support/ClaudeNotch/`, à
+L'app ajoute une ligne JSON par événement à deux fichiers de `~/Library/Application Support/Oriel/`, à
 partir de hooks qu'elle reçoit déjà :
 
 - `files.jsonl` : chaque fichier écrit par Claude (`PostToolUse` réussi de Write, Edit, MultiEdit,
@@ -1168,7 +1172,7 @@ scripts/make-dmg.sh   # build/Oriel-<version>.dmg et son .sha256, vérifié apr�
 
 - `VERSION=1.2.3 scripts/build.sh` fixe la version de l'app (par défaut : `CFBundleShortVersionString` de
   `Resources/Info.plist`). `RELEASE_CHANNEL=1` marque l'app comme build de release
-  (`ClaudeNotchUpdateChannel = release` dans son Info.plist) : seules celles-là se mettent à jour seules.
+  (`OrielUpdateChannel = release` dans son Info.plist) : seules celles-là se mettent à jour seules.
 - `SIGN_KEYCHAIN=<trousseau> SIGN_IDENTITY=<nom du certificat> scripts/build.sh` signe avec ce certificat au
   lieu d'ad hoc (les deux variables, ou aucune). C'est ce que fait le workflow de release ; les builds locaux
   restent ad hoc et macOS redemande leurs accès après chacun.
@@ -1178,7 +1182,7 @@ scripts/make-dmg.sh   # build/Oriel-<version>.dmg et son .sha256, vérifié apr�
 - Traductions : `Resources/en.lproj` et `Resources/fr.lproj`. Le texte français du code sert de clé ;
   `LocalizationTests` vérifie que chaque clé utilisée dans le code a sa traduction anglaise.
 - Captures PNG du panneau, avec des données fictives :
-  `CLAUDE_NOTCH_SNAPSHOT_DIR=/un/dossier swift test --filter SnapshotTests`.
+  `ORIEL_SNAPSHOT_DIR=/un/dossier swift test --filter SnapshotTests`.
 - **Publier une version** = pousser un tag `vX.Y.Z`. GitHub Actions lance les tests, compile l'app universelle
   en version X.Y.Z avec `RELEASE_CHANNEL=1`, fabrique le DMG, le signe avec le secret `UPDATE_SIGNING_KEY`
   (`scripts/update-signing.swift` ; le job échoue si la signature échoue ou si la clé ne correspond pas à

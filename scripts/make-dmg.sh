@@ -1,14 +1,16 @@
 #!/bin/sh
-# Crée, à partir de build/Oriel.app (lancer scripts/build.sh avant), deux images disque de la même app :
-#   build/Oriel-<version>.dmg        avec Oriel.app : celle à télécharger, et celle de la mise à jour automatique d'Oriel ;
-#   build/ClaudeNotch-<version>.dmg  avec ClaudeNotch.app : la seule que la mise à jour automatique des versions 1.1.0 à
-#                                    1.9.0 sait installer (l'app se renomme Oriel.app à son lancement).
-# Chacune est vérifiée (hdiutil verify, montage en lecture seule) et accompagnée de son SHA-256 dans <dmg>.sha256.
+# Crée, à partir de build/Oriel.app (lancer scripts/build.sh avant), l'image disque build/Oriel-<version>.dmg :
+# Oriel.app, un lien vers Applications et le fichier d'instructions de première ouverture. C'est l'image à
+# télécharger et celle de la mise à jour automatique.
+# Elle est vérifiée (hdiutil verify, montage en lecture seule) et accompagnée de son SHA-256 dans <dmg>.sha256.
+# Pas de fond d'image avec flèche : il faudrait un Finder interactif (AppleScript) pour placer les icônes,
+# ce que le runner CI n'offre pas.
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 APP="$ROOT/build/Oriel.app"
 VOLUME="Oriel"
+INSTRUCTIONS="Première ouverture - First launch.txt"
 
 if [ ! -d "$APP" ]; then
     echo "App introuvable : $APP (lance d'abord scripts/build.sh)" >&2
@@ -33,9 +35,8 @@ fail() {
     exit 1
 }
 
-# make_dmg <nom> : build/<nom>-<version>.dmg contenant <nom>.app.
 make_dmg() {
-    NAME=$1
+    NAME=Oriel
     DMG="$ROOT/build/$NAME-$VERSION.dmg"
 
     # 1. Contenu : l'app et un lien vers /Applications (racine lisible par tous, mktemp la crée en 700).
@@ -43,6 +44,7 @@ make_dmg() {
     chmod 755 "$STAGING"
     ditto "$APP" "$STAGING/$NAME.app"
     ln -s /Applications "$STAGING/Applications"
+    cp "$ROOT/scripts/dmg-first-launch.txt" "$STAGING/$INSTRUCTIONS"
 
     rm -f "$DMG" "$DMG.sha256"
     hdiutil create -quiet -volname "$VOLUME" -srcfolder "$STAGING" -fs HFS+ -format UDZO \
@@ -54,13 +56,14 @@ make_dmg() {
     hdiutil verify -quiet "$DMG"
     MOUNT=$(mktemp -d "${TMPDIR:-/tmp}/oriel-mount.XXXXXX")
     hdiutil attach -quiet -nobrowse -readonly -noautoopen -mountpoint "$MOUNT" "$DMG"
-    [ -x "$MOUNT/$NAME.app/Contents/MacOS/ClaudeNotch" ] || fail "$NAME.app absente ou incomplète"
+    [ -x "$MOUNT/$NAME.app/Contents/MacOS/Oriel" ] || fail "$NAME.app absente ou incomplète"
     [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$MOUNT/$NAME.app/Contents/Info.plist")" = \
-        io.github.slybald.claudenotch ] || fail "identifiant de $NAME.app inattendu"
+        io.github.slybald.oriel ] || fail "identifiant de $NAME.app inattendu"
+    [ -s "$MOUNT/$INSTRUCTIONS" ] || fail "fichier d'instructions absent"
     [ -L "$MOUNT/Applications" ] || fail "lien Applications absent"
     [ "$(readlink "$MOUNT/Applications")" = /Applications ] || fail "le lien Applications ne pointe pas vers /Applications"
     codesign --verify --deep --strict "$MOUNT/$NAME.app" || fail "signature de $NAME.app invalide"
-    echo "Contenu vérifié : $NAME.app ($(lipo -archs "$MOUNT/$NAME.app/Contents/MacOS/ClaudeNotch")), Applications -> /Applications"
+    echo "Contenu vérifié : $NAME.app ($(lipo -archs "$MOUNT/$NAME.app/Contents/MacOS/Oriel")), Applications -> /Applications"
     hdiutil detach -quiet "$MOUNT"
     rmdir "$MOUNT"
     MOUNT=""
@@ -71,5 +74,4 @@ make_dmg() {
     echo "SHA-256 : $(cut -d' ' -f1 "$DMG.sha256")"
 }
 
-make_dmg Oriel
-make_dmg ClaudeNotch
+make_dmg

@@ -1,4 +1,4 @@
-/* Claude Notch: English texts of the local API (Settings, Scripts, ear tabs of scripts). The key is the French text used in the code. */
+/* Oriel: English texts of the local API (Settings, Scripts, ear tabs of scripts). The key is the French text used in the code. */
 "%@ · %d appel" = "%@ · %d call";
 "%@ · %d appels" = "%@ · %d calls";
 "API locale" = "Local API";
