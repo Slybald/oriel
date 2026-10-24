@@ -1,7 +1,7 @@
 #!/bin/sh
 # Crée, à partir de build/Oriel.app (lancer scripts/build.sh avant), deux images disque de la même app :
 #   build/Oriel-<version>.dmg        avec Oriel.app : celle à télécharger, et celle de la mise à jour automatique d'Oriel ;
-#   build/ClaudeNotch-<version>.dmg  avec ClaudeNotch.app : la seule que la mise à jour automatique des versions 1.1.0 à
+#   build/Oriel-<version>.dmg  avec Oriel.app : la seule que la mise à jour automatique des versions 1.1.0 à
 #                                    1.9.0 sait installer (l'app se renomme Oriel.app à son lancement).
 # Chacune est vérifiée (hdiutil verify, montage en lecture seule) et accompagnée de son SHA-256 dans <dmg>.sha256.
 set -eu
@@ -54,13 +54,13 @@ make_dmg() {
     hdiutil verify -quiet "$DMG"
     MOUNT=$(mktemp -d "${TMPDIR:-/tmp}/oriel-mount.XXXXXX")
     hdiutil attach -quiet -nobrowse -readonly -noautoopen -mountpoint "$MOUNT" "$DMG"
-    [ -x "$MOUNT/$NAME.app/Contents/MacOS/ClaudeNotch" ] || fail "$NAME.app absente ou incomplète"
+    [ -x "$MOUNT/$NAME.app/Contents/MacOS/Oriel" ] || fail "$NAME.app absente ou incomplète"
     [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$MOUNT/$NAME.app/Contents/Info.plist")" = \
-        io.github.slybald.claudenotch ] || fail "identifiant de $NAME.app inattendu"
+        io.github.slybald.oriel ] || fail "identifiant de $NAME.app inattendu"
     [ -L "$MOUNT/Applications" ] || fail "lien Applications absent"
     [ "$(readlink "$MOUNT/Applications")" = /Applications ] || fail "le lien Applications ne pointe pas vers /Applications"
     codesign --verify --deep --strict "$MOUNT/$NAME.app" || fail "signature de $NAME.app invalide"
-    echo "Contenu vérifié : $NAME.app ($(lipo -archs "$MOUNT/$NAME.app/Contents/MacOS/ClaudeNotch")), Applications -> /Applications"
+    echo "Contenu vérifié : $NAME.app ($(lipo -archs "$MOUNT/$NAME.app/Contents/MacOS/Oriel")), Applications -> /Applications"
     hdiutil detach -quiet "$MOUNT"
     rmdir "$MOUNT"
     MOUNT=""
@@ -72,4 +72,4 @@ make_dmg() {
 }
 
 make_dmg Oriel
-make_dmg ClaudeNotch
+make_dmg Oriel

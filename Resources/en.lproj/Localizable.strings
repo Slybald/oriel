@@ -1,4 +1,4 @@
-/* Claude Notch: English. The key is the French text used in the code (see Sources/ClaudeNotch/Localization.swift). */
+/* Oriel: English. The key is the French text used in the code (see Sources/Oriel/Localization.swift). */
 
 /* Panel menu */
 "Lancer à l'ouverture de session" = "Open at Login";
@@ -117,7 +117,7 @@
 /* Alerts */
 "Mise à jour des hooks impossible" = "Couldn’t update the hooks";
 "Désinstaller Oriel ?" = "Uninstall Oriel?";
-"Les hooks d'Oriel seront retirés de ~/.claude/settings.json (sauvegarde horodatée à côté, tes autres hooks restent en place), ainsi que ~/.claude/hooks/claude-notch-hook.sh et le lancement à l'ouverture de session. L'app se fermera ensuite." = "Oriel’s hooks will be removed from ~/.claude/settings.json (a timestamped backup is kept next to it, and your other hooks stay in place), along with ~/.claude/hooks/claude-notch-hook.sh and the login item. The app will then quit.";
+"Les hooks d'Oriel seront retirés de ~/.claude/settings.json (sauvegarde horodatée à côté, tes autres hooks restent en place), ainsi que ~/.claude/hooks/oriel-hook.sh et le lancement à l'ouverture de session. L'app se fermera ensuite." = "Oriel’s hooks will be removed from ~/.claude/settings.json (a timestamped backup is kept next to it, and your other hooks stay in place), along with ~/.claude/hooks/oriel-hook.sh and the login item. The app will then quit.";
 "Le lancement à l'ouverture de session sera retiré. L'app se fermera ensuite." = "The login item will be removed. The app will then quit.";
 "Désinstaller" = "Uninstall";
 "Annuler" = "Cancel";
@@ -320,7 +320,7 @@
 "Invisible dans les captures et le partage d'écran" = "Hidden from Screenshots and Screen Sharing";
 "Tu vois toujours la notch ; captures, enregistrements et partages d'écran ne la montrent pas (selon l'app qui capture)." = "You still see the notch; screenshots, recordings and screen sharing don't show it (depending on the capturing app).";
 "La règle d'économie d'énergie reste en place" = "The Low Power Mode rule is still in place";
-"Pour la retirer : sudo rm /etc/sudoers.d/claude-notch-lowpower" = "To remove it: sudo rm /etc/sudoers.d/claude-notch-lowpower";
+"Pour la retirer : sudo rm /etc/sudoers.d/oriel-lowpower" = "To remove it: sudo rm /etc/sudoers.d/oriel-lowpower";
 
 /* Setup assistant */
 "Passer" = "Skip";

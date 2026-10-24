@@ -1,6 +1,6 @@
 #!/bin/sh
-# Compile en release (binaire universel arm64 + x86_64) et assemble build/Oriel.app (exécutable ClaudeNotch,
-# identifiant io.github.slybald.claudenotch : conservés pour la mise à jour).
+# Compile en release (binaire universel arm64 + x86_64) et assemble build/Oriel.app (exécutable Oriel,
+# identifiant io.github.slybald.oriel : conservés pour la mise à jour).
 #
 # Signature : ad hoc par défaut (le cdhash change à chaque build, macOS redemande alors les autorisations).
 # SIGN_KEYCHAIN=<trousseau> SIGN_IDENTITY=<nom ou empreinte du certificat> scripts/build.sh → signature avec ce
@@ -11,7 +11,7 @@
 #
 # VERSION=1.2.3 scripts/build.sh  → version injectée dans la copie de l'Info.plist
 # (CFBundleShortVersionString et CFBundleVersion). Par défaut : celle de Resources/Info.plist.
-# RELEASE_CHANNEL=1 scripts/build.sh → ClaudeNotchUpdateChannel = release : l'app se met à jour seule depuis
+# RELEASE_CHANNEL=1 scripts/build.sh → OrielUpdateChannel = release : l'app se met à jour seule depuis
 # les releases GitHub. Sans (builds locaux, scripts/install.sh) : aucune mise à jour automatique.
 set -eu
 
@@ -40,7 +40,7 @@ ARCHS="--arch arm64 --arch x86_64"
 # shellcheck disable=SC2086
 swift build -c release $ARCHS
 # shellcheck disable=SC2086
-BIN="$(swift build -c release $ARCHS --show-bin-path)/ClaudeNotch"
+BIN="$(swift build -c release $ARCHS --show-bin-path)/Oriel"
 
 for arch in arm64 x86_64; do
     if ! lipo "$BIN" -verify_arch "$arch"; then
@@ -52,17 +52,17 @@ done
 APP="$ROOT/build/Oriel.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN" "$APP/Contents/MacOS/ClaudeNotch"
+cp "$BIN" "$APP/Contents/MacOS/Oriel"
 cp "$PLIST_SRC" "$APP/Contents/Info.plist"
 plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
 plutil -replace CFBundleVersion -string "$VERSION" "$APP/Contents/Info.plist"
 CHANNEL=développement
 if [ "${RELEASE_CHANNEL:-}" = 1 ]; then
-    plutil -replace ClaudeNotchUpdateChannel -string release "$APP/Contents/Info.plist"
+    plutil -replace OrielUpdateChannel -string release "$APP/Contents/Info.plist"
     CHANNEL=release
 fi
-cp "$ROOT/hooks/claude-notch-hook.sh" "$APP/Contents/Resources/claude-notch-hook.sh"
-chmod 755 "$APP/Contents/Resources/claude-notch-hook.sh"
+cp "$ROOT/hooks/oriel-hook.sh" "$APP/Contents/Resources/oriel-hook.sh"
+chmod 755 "$APP/Contents/Resources/oriel-hook.sh"
 cp "$ROOT/hooks/codex-notch-hook.sh" "$APP/Contents/Resources/codex-notch-hook.sh"
 chmod 755 "$APP/Contents/Resources/codex-notch-hook.sh"
 # Commande `notch` (API locale) : copiée dans ~/.local/bin seulement sur un clic dans les réglages.
@@ -77,8 +77,8 @@ cp "$FANCTL" "$APP/Contents/Helpers/fanctl"
 for arch in arm64 x86_64; do
     lipo "$FANCTL" -verify_arch "$arch" || { echo "Architecture $arch absente de $FANCTL" >&2; exit 1; }
 done
-cp "$ROOT/hooks/claude-notch-statusline.sh" "$APP/Contents/Resources/claude-notch-statusline.sh"
-chmod 755 "$APP/Contents/Resources/claude-notch-statusline.sh"
+cp "$ROOT/hooks/oriel-statusline.sh" "$APP/Contents/Resources/oriel-statusline.sh"
+chmod 755 "$APP/Contents/Resources/oriel-statusline.sh"
 
 # Lecture en cours : mediaremote-adapter (Vendor/mediaremote-adapter, BSD-3-Clause, commit noté dans COMMIT).
 # Depuis macOS 15.4, MediaRemote ne répond qu'aux binaires d'Apple : /usr/bin/perl lance le script, qui charge
@@ -107,7 +107,7 @@ cat > "$FRAMEWORK/Versions/A/Resources/Info.plist" <<'PLIST'
 	<key>CFBundleExecutable</key>
 	<string>MediaRemoteAdapter</string>
 	<key>CFBundleIdentifier</key>
-	<string>io.github.slybald.claudenotch.mediaremote-adapter</string>
+	<string>io.github.slybald.oriel.mediaremote-adapter</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -139,4 +139,4 @@ if [ "$SIGNATURE" = "signature stable" ]; then
 else
     codesign --force --deep --sign - "$APP"
 fi
-echo "App prête : $APP (version $VERSION, canal $CHANNEL, $(lipo -archs "$APP/Contents/MacOS/ClaudeNotch"), $SIGNATURE)"
+echo "App prête : $APP (version $VERSION, canal $CHANNEL, $(lipo -archs "$APP/Contents/MacOS/Oriel"), $SIGNATURE)"

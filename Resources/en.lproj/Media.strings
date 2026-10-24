@@ -1,4 +1,4 @@
-/* Claude Notch: English texts of the Media module. The key is the French text used in the code. */
+/* Oriel: English texts of the Media module. The key is the French text used in the code. */
 "Lecteur" = "Player";
 "Lecture en cours" = "Now Playing";
 "Lecteur et calendrier masqués" = "Player and calendar hidden";

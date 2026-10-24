@@ -1,4 +1,4 @@
-/* Claude Notch : textes français de l'Info.plist (demandes d'autorisation). */
+/* Oriel : textes français de l'Info.plist (demandes d'autorisation). */
 "NSDesktopFolderUsageDescription" = "Oriel lance des outils compagnons optionnels qui lisent des fichiers sur ton Bureau.";
 "NSDocumentsFolderUsageDescription" = "Oriel lance des outils compagnons optionnels qui lisent des fichiers dans ton dossier Documents.";
 "NSDownloadsFolderUsageDescription" = "Oriel lance des outils compagnons optionnels qui rangent des fichiers de ton dossier Téléchargements.";

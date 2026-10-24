@@ -1,4 +1,4 @@
-/* Claude Notch : textes français de l'API locale (Réglages › Scripts, intercalaires des scripts ; la clé est le texte). */
+/* Oriel : textes français de l'API locale (Réglages › Scripts, intercalaires des scripts ; la clé est le texte). */
 "%@ · %d appel" = "%@ · %d appel";
 "%@ · %d appels" = "%@ · %d appels";
 "API locale" = "API locale";

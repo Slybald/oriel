@@ -1,6 +1,6 @@
 // Signature Ed25519 des mises à jour (les DMG publiés).
 //
-//   swift scripts/update-signing.swift generate | gh secret set UPDATE_SIGNING_KEY -R Slybald/claude-notch
+//   swift scripts/update-signing.swift generate | gh secret set UPDATE_SIGNING_KEY -R Slybald/oriel
 //       Crée une paire de clés : la privée part sur stdout (vers le secret GitHub de la CI) et dans le
 //       trousseau de session (secours) ; la publique s'affiche sur stderr, à intégrer dans l'app.
 //   swift scripts/update-signing.swift sign <fichier>
@@ -41,7 +41,7 @@ case "generate":
     let encoded = key.rawRepresentation.base64EncodedString()
     let add: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
                               kSecAttrAccount as String: account, kSecValueData as String: Data(encoded.utf8),
-                              kSecAttrLabel as String: "Claude Notch — clé de signature des mises à jour"]
+                              kSecAttrLabel as String: "Oriel — clé de signature des mises à jour"]
     let status = SecItemAdd(add as CFDictionary, nil)
     guard status == errSecSuccess else { fail("Écriture dans le trousseau impossible (\(status)).") }
     FileHandle.standardError.write(Data("Clé publique : \(key.publicKey.rawRepresentation.base64EncodedString())\n".utf8))

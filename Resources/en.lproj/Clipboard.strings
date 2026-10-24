@@ -1,4 +1,4 @@
-/* Claude Notch: English texts of the Clipboard module. The key is the French text used in the code. */
+/* Oriel: English texts of the Clipboard module. The key is the French text used in the code. */
 "Presse-papiers" = "Clipboard";
 "Aucune copie pour l'instant" = "Nothing copied yet";
 "Copie du texte, un lien ou une image : ils apparaîtront ici." = "Copy some text, a link or an image: it will show up here.";

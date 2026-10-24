@@ -1,4 +1,4 @@
-/* Claude Notch: English texts of the Claude module (reply from the notch). The key is the French text used in the code. */
+/* Oriel: English texts of the Claude module (reply from the notch). The key is the French text used in the code. */
 
 /* Permission, question, plan */
 "Autoriser %@ ?" = "Allow %@?";

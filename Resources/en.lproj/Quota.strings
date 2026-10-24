@@ -1,4 +1,4 @@
-/* Claude Notch: English texts of the quota gauges shared by the Claude and Codex tabs. The key is the French text used in the code. */
+/* Oriel: English texts of the quota gauges shared by the Claude and Codex tabs. The key is the French text used in the code. */
 
 "%d h" = "%d h";
 "%d j" = "%d d";
