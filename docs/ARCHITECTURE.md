@@ -395,6 +395,11 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     status line (`curl` 1 s at most, app closed = nothing), and `ClaudeUsage.parse` keeps only the percentages and reset times,
     in memory. `HookServer.isPaused` (Claude tab off) answers 204 without reading. The figure is the account's, so the last one
     received from any session is the one shown; windows past `resets_at` are dropped, like Claude Code does.
+    The Code tab of the Claude app never runs the `statusLine`, so no figure from it. Ruled out (measured 2026-10-24):
+    reading `GET api.anthropic.com/api/oauth/usage` with the OAuth token of the `Claude Code-credentials` keychain item.
+    Only the `claude` CLI renews that token (it had expired for 3 days while working in the app only), the app's Code tab
+    has its own authentication, and Oriel must never refresh it itself (that would rotate the refresh token and sign
+    Claude Code out).
   - **Codex**: `CodexAppServer.rateLimits()` (`account/rateLimits/read`, one process of about 1 s). `CodexUsageStore` reads only
     between `CodexModule.start()` and `stop()` (panel open): cache of 60 s, one 5-minute timer, an error keeps the last figure and
     waits 15 min, `forget()` (tab or setting off) discards a read still in flight. The intercalaire hides a figure older than 15 min.
