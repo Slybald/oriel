@@ -3,23 +3,26 @@
 For contributors. The [README](../README.md) describes the product; this page explains how the code is
 organised and why some choices were made, so they are not undone by accident.
 
-The product is called Oriel (formerly Claude Notch). Internal names keep the old one on purpose: the Swift module
-and `Sources/ClaudeNotch`, the executable `ClaudeNotch`, the bundle identifier, the data folder, the hook scripts.
-The reason: someone updating from Claude Notch keeps their macOS permissions, settings, hooks (and Codex's approval of
-the hooks) and data, with nothing to move or approve again.
+The product is called Oriel (formerly Claude Notch). Since 2.2 every internal name follows: the Swift module and
+`Sources/Oriel`, the executable `Oriel`, the bundle identifier `io.github.slybald.oriel`, the data folder, the hook
+scripts. Not renamed: the repository name, the local API port, and the signing certificate (CN `Claude Notch
+Self-Signed`, a GitHub secret; renaming it would change the code requirement and reset every macOS permission).
+The old names live on only as constants of the one-time migration (`LegacyMigration`, `AppIdentity.legacyBundleIds`).
+This reverses the earlier decision to keep the old names so that updating kept permissions: the cost is one manual
+reinstall for people on 2.1 or earlier (see "Rename migration" below).
 
 ## Commands
 
 - `swift build`: must produce **zero warnings** (the only tolerated one is the toolchain's
   "x86_64 architecture is deprecated" during the universal build).
 - `swift test`: all green; 7 diagnostic tests are skipped unless their environment variables are set.
-- Offscreen PNG renders: `CLAUDE_NOTCH_SNAPSHOT_DIR=/some/dir swift test --filter SnapshotTests` (notch, tabs,
+- Offscreen PNG renders: `ORIEL_SNAPSHOT_DIR=/some/dir swift test --filter SnapshotTests` (notch, tabs,
   compact mode, settings window, reply cards in `ClaudeSnapshotTests`). Known artifact: under the notch's
   `clipShape`, SF Symbols come out white in these renders (`layer.render` and `cacheDisplay` alike); a
   window-server capture of the same view shows them tinted, as on screen.
-- Real Codex check (skipped by default, uses a little quota): `CLAUDE_NOTCH_CODEX_LIVE=1 swift test --filter CodexLiveTests`
+- Real Codex check (skipped by default, uses a little quota): `ORIEL_CODEX_LIVE=1 swift test --filter CodexLiveTests`
   drives `codex app-server` through the real installer, hook script and server in a throwaway `CODEX_HOME`.
-- Memory and CPU of the notch view: `CLAUDE_NOTCH_FOOTPRINT=1 swift test --filter FootprintTests`.
+- Memory and CPU of the notch view: `ORIEL_FOOTPRINT=1 swift test --filter FootprintTests`.
 - `scripts/build.sh` (universal app in `build/`, ad hoc signed unless `SIGN_KEYCHAIN` and `SIGN_IDENTITY` are
   set; `VERSION=x.y.z` sets the version, `RELEASE_CHANNEL=1` marks a release build), `scripts/make-dmg.sh`
   (DMG + SHA-256), `scripts/install.sh` (developer install), `scripts/update-signing.swift` (Ed25519 key
@@ -28,11 +31,11 @@ the hooks) and data, with nothing to move or approve again.
   keychain, builds the app with `RELEASE_CHANNEL=1`, checks its code signature, makes the DMG, signs it with the
   `UPDATE_SIGNING_KEY` secret and creates the release (DMG, `.sha256`, `.sig`).
 - Live diagnostics of the running app: `GET http://127.0.0.1:47823/state` with the hook token
-  (`curl -H @"$HOME/Library/Application Support/ClaudeNotch/hook-token" …`): sessions, notch, tools, jobs,
+  (`curl -H @"$HOME/Library/Application Support/Oriel/hook-token" …`): sessions, notch, tools, jobs,
   version, updater, replies (counts only), local API (on, tab count, client names); `notch` gives the window level seen by the window server, the Space,
   occlusion, screen, front app, full-screen state, tab, tab edit mode (`editingTabs`) and running modules.
 
-## Code map (`Sources/ClaudeNotch/`)
+## Code map (`Sources/Oriel/`)
 
 - `HookServer`: minimal HTTP server on 127.0.0.1:47823. It resolves the process context *before* replying,
   while the hook process is still alive. Exact `Host`, no `Origin`, token (`HookAccess`) on every route but
@@ -118,7 +121,7 @@ the hooks) and data, with nothing to move or approve again.
 ## Modules (tabs)
 
 The expanded notch is a row of tabs; each tab is a module. Adding a module means: a folder
-`Sources/ClaudeNotch/Modules/<Name>/`, its string tables `Resources/{en,fr}.lproj/<Name>.strings`, and one line
+`Sources/Oriel/Modules/<Name>/`, its string tables `Resources/{en,fr}.lproj/<Name>.strings`, and one line
 in `ModuleRegistry.standardModules`. A module never edits `Info.plist` (the usage descriptions for calendars,
 Apple Events and Bluetooth are already there; Messages added the one for Contacts) nor another module's files.
 
@@ -166,7 +169,7 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     while editing (measured, `TabEditingGestureTests.testEditModeCPU`); now ~3 % in debug while editing and 0 %
     after the exit transition. Off with "Reduce motion" (fade only). The views exist only in edit mode, panel open.
   - Tests play the gestures with mouse events sent to the expanded notch in an offscreen window (long press,
-    click, drag, "−", Done, click outside the bar) and render `tabs-*.png` with `CLAUDE_NOTCH_SNAPSHOT_DIR`.
+    click, drag, "−", Done, click outside the bar) and render `tabs-*.png` with `ORIEL_SNAPSHOT_DIR`.
 - **Ears = index tabs** (collapsed notch; Claude only while its tab is on; Codex is an ordinary module here, see
   "Codex" below). Every activity that has ears gets its own tab against the notch: Claude (waiting for you >
   working > just finished, 5 s) first, then the running modules by decreasing priority (timer 5, Codex 9 while it waits
@@ -369,7 +372,7 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     when the app quits (update, relaunch, crash) the connection of every held hook drops, the script exits 0, and
     Claude does not start it again before the next `Stop`. A session idle since before the relaunch has no waiter
     until then. Fix: in `inbox` mode the script retries when the connection was cut (curl 52/56), every second, until
-    the app is back (`CLAUDE_NOTCH_RETRY`, 30 s by default; 7/22/28 while it is not up or has not rewritten its
+    the app is back (`ORIEL_RETRY`, 30 s by default; 7/22/28 while it is not up or has not rewritten its
     token), then holds again; it gives up (exit 0) after the delay or when its parent is gone. `permission` is never
     retried. Hooks started by an older script keep the old behaviour until their next `Stop`. `HookServer.stop()`
     now closes the open connections like a quit does (tests). `/state` shows `replyChannel` per session
@@ -383,9 +386,9 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     `resets_at` in epoch seconds; absent without Pro or Max and before the first answer of a session; hooks do not carry it).
     Measured on Claude Code 2.1.304 by running one short real session with a capture script as `statusLine`: the first call has
     no `rate_limits`, the one after the first answer has both windows. Claude Code allows ONE `statusLine` command, so
-    `StatusLineInstaller` (Settings › Claude › Show quota, off by default) swaps the `command` for `hooks/claude-notch-statusline.sh`
+    `StatusLineInstaller` (Settings › Claude › Show quota, off by default) swaps the `command` for `hooks/oriel-statusline.sh`
     in place (other keys such as `padding` and the key order stay, timestamped backup, `HookInstaller.loadSettings` / `save`),
-    keeps the old command in `claude-notch-statusline.previous` (0600, next to the script) and the script runs it again with
+    keeps the old command in `oriel-statusline.previous` (0600, next to the script) and the script runs it again with
     the same JSON (`sh -c`, as Claude Code does). Not a plain command (`type` other than `command`, no `command`): refused,
     nothing touched. Uninstall (the switch, or Uninstall Oriel) puts the exact old command back; a `statusLine` the user
     changed since is left alone. The script POSTs to `/claude/status` only when the JSON has `rate_limits`, never fails the
@@ -441,7 +444,7 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
   in the background and trap TERM to kill it: the app sees the connection close.
 - **Proof of the app**: the token authenticates the script to the app, not the other way round. A second
   secret (`hook-proof`, 0600, written before the token, never sent by the script) comes back in the
-  `X-Claude-Notch-Proof` header of a 200 from `/permission` or `/inbox`, only to an authenticated request. The
+  `X-Oriel-Proof` header of a 200 from `/permission` or `/inbox`, only to an authenticated request. The
   script compares it with shell builtins (never in argv) and ignores any answer without it: a program bound to
   the port while the app is closed (any account can bind 47823) gets the request but decides nothing. While
   the app runs, nobody else can bind the port (checked, even with `SO_REUSEPORT`).
@@ -614,10 +617,10 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
   - Consequence for users: the first release signed this way has a different requirement from the ad hoc
     versions, so macOS asks one last time for the accesses already granted; after that, never again.
   - Not a notarization: there is still no Developer ID, so macOS blocks the first launch of a downloaded copy
-    (Open Anyway or `xattr -dr com.apple.quarantine`).
+    (right-click › Open on macOS 13-14, Open Anyway on 15 and later, or `xattr -dr com.apple.quarantine`; steps in the README and in a text file inside the DMG).
   - Independent from the Ed25519 key above: that one protects the update download, this one gives the app a
     stable identity.
-- **Update channel**: only an app built with `RELEASE_CHANNEL=1` (Info.plist key `ClaudeNotchUpdateChannel =
+- **Update channel**: only an app built with `RELEASE_CHANNEL=1` (Info.plist key `OrielUpdateChannel =
   release`, set by the release workflow) checks for updates; local builds and `scripts/install.sh` never do.
   The signal is a GitHub release (`/releases/latest`, drafts and pre-releases ignored), not a commit.
   Checks run 60 s after launch, then every 6 h (low-frequency timers with tolerance, ~0 % CPU).
@@ -625,26 +628,29 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
   the signature of every byte of the DMG) matches the public key in `Updater.swift`. The CI signs with the
   `UPDATE_SIGNING_KEY` secret and checks the result against that public key, so a wrong secret fails the release
   instead of shipping an update nobody can install. The private key also lives in the maintainer's keychain;
-  losing it breaks automatic updates for every existing installation. Each release carries two signed images of
-  the same app: `Oriel-<v>.dmg` (volume "Oriel", with `Oriel.app`) and `ClaudeNotch-<v>.dmg` (with `ClaudeNotch.app`),
-  because the Updater of 1.1.0 to 1.9.0 only looks for the old file name and the old bundle name. Keep the second
-  one as long as such versions can still be installed.
+  losing it breaks automatic updates for every existing installation. Each release carries one signed image, `Oriel-<v>.dmg`
+  (volume "Oriel", with `Oriel.app`, the Applications link and a bilingual first-launch text file).
+  `ClaudeNotch-<v>.dmg`, which the Updater of 1.1.0 to 1.9.0 looked for, is no longer published: those versions
+  find no update. No background picture with an arrow in the DMG: placing icons needs an interactive Finder
+  (AppleScript), which the CI runner does not have.
 - **Install**: `hdiutil attach` on a private mount point, the volume's `Oriel.app` must have our bundle
   identifier and the announced version, `ditto` into a hidden folder next to the installed app (same volume),
   detach, then two renames (current → a hidden `-old.app` backup next to it, new → current path) with a rollback if
   the second fails: never a half-replaced app. Only from `/Applications` or `~/Applications` with a writable folder;
   otherwise the menu links to the release page. `hdiutil` prints a deprecation notice on recent macOS; it stays
   because the app supports macOS 13.
-- **Rename `ClaudeNotch.app` → `Oriel.app`**: the Updater of 1.1.0 to 1.9.0 replaces `ClaudeNotch.app`, so the
-  new version first runs under that name. At launch it renames its own bundle to `Oriel.app` in place (a rename,
-  nothing is copied), points the LaunchAgent to the new path and relaunches from `Oriel.app` once it has quit
-  (one instance only). Neighbouring cases: an older `ClaudeNotch.app` next to an `Oriel.app` (same identifier,
-  lower or equal version) is quit and moved to the Trash, and the LaunchAgent is repointed; a newer
-  `ClaudeNotch.app` takes the place of the `Oriel.app`; an `Oriel.app` from another publisher is left alone and the
-  app keeps its `ClaudeNotch.app` folder. The repository rename relies on GitHub's 301 on `/releases/latest`, which
-  URLSession follows. Covered by `UpdaterTests.testLegacyUpdaterInstallsTheRenamedApp` and
-  `testLatestReleaseFollowsRepositoryRename`. What is kept (bundle identifier, certificate, executable name, data
-  folder, hook scripts…): everything a user would otherwise have to move or approve again.
+- **Rename migration** (2.2): the Updater refuses a bundle with another `CFBundleIdentifier`, so 2.1 and earlier
+  cannot update into Oriel; the user downloads the DMG once by hand and macOS asks for its accesses again. At the
+  first launch `LegacyMigration.run` (before anything else, after quitting a running old instance) takes over the
+  old installation; each step is idempotent and never overwrites: `Application Support/ClaudeNotch` → `Oriel`
+  (moved, nothing done if both exist; the API and hook tokens go with it); the old UserDefaults domains
+  (`io.github.slybald.claudenotch`, then `local.claudenotch`) copied only while the new domain is empty; in
+  `~/.claude/settings.json` the file names `claude-notch-hook.sh` and `claude-notch-statusline.sh` rewritten as
+  text (the rest of the file is untouched, copy in `settings.json.oriel-migration.bak`) and the scripts and the
+  `.previous` file renamed in `~/.claude/hooks`; in `~/.codex/hooks.json` the permission `statusMessage` renamed
+  (the Codex script keeps its name `codex-notch-hook.sh`); the old LaunchAgents replaced by the new one when the app
+  runs from Applications. Covered by `MigrationTests` (paths injected, never the real `~`). Not migrated: the sudo
+  rules and the `fanctl` helper (root-owned, the user authorizes again; the old ones are removable, see the README).
 - **When to install**: at launch, as soon as a version is found; later, only when no session is working or
   waiting (`SessionStore.hasBusySessions`), retried every 10 min. With the preference off, the version is only
   announced in the menu.
@@ -668,10 +674,10 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
   Allow/Deny, "via <client>" on the card (names with claude, codex, anthropic or openai refused, no color is Codex's).
   `notch run` resends a result refused by the rate limit once, a second later, else removes its hourglass. Expiry is one wall-clock `asyncAfter` re-armed for the next deadline (no
   periodic timer). Requests are handled on the main thread (`DispatchQueue.main.sync` from the server queue, like
-  `/state`). Not done: a `claude-notch://` scheme (any web page can open one) and App Intents.
+  `/state`). Not done: a `oriel://` scheme (any web page can open one) and App Intents.
 - **Reply flow** (`/permission`, `/inbox`): the hook script posts with the token (curl reads it from the 0600 file
   `hook-token`, never from argv) and waits. `HookServer` checks `Host`, `Origin` and the token, then hands the
-  request to `ReplyCenter`. A click gives the answer: the app returns it with the `X-Claude-Notch-Proof` header,
+  request to `ReplyCenter`. A click gives the answer: the app returns it with the `X-Oriel-Proof` header,
   whose value is the 0600 file `hook-proof`. The script checks that header, then prints the decision (`permission`)
   or writes the message to stderr and exits 2 (`inbox`). Fail-open everywhere: a missing token or proof file, a
   failed curl, an empty body, or a missing or wrong proof make the script exit 0 without applying anything, so
