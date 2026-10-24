@@ -25,7 +25,9 @@ struct CodexHookInstaller {
     /// Au-dessus de `CodexApprovals.engagedDelay` : l'app rend toujours la main avant.
     static let permissionTimeout = "75"
     /// Affiché par Codex pendant que le hook tient la demande.
-    static let permissionStatus = "Oriel"
+    /// Fait partie de la définition du hook, donc du hash de confiance de Codex : figé à l'ancien nom pour que la
+    /// mise à jour vers Oriel ne redemande pas l'approbation.
+    static let permissionStatus = "Claude Notch"
 
     enum Status: Equatable {
         case notInstalled
@@ -142,6 +144,12 @@ struct CodexHookInstaller {
         try Self.addEntries(to: &file, command: hookCommand)
         try writeHookScript(script)
         return try save(file, replacing: original)
+    }
+
+    /// Réécrit seulement le script de hook, sans toucher à hooks.json (entrées déjà à jour).
+    func updateScript() throws {
+        guard let bundledHook, let script = try? Data(contentsOf: bundledHook) else { throw Failure.missingBundledHook }
+        try writeHookScript(script)
     }
 
     /// Retire nos entrées et le script. Un hooks.json qui n'avait que nos hooks disparaît (après sauvegarde).

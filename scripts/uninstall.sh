@@ -32,6 +32,7 @@ fi
 FAN_HELPER=/Library/PrivilegedHelperTools/io.github.slybald.oriel.fanctl
 FAN_RULE=/etc/sudoers.d/oriel-fans
 pkill -x Oriel 2>/dev/null || true
+pkill -x ClaudeNotch 2>/dev/null || true
 if [ -e "$FAN_HELPER" ] || [ -e "$FAN_RULE" ]; then
     echo "Outil des ventilateurs d'Oriel trouvé : retrait avec sudo, ton mot de passe est demandé."
     sudo /bin/sh -c "[ -x $FAN_HELPER ] && $FAN_HELPER auto; /bin/rm -f $FAN_RULE $FAN_HELPER" \
@@ -39,7 +40,7 @@ if [ -e "$FAN_HELPER" ] || [ -e "$FAN_RULE" ]; then
 fi
 # Nom actuel, puis celui d'avant le renommage.
 for dir in /Applications "$HOME/Applications"; do
-    for app in Oriel.app Oriel.app; do
+    for app in Oriel.app ClaudeNotch.app; do
         if [ -d "$dir/$app" ]; then
             rm -rf "${dir:?}/$app"
             echo "App supprimée : $dir/$app"

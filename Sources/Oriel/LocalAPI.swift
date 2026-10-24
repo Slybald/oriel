@@ -462,6 +462,8 @@ struct ExternalEar: Equatable, Identifiable {
 enum NotchCLI {
     /// Ligne que porte notre script : un fichier sans elle n'est pas à nous.
     static let marker = "# oriel-cli"
+    /// Marqueur d'avant le renommage : une commande installée par la 2.1 ou avant est la nôtre, à mettre à jour.
+    static let legacyMarker = "# claude-notch-cli"
 
     enum Status: Equatable {
         /// Pas de script dans l'app (`swift run`).
@@ -519,6 +521,7 @@ enum NotchCLI {
     }
 
     private static func isOurs(_ data: Data) -> Bool {
-        String(decoding: data.prefix(512), as: UTF8.self).contains(marker)
+        let head = String(decoding: data.prefix(512), as: UTF8.self)
+        return head.contains(marker) || head.contains(legacyMarker)
     }
 }

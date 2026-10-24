@@ -647,9 +647,15 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
   (`io.github.slybald.claudenotch`, then `local.claudenotch`) copied only while the new domain is empty; in
   `~/.claude/settings.json` the file names `claude-notch-hook.sh` and `claude-notch-statusline.sh` rewritten as
   text (the rest of the file is untouched, copy in `settings.json.oriel-migration.bak`) and the scripts and the
-  `.previous` file renamed in `~/.claude/hooks`; in `~/.codex/hooks.json` the permission `statusMessage` renamed
-  (the Codex script keeps its name `codex-notch-hook.sh`); the old LaunchAgents replaced by the new one when the app
-  runs from Applications. Covered by `MigrationTests` (paths injected, never the real `~`). Not migrated: the sudo
+  `.previous` file renamed in `~/.claude/hooks`, only once settings.json is rewritten (otherwise the old script stays,
+  open Claude sessions still call it, and `HookInstaller.legacyMarker` makes the next launch replace the old entries
+  instead of duplicating them; `hooks_config.py` does the same); `~/.codex/hooks.json` is not touched (changing a
+  hook definition, `statusMessage` included, changes Codex's trust hash and asks for approval again, so
+  `CodexHookInstaller.permissionStatus` stays "Claude Notch"): only the script is refreshed silently at launch
+  when the Codex tab is on (`CodexHookSetup.updateScriptIfNeeded`); the `notch` command is recognised by its old
+  marker (`NotchCLI.legacyMarker`) and offered as an update; the old LaunchAgents are replaced by the new one when
+  the app runs from Applications; outside it (DMG, Downloads) the old LaunchAgent is left alone, because the new one would
+  point to a path that disappears on eject, and it is migrated at a later launch from Applications. Covered by `MigrationTests` (paths injected, never the real `~`). Not migrated: the sudo
   rules and the `fanctl` helper (root-owned, the user authorizes again; the old ones are removable, see the README).
 - **When to install**: at launch, as soon as a version is found; later, only when no session is working or
   waiting (`SessionStore.hasBusySessions`), retried every 10 min. With the preference off, the version is only

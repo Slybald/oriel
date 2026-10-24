@@ -13,6 +13,8 @@ import Foundation
 struct HookInstaller {
     static let hookFileName = "oriel-hook.sh"
     static let marker = hookFileName
+    /// Nom du script avant le renommage en Oriel : ses entrées sont à nous aussi (retirées puis remplacées, pas doublées).
+    static let legacyMarker = "claude-notch-hook.sh"
     static let events = [
         "SessionStart",
         "SessionEnd",
@@ -289,11 +291,11 @@ struct HookInstaller {
     static func isOurs(_ hook: OrderedJSON) -> Bool {
         guard hook.members != nil, let command = hook["command"] else { return false }
         let text = command.stringValue ?? String(decoding: command.serialized(), as: UTF8.self)
-        return containsMarker(text)
+        return containsMarker(text, marker) || containsMarker(text, legacyMarker)
     }
 
     /// Recherche octet par octet (pas de regroupement Unicode, comme `in` en Python).
-    private static func containsMarker(_ text: String) -> Bool {
+    private static func containsMarker(_ text: String, _ marker: String) -> Bool {
         let haystack = Array(text.utf8)
         let needle = Array(marker.utf8)
         guard haystack.count >= needle.count else { return false }

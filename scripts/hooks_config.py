@@ -21,6 +21,8 @@ import tempfile
 import time
 
 MARKER = "oriel-hook.sh"
+# Nom d'avant le renommage en Oriel : ces entrées sont à nous aussi.
+LEGACY_MARKER = "claude-notch-hook.sh"
 EVENTS = [
     "SessionStart",
     "SessionEnd",
@@ -85,7 +87,7 @@ def load(path):
 
 
 def is_ours(hook):
-    return isinstance(hook, dict) and MARKER in str(hook.get("command", ""))
+    return isinstance(hook, dict) and any(m in str(hook.get("command", "")) for m in (MARKER, LEGACY_MARKER))
 
 
 def strip(settings, drop_empty_root):

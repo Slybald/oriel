@@ -95,6 +95,15 @@ final class CodexHookSetup: ObservableObject {
         updateTimer()
     }
 
+    /// Mise à jour silencieuse du script au lancement (hooks déjà approuvés), onglet Codex activé. hooks.json n'est
+    /// pas touché : sa définition fixe le hash de confiance de Codex.
+    func updateScriptIfNeeded() {
+        refresh()
+        guard status == .scriptOutdated else { return }
+        try? makeInstaller().updateScript()
+        refresh()
+    }
+
     /// Demande à Codex (`hooks/list`) ce qu'il pense de nos hooks. Sans `force` (bouton « Vérifier »), seulement quand
     /// l'approbation est attendue : une fois les hooks actifs, plus aucun processus Codex n'est lancé tout seul.
     func verify(force: Bool = false) {

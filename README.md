@@ -331,8 +331,8 @@ Oriel updates itself from the [Releases](https://github.com/Slybald/oriel/releas
 - **Updating from 2.1 or earlier** (when the app was still called Claude Notch): the automatic update cannot
   cross the rename. Download `Oriel-<version>.dmg` once by hand and drag **Oriel** onto Applications (it replaces
   the old app), then grant again the macOS accesses it asks for. Your settings, notes and hooks are picked up
-  at the first launch (the data folder, the open-at-login option and the Claude Code and Codex hooks are
-  moved to the new names). From then on, updates are automatic again. If you had turned on the fan or low-power
+  at the first launch (the data folder, the open-at-login option and the Claude Code hooks are
+  moved to the new names; the Codex hooks keep their approval). From then on, updates are automatic again. If you had turned on the fan or low-power
   authorization, do it again in Settings; the old rules can be removed with
   `sudo rm /etc/sudoers.d/claude-notch-*` and `sudo rm /Library/PrivilegedHelperTools/io.github.slybald.claudenotch.fanctl`.
 
@@ -936,8 +936,8 @@ Oriel se met à jour seule depuis la page [Releases](https://github.com/Slybald/
 - **Mise à jour depuis la 2.1 ou avant** (quand l'app s'appelait encore Claude Notch) : la mise à jour
   automatique ne peut pas passer le renommage. Télécharge `Oriel-<version>.dmg` une fois à la main et glisse **Oriel**
   sur Applications (elle remplace l'ancienne app), puis redonne les accès macOS demandés. Tes réglages, tes notes et
-  tes hooks sont repris au premier lancement (dossier de données, ouverture à la connexion, hooks de Claude Code et
-  de Codex déplacés vers les nouveaux noms). Ensuite, les mises à jour redeviennent automatiques. Si tu avais activé
+  tes hooks sont repris au premier lancement (dossier de données, ouverture à la connexion, hooks de Claude Code
+  déplacés vers les nouveaux noms ; les hooks Codex gardent leur approbation). Ensuite, les mises à jour redeviennent automatiques. Si tu avais activé
   l'autorisation des ventilateurs ou de l'économie d'énergie, refais-le dans les Réglages ; les anciennes règles se
   retirent avec `sudo rm /etc/sudoers.d/claude-notch-*` et
   `sudo rm /Library/PrivilegedHelperTools/io.github.slybald.claudenotch.fanctl`.

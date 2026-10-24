@@ -28,12 +28,13 @@ for OLD in $LEGACY_LABELS; do
     rm -f "$HOME/Library/LaunchAgents/$OLD.plist"
 done
 pkill -x Oriel 2>/dev/null || true
+pkill -x ClaudeNotch 2>/dev/null || true
 i=0
 while pgrep -x Oriel >/dev/null 2>&1 && [ "$i" -lt 20 ]; do
     sleep 0.1
     i=$((i + 1))
 done
-rm -rf "$DEST/Oriel.app"
+rm -rf "$DEST/Oriel.app" "$DEST/ClaudeNotch.app"
 ditto "$ROOT/build/Oriel.app" "$DEST/Oriel.app"
 "$LSREGISTER" -f "$DEST/Oriel.app" 2>/dev/null || true
 echo "App installée : $DEST/Oriel.app"

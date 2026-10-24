@@ -11,7 +11,7 @@ final class MigrationTests: XCTestCase {
             return url
         }
         return .init(applicationSupport: make("support"), launchAgents: make("agents"),
-                     claudeConfig: make(".claude"), codexConfig: make(".codex"))
+                     claudeConfig: make(".claude"))
     }
 
     private func text(_ url: URL) -> String? { try? String(contentsOf: url, encoding: .utf8) }
@@ -104,30 +104,105 @@ final class MigrationTests: XCTestCase {
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: config.path), [])
     }
 
-    // MARK: - Hooks Codex
+    /// Écriture impossible : settings.json garde son contenu et l'ancien script reste en place (des sessions Claude
+    /// déjà ouvertes l'appellent encore).
+    func testScriptsStayWhenSettingsCannotBeRewritten() throws {
+        let config = try locations().claudeConfig
+        let hooks = config.appendingPathComponent("hooks")
+        try FileManager.default.createDirectory(at: hooks, withIntermediateDirectories: true)
+        try Data("x".utf8).write(to: hooks.appendingPathComponent("claude-notch-hook.sh"))
+        let settings = config.appendingPathComponent("settings.json")
+        let before = #"{"hooks":{"Stop":[{"hooks":[{"command":"\"\#(hooks.path)/claude-notch-hook.sh\""}]}]}}"#
+        try Data(before.utf8).write(to: settings)
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: config.path)
+        addTeardownBlock { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: config.path) }
 
-    func testCodexHooksStatusMessageIsRenamed() throws {
-        let config = try locations().codexConfig
-        let file = config.appendingPathComponent("hooks.json")
-        let before = #"{"hooks":{"PermissionRequest":[{"hooks":[{"type":"command","command":"/x/codex-notch-hook.sh","#
-            + #""statusMessage": "Claude Notch"},{"type":"command","command":"/y/autre.sh","timeout":5}]}]}}"#
-        try Data(before.utf8).write(to: file)
-
-        XCTAssertTrue(LegacyMigration.rewriteCodexHooks(in: config))
-        let after = try XCTUnwrap(text(file))
-        XCTAssertFalse(after.contains("Claude Notch"))
-        XCTAssertTrue(after.contains(#""statusMessage": "Oriel""#))
-        XCTAssertTrue(after.contains("/y/autre.sh"))
-        XCTAssertFalse(LegacyMigration.rewriteCodexHooks(in: config), "idempotent")
+        XCTAssertFalse(LegacyMigration.rewriteClaudeHooks(in: config))
+        XCTAssertEqual(text(settings), before)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: hooks.appendingPathComponent("claude-notch-hook.sh").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: hooks.appendingPathComponent("oriel-hook.sh").path))
     }
 
-    func testCodexHooksOfSomeoneElseAreLeftAlone() throws {
-        let config = try locations().codexConfig
-        let file = config.appendingPathComponent("hooks.json")
-        let content = #"{"hooks":{"Stop":[{"hooks":[{"command":"/z.sh","statusMessage":"Claude Notch"}]}]}}"#
-        try Data(content.utf8).write(to: file)
-        XCTAssertFalse(LegacyMigration.rewriteCodexHooks(in: config))
-        XCTAssertEqual(text(file), content)
+    /// settings.json en lien symbolique (dotfiles) : le lien reste un lien, sa cible est réécrite.
+    func testSymbolicLinkToSettingsIsKept() throws {
+        let place = try locations()
+        let config = place.claudeConfig
+        let dotfiles = place.applicationSupport.appendingPathComponent("dotfiles.json")
+        try Data(#"{"command":"/h/claude-notch-hook.sh"}"#.utf8).write(to: dotfiles)
+        let link = config.appendingPathComponent("settings.json")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: dotfiles)
+
+        XCTAssertTrue(LegacyMigration.rewriteClaudeHooks(in: config))
+        XCTAssertNotNil(try? FileManager.default.destinationOfSymbolicLink(atPath: link.path), "toujours un lien")
+        XCTAssertEqual(text(dotfiles), #"{"command":"/h/oriel-hook.sh"}"#)
+    }
+
+    // MARK: - Anciennes entrées et commande
+
+    /// Un hook posé par la 2.1 (« claude-notch-hook.sh ») est le nôtre : il n'est pas laissé à côté du nouveau.
+    func testLegacyHookEntriesAreOursAndNotDuplicated() throws {
+        let config = try makeTemporaryDirectory(self)
+        let installer = HookInstaller(configDirectory: config,
+                                      bundledHook: repositoryRoot.appendingPathComponent("hooks/oriel-hook.sh"))
+        let legacy = #"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"\"/h/claude-notch-hook.sh\"","async":true},"#
+            + #"{"type":"command","command":"/usr/local/bin/mien"}]}]}}"#
+        try Data(legacy.utf8).write(to: installer.settingsURL)
+        XCTAssertEqual(installer.status(), .outdated)
+
+        try installer.install()
+        let after = try XCTUnwrap(text(installer.settingsURL))
+        XCTAssertFalse(after.contains("claude-notch-hook.sh"))
+        let fresh = try makeTemporaryDirectory(self)
+        let clean = HookInstaller(configDirectory: fresh, bundledHook: repositoryRoot.appendingPathComponent("hooks/oriel-hook.sh"))
+        try clean.install()
+        let count = { (text: String) in text.components(separatedBy: "oriel-hook.sh").count }
+        XCTAssertEqual(count(after), count(try XCTUnwrap(text(clean.settingsURL))), "mêmes entrées qu'une installation neuve")
+        XCTAssertTrue(after.contains("/usr/local/bin/mien"))
+        XCTAssertEqual(installer.status(), .installed)
+    }
+
+    /// La commande `notch` posée par la 2.1 est à mettre à jour, pas « un autre programme ».
+    func testLegacyNotchCommandIsOutdatedNotForeign() throws {
+        let folder = try makeTemporaryDirectory(self)
+        let bundled = folder.appendingPathComponent("bundled")
+        let destination = folder.appendingPathComponent("notch")
+        try Data("#!/bin/sh\n\(NotchCLI.marker)\necho new\n".utf8).write(to: bundled)
+        try Data("#!/bin/sh\n# claude-notch-cli\necho old\n".utf8).write(to: destination)
+        XCTAssertEqual(NotchCLI.status(bundled: bundled, destination: destination), .outdated)
+        try NotchCLI.install(bundled: bundled, destination: destination)
+        XCTAssertEqual(NotchCLI.status(bundled: bundled, destination: destination), .installed)
+        XCTAssertNoThrow(try NotchCLI.remove(destination: destination))
+    }
+
+    // MARK: - Hooks Codex
+
+    /// Les hooks Codex ne sont pas réécrits (leur hash de confiance changerait) ; seul le script est mis à jour,
+    /// en silence, et hooks.json reste identique octet pour octet.
+    func testCodexScriptIsUpdatedWithoutTouchingHooksJSON() throws {
+        let config = try makeTemporaryDirectory(self)
+        let bundled = config.appendingPathComponent("bundled.sh")
+        try Data("#!/bin/sh\nnouveau\n".utf8).write(to: bundled)
+        let installer = CodexHookInstaller(configDirectory: config, bundledHook: bundled)
+        try installer.install()
+        let hooksBefore = try Data(contentsOf: installer.hooksURL)
+        try Data("#!/bin/sh\nancien\n".utf8).write(to: installer.hookURL)
+        XCTAssertEqual(installer.status(), .scriptOutdated)
+
+        let setup = CodexHookSetup(installer: { installer }, service: { _ in nil })
+        setup.updateScriptIfNeeded()
+        XCTAssertEqual(setup.status, .installed)
+        XCTAssertEqual(text(installer.hookURL), "#!/bin/sh\nnouveau\n")
+        XCTAssertEqual(try Data(contentsOf: installer.hooksURL), hooksBefore)
+    }
+
+    func testCodexEntriesFromBeforeTheRenameStayCurrent() throws {
+        let config = try makeTemporaryDirectory(self)
+        let bundled = config.appendingPathComponent("bundled.sh")
+        try Data("x".utf8).write(to: bundled)
+        let installer = CodexHookInstaller(configDirectory: config, bundledHook: bundled)
+        try installer.install()
+        XCTAssertEqual(CodexHookInstaller.permissionStatus, "Claude Notch", "même définition qu'avant le renommage")
+        XCTAssertEqual(installer.status(), .installed)
     }
 
     // MARK: - LaunchAgent et ensemble

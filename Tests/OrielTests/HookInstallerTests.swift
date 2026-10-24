@@ -83,7 +83,8 @@ final class HookInstallerTests: XCTestCase {
     /// Cas tordus : nos entrées anciennes mélangées aux tiennes, événement vide, valeur qui n'est pas une liste,
     /// commande qui n'est pas une chaîne, entrée compacte avec échappements.
     static let tricky = #"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"afplay x"},"#
-        + #"{"type":"command","command":"\"/ancien/chemin/oriel-hook.sh\"","async":true}]},"#
+        + #"{"type":"command","command":"\"/ancien/chemin/oriel-hook.sh\"","async":true},"#
+        + #"{"type":"command","command":"\"/avant/claude-notch-hook.sh\""}]},"#
         + #"{"matcher":"","hooks":[{"type":"command","command":"/ancien/oriel-hook.sh"}]}],"#
         + #""SessionStart":[],"Custom":"pas une liste","#
         + #""PreCompact":[{"matcher":"auto","hooks":[{"type":"command","command":["oriel-hook.sh"]}]}],"#

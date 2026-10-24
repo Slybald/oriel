@@ -35,6 +35,7 @@ final class HookSetup: ObservableObject {
     /// mis à jour sans rien demander, l'accord a été donné à l'installation (sauvegarde horodatée de settings.json,
     /// comme toujours). Onglet désactivé : `~/.claude` n'est même pas lu. Puis la fenêtre éventuelle.
     func showOnboardingIfNeeded(claudeEnabled: Bool, prefs: Preferences, registry: ModuleRegistry?) {
+        if registry?.isEnabled(ModuleRegistry.codexId) == true { CodexHookSetup.shared.updateScriptIfNeeded() }
         if claudeEnabled {
             refresh()
             silentUpdate()

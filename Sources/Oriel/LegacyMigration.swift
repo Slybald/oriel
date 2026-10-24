@@ -9,14 +9,12 @@ enum LegacyMigration {
         var applicationSupport: URL
         var launchAgents: URL
         var claudeConfig: URL
-        var codexConfig: URL
 
         static var standard: Locations {
             let home = FileManager.default.homeDirectoryForCurrentUser
             return Locations(applicationSupport: home.appendingPathComponent("Library/Application Support"),
                              launchAgents: LaunchAgent.directory,
-                             claudeConfig: home.appendingPathComponent(".claude"),
-                             codexConfig: home.appendingPathComponent(".codex"))
+                             claudeConfig: home.appendingPathComponent(".claude"))
         }
     }
 
@@ -24,14 +22,12 @@ enum LegacyMigration {
     static let oldClaudeHook = "claude-notch-hook.sh"
     static let oldStatusLine = "claude-notch-statusline.sh"
     static let oldStatusLinePrevious = "claude-notch-statusline.previous"
-    static let oldCodexStatus = "Claude Notch"
 
     /// `executable` : l'exécutable à mettre dans le LaunchAgent (nil : app hors Applications, l'ancien est laissé).
     static func run(_ locations: Locations, defaults: UserDefaults, ownDomain: String, executable: String?) {
         moveDataFolder(in: locations.applicationSupport)
         copyDefaults(into: defaults, ownDomain: ownDomain)
         rewriteClaudeHooks(in: locations.claudeConfig)
-        rewriteCodexHooks(in: locations.codexConfig)
         LaunchAgent.migrateLegacy(in: locations.launchAgents, executable: executable)
     }
 
@@ -68,28 +64,22 @@ enum LegacyMigration {
     }
 
     /// settings.json (Claude Code) : les commandes des hooks et de la ligne d'état pointent vers les scripts renommés.
-    /// Seuls ces noms sont touchés ; le reste du fichier reste tel quel (copie `.oriel-migration.bak` à côté).
+    /// Seuls ces noms sont touchés ; le reste du fichier reste tel quel (copie `.oriel-migration.bak` à côté). Les
+    /// scripts ne sont renommés qu'une fois settings.json réécrit : sinon l'ancien reste, des sessions ouvertes
+    /// l'appellent encore (le lancement suivant remplace les entrées, voir `HookInstaller.legacyMarker`).
+    /// Hooks Codex : pas touchés (changer leur définition ferait redemander l'approbation à Codex) ; le script
+    /// garde son nom et se met à jour tout seul (`CodexHookSetup.updateScriptIfNeeded`).
     @discardableResult
     static func rewriteClaudeHooks(in config: URL) -> Bool {
-        let hooks = config.appendingPathComponent("hooks")
-        let moved = [(oldClaudeHook, HookInstaller.hookFileName), (oldStatusLine, StatusLineInstaller.scriptName),
-                     (oldStatusLinePrevious, StatusLineInstaller.previousName)]
-            .map { renameFile(hooks.appendingPathComponent($0.0), to: hooks.appendingPathComponent($0.1)) }
-        let rewritten = rewrite(config.appendingPathComponent("settings.json"),
-                                [(oldClaudeHook, HookInstaller.hookFileName), (oldStatusLine, StatusLineInstaller.scriptName)])
-        return rewritten || moved.contains(true)
-    }
-
-    /// hooks.json (Codex) : le script garde son nom, seul le message affiché pendant la demande change.
-    @discardableResult
-    static func rewriteCodexHooks(in config: URL) -> Bool {
-        let file = config.appendingPathComponent("hooks.json")
-        guard let text = try? String(contentsOf: file, encoding: .utf8), text.contains(CodexHookInstaller.hookFileName)
+        guard rewrite(config.appendingPathComponent("settings.json"),
+                      [(oldClaudeHook, HookInstaller.hookFileName), (oldStatusLine, StatusLineInstaller.scriptName)])
         else { return false }
-        let pattern = #"("statusMessage"\s*:\s*)"\#(oldCodexStatus)""#
-        let updated = text.replacingOccurrences(of: pattern, with: "$1\"\(CodexHookInstaller.permissionStatus)\"",
-                                                options: .regularExpression)
-        return write(updated, replacing: text, at: file)
+        let hooks = config.appendingPathComponent("hooks")
+        for (old, new) in [(oldClaudeHook, HookInstaller.hookFileName), (oldStatusLine, StatusLineInstaller.scriptName),
+                           (oldStatusLinePrevious, StatusLineInstaller.previousName)] {
+            renameFile(hooks.appendingPathComponent(old), to: hooks.appendingPathComponent(new))
+        }
+        return true
     }
 
     // MARK: - Fichiers
@@ -100,9 +90,11 @@ enum LegacyMigration {
         return write(updated, replacing: text, at: file)
     }
 
-    private static func write(_ updated: String, replacing text: String, at file: URL) -> Bool {
+    /// Écrit sur la cible d'un lien symbolique (dotfiles), comme `HookInstaller`.
+    private static func write(_ updated: String, replacing text: String, at link: URL) -> Bool {
         guard updated != text else { return false }
         let manager = FileManager.default
+        let file = link.resolvingSymlinksInPath()
         let backup = file.appendingPathExtension("oriel-migration.bak")
         let permissions = (try? manager.attributesOfItem(atPath: file.path))?[.posixPermissions]
         do {
@@ -117,6 +109,7 @@ enum LegacyMigration {
     }
 
     /// Renomme un script de hook ; le nouveau existe déjà : rien n'est écrasé.
+    @discardableResult
     private static func renameFile(_ old: URL, to new: URL) -> Bool {
         let manager = FileManager.default
         guard manager.fileExists(atPath: old.path), !manager.fileExists(atPath: new.path) else { return false }
