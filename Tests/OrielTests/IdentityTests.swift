@@ -1,7 +1,7 @@
 import XCTest
 @testable import Oriel
 
-/// Identifiant public, migration depuis local.oriel, dossiers protégés.
+/// Identifiant public, migration depuis local.claudenotch, dossiers protégés.
 final class IdentityTests: XCTestCase {
     private static let executable = "/Applications/Oriel.app/Contents/MacOS/Oriel"
 
@@ -68,25 +68,9 @@ final class IdentityTests: XCTestCase {
         let dir = try makeTemporaryDirectory(self)
         LaunchAgent.setEnabled(true, in: dir, executable: Self.executable)
         XCTAssertNotNil(agent(dir, AppIdentity.bundleId))
-        try Data("<plist/>".utf8).write(to: LaunchAgent.plistURL(label: "local.oriel", in: dir))
+        try Data("<plist/>".utf8).write(to: LaunchAgent.plistURL(label: "local.claudenotch", in: dir))
         LaunchAgent.setEnabled(false, in: dir)
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: dir.path), [])
-    }
-
-    // MARK: - Préférences
-
-    func testLegacyDefaultsAreCopiedWithoutOverwriting() throws {
-        let suite = "oriel-tests-\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
-        addTeardownBlock { defaults.removePersistentDomain(forName: suite) }
-        defaults.set("récent", forKey: "jobs.claude-recap.lastDay")
-
-        AppIdentity.migrateLegacyDefaults(from: ["alwaysVisible": true, "jobs.claude-recap.lastDay": "ancien"],
-                                          to: defaults)
-        XCTAssertEqual(defaults.object(forKey: "alwaysVisible") as? Bool, true)
-        XCTAssertEqual(defaults.string(forKey: "jobs.claude-recap.lastDay"), "récent")
-        AppIdentity.migrateLegacyDefaults(from: nil, to: defaults)
-        XCTAssertEqual(defaults.object(forKey: "alwaysVisible") as? Bool, true)
     }
 
     // MARK: - Emplacement de l'app

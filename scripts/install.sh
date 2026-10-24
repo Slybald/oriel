@@ -6,11 +6,10 @@ set -eu
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 # Même valeur que CFBundleIdentifier (Resources/Info.plist) et AppIdentity.bundleId.
 LABEL=io.github.slybald.oriel
-LEGACY_LABEL=local.oriel
+LEGACY_LABELS="io.github.slybald.claudenotch local.claudenotch"
 CONFIG_DIR=${CLAUDE_CONFIG_DIR:-$HOME/.claude}
 HOOK="$CONFIG_DIR/hooks/oriel-hook.sh"
 AGENT="$HOME/Library/LaunchAgents/$LABEL.plist"
-LEGACY_AGENT="$HOME/Library/LaunchAgents/$LEGACY_LABEL.plist"
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
 "$ROOT/scripts/build.sh"
@@ -23,17 +22,18 @@ else
     mkdir -p "$DEST"
 fi
 launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
-# Ancien identifiant (local.oriel) : LaunchAgent déchargé et supprimé.
-launchctl bootout "gui/$(id -u)/$LEGACY_LABEL" 2>/dev/null || true
-rm -f "$LEGACY_AGENT"
+# Identifiants d'avant le renommage en Oriel : LaunchAgent déchargé et supprimé.
+for OLD in $LEGACY_LABELS; do
+    launchctl bootout "gui/$(id -u)/$OLD" 2>/dev/null || true
+    rm -f "$HOME/Library/LaunchAgents/$OLD.plist"
+done
 pkill -x Oriel 2>/dev/null || true
 i=0
 while pgrep -x Oriel >/dev/null 2>&1 && [ "$i" -lt 20 ]; do
     sleep 0.1
     i=$((i + 1))
 done
-# Ancien nom du bundle (avant Oriel) : retiré, l'app ne doit exister qu'une fois.
-rm -rf "$DEST/Oriel.app" "$DEST/Oriel.app"
+rm -rf "$DEST/Oriel.app"
 ditto "$ROOT/build/Oriel.app" "$DEST/Oriel.app"
 "$LSREGISTER" -f "$DEST/Oriel.app" 2>/dev/null || true
 echo "App installée : $DEST/Oriel.app"

@@ -14,8 +14,8 @@ if grep -qs codex-notch-hook.sh "$HOME/.codex/hooks.json"; then
     echo "Hooks Codex encore posés dans ~/.codex/hooks.json : retire-les d'abord (Réglages > Codex > Retirer les hooks)."
 fi
 
-# Identifiant actuel, puis celui des premières versions.
-for LABEL in io.github.slybald.oriel local.oriel; do
+# Identifiant actuel, puis ceux d'avant le renommage en Oriel.
+for LABEL in io.github.slybald.oriel io.github.slybald.claudenotch local.claudenotch; do
     launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
     rm -f "$HOME/Library/LaunchAgents/$LABEL.plist"
 done

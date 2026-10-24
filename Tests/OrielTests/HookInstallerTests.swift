@@ -503,7 +503,7 @@ final class HookInstallerTests: XCTestCase {
         // Script ancien, puis absent : entrées à jour, seul le script est à refaire.
         try write(String(decoding: installed, as: UTF8.self))
         XCTAssertEqual(installer.status(), .installed)
-        try Data("#!/bin/sh\nopen -g -b local.oriel\n".utf8).write(to: installer.hookURL)
+        try Data("#!/bin/sh\nopen -g -b local.claudenotch\n".utf8).write(to: installer.hookURL)
         XCTAssertEqual(installer.status(), .scriptOutdated)
         try FileManager.default.removeItem(at: installer.hookURL)
         XCTAssertEqual(installer.status(), .scriptOutdated)

@@ -4,8 +4,8 @@ import Foundation
 /// Le dossier est injectable pour les tests.
 enum LaunchAgent {
     static var label: String { AppIdentity.bundleId }
-    /// Label des premières versions (scripts/install.sh).
-    static var legacyLabel: String { AppIdentity.legacyBundleId }
+    /// Labels d'avant le renommage en Oriel (2.1 et avant, premières versions de scripts/install.sh).
+    static var legacyLabels: [String] { AppIdentity.legacyBundleIds }
 
     static var directory: URL {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/LaunchAgents")
@@ -33,23 +33,24 @@ enum LaunchAgent {
         } else {
             // Pas de `launchctl bootout` ici : si launchd a lancé l'app, il la tuerait.
             // Sans le fichier, rien ne sera relancé à la prochaine ouverture de session.
-            for url in [plistURL(in: directory), plistURL(label: legacyLabel, in: directory)] {
+            for url in [plistURL(in: directory)] + legacyLabels.map({ plistURL(label: $0, in: directory) }) {
                 try? FileManager.default.removeItem(at: url)
             }
         }
     }
 
-    /// Ancien plist `local.oriel.plist` : remplacé par le nouveau pour garder « Lancer à l'ouverture
-    /// de session », puis supprimé, sans `launchctl bootout` (il tuerait l'app si launchd l'a lancée).
-    /// Rend vrai si une migration a eu lieu.
+    /// Anciens plists (`io.github.slybald.claudenotch.plist`, `local.claudenotch.plist`) : remplacés par le nouveau pour
+    /// garder « Lancer à l'ouverture de session », puis supprimés, sans `launchctl bootout` (il tuerait l'app si
+    /// launchd l'a lancée). Rend vrai si une migration a eu lieu.
     @discardableResult
     static func migrateLegacy(in directory: URL = directory,
                               executable: String? = Bundle.main.executablePath) -> Bool {
-        let legacy = plistURL(label: legacyLabel, in: directory)
-        guard FileManager.default.fileExists(atPath: legacy.path), let executable else { return false }
+        let legacy = legacyLabels.map { plistURL(label: $0, in: directory) }
+            .filter { FileManager.default.fileExists(atPath: $0.path) }
+        guard !legacy.isEmpty, let executable else { return false }
         do {
             try write(executable: executable, in: directory)
-            try FileManager.default.removeItem(at: legacy)
+            for url in legacy { try FileManager.default.removeItem(at: url) }
         } catch {
             NSLog("Oriel : migration du LaunchAgent impossible (%@).", String(describing: error))
             return false
