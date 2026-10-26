@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-10-26
+
+### Changed
+
+- **Everything is now called Oriel**: the app's executable, its identifier (`io.github.slybald.oriel`), its data
+  folder and its hook scripts. Updating from 2.1 or earlier: download Oriel once by hand, then grant the macOS
+  permissions again. Settings, notes and hooks (Claude Code and Codex) are carried over on first launch, along with
+  the login item. The fan and low-power authorizations must be granted again in Settings.
+- Settings › Claude explains that the quota gauges fill only while Claude Code runs in a terminal, not in the
+  Claude app.
+
+### Added
+
+- **First launch guide** for macOS Gatekeeper, in the README (EN/FR) and as a text file inside the disk image.
+
+### Removed
+
+- The `ClaudeNotch-X.Y.Z.dmg` disk image: each release now ships a single `Oriel-X.Y.Z.dmg`.
+
 ## [2.1.0] - 2026-10-22
 
 ### Added
