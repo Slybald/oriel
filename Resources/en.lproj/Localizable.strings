@@ -314,6 +314,11 @@
 "Douce" = "Gentle";
 "« Réduire les animations » est activé dans macOS : simple fondu." = "“Reduce motion” is on in macOS: simple fade.";
 "Ouverture, fermeture et changement d'onglet." = "Opening, closing and switching tabs.";
+"Écran sans encoche" = "Display Without a Notch";
+"Encoche" = "Notch";
+"Pilule" = "Pill";
+"Caméléon" = "Chameleon";
+"Encoche : dessinée en haut de l'écran. Pilule : elle flotte juste sous le bord. Caméléon : invisible au repos, en verre dépoli pendant une activité ; la souris en haut au centre l'ouvre." = "Notch: drawn at the top of the screen. Pill: floats just below the edge. Chameleon: invisible at rest, frosted glass during an activity; the pointer at the top center opens it.";
 "Teinter aussi la notch repliée" = "Tint the Collapsed Notch Too";
 "Écrans sans encoche seulement : sur une vraie encoche, elle reste noire." = "Displays without a notch only: on a real notch, it stays black.";
 "Confidentialité" = "Privacy";

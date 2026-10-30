@@ -49,9 +49,17 @@ struct ScreenCandidate: Equatable {
     var hasNotch: Bool { safeAreaTop > 0 && auxiliaryLeftWidth != nil && auxiliaryRightWidth != nil }
 }
 
+/// Notch repliée d'un écran sans encoche (`appearance.virtualNotch`) : encoche dessinée contre le haut de l'écran,
+/// pilule qui flotte juste en dessous, ou caméléon (invisible au repos, en verre dépoli pendant une activité).
+enum VirtualNotchStyle: String {
+    case notch, pill, chameleon
+}
+
 enum NotchScreenPicker {
     /// Largeur de l'encoche virtuelle des écrans sans encoche.
     static let virtualNotchWidth: CGFloat = 200
+    /// Écart entre le haut de l'écran et la pilule : elle flotte, elle ne touche pas le bord.
+    static let pillGap: CGFloat = 4
 
     /// Index de l'écran choisi (`ScreenChoice` ou nom d'écran) ; un écran nommé absent ou une souris hors de
     /// tout écran retombent sur l'écran intégré.
@@ -83,8 +91,10 @@ enum NotchScreenPicker {
         point.x >= frame.minX && point.x < frame.maxX && point.y >= frame.minY && point.y <= frame.maxY
     }
 
-    /// Encoche réelle, ou encoche virtuelle centrée en haut, à la hauteur de la barre des menus de l'écran.
-    static func notchRect(on screen: ScreenCandidate, menuBarThickness: CGFloat) -> (rect: CGRect, hasNotch: Bool) {
+    /// Encoche réelle, ou encoche virtuelle centrée en haut, à la hauteur de la barre des menus de l'écran (la pilule,
+    /// `pillGap` plus bas).
+    static func notchRect(on screen: ScreenCandidate, menuBarThickness: CGFloat,
+                          style: VirtualNotchStyle = .notch) -> (rect: CGRect, hasNotch: Bool) {
         let frame = screen.frame
         if screen.hasNotch, let left = screen.auxiliaryLeftWidth, let right = screen.auxiliaryRightWidth {
             let height = screen.safeAreaTop
@@ -92,7 +102,8 @@ enum NotchScreenPicker {
                            height: height), true)
         }
         let menuBar = max(frame.maxY - screen.visibleFrame.maxY, menuBarThickness)
-        return (CGRect(x: frame.midX - virtualNotchWidth / 2, y: frame.maxY - menuBar, width: virtualNotchWidth,
+        let top = frame.maxY - (style == .pill ? pillGap : 0)
+        return (CGRect(x: frame.midX - virtualNotchWidth / 2, y: top - menuBar, width: virtualNotchWidth,
                        height: menuBar), false)
     }
 }

@@ -40,13 +40,17 @@ final class ShellSnapshotTests: XCTestCase {
         try render(notch { $0.customPanelWidth = 460 }.root, "shell-width-460", outputDir)
     }
 
-    /// Écran sans encoche : encoche virtuelle de 200 pt sur une barre des menus de 24 pt, noire ou teintée.
+    /// Écran sans encoche : encoche virtuelle de 200 pt sur une barre des menus de 24 pt, noire ou teintée ; pilule et
+    /// caméléon (son verre, flou du fond d'écran, n'apparaît pas hors écran).
     func testRenderVirtualNotch() throws {
         guard let outputDir else { throw XCTSkip("ORIEL_SNAPSHOT_DIR non défini") }
-        func virtual(expanded: Bool, ears: Bool = false, configure: (Preferences) -> Void = { _ in }) -> NotchHarness {
+        func virtual(expanded: Bool, ears: Bool = false, style: VirtualNotchStyle = .notch,
+                     configure: (Preferences) -> Void = { _ in }) -> NotchHarness {
             let notch = NotchHarness(self, store: ears ? .working(1) : SessionStore())
             notch.model.hasNotch = false
             notch.model.notchSize = CGSize(width: NotchScreenPicker.virtualNotchWidth, height: 24)
+            notch.model.notchGap = style == .pill ? NotchScreenPicker.pillGap : 0
+            notch.prefs.virtualNotchStyle = style
             configure(notch.prefs)
             notch.model.isExpanded = expanded
             return notch
@@ -60,6 +64,13 @@ final class ShellSnapshotTests: XCTestCase {
         }.root, "shell-virtual-collapsed-tinted", outputDir, size: size)
         try render(virtual(expanded: true) { $0.panelBackground = .graphite }.root, "shell-virtual-expanded",
                    outputDir)
+        for style in [VirtualNotchStyle.pill, .chameleon] {
+            let name = "shell-virtual-\(style.rawValue)"
+            try render(virtual(expanded: false, style: style).root, name + "-collapsed", outputDir, size: size)
+            try render(virtual(expanded: false, ears: true, style: style).root, name + "-collapsed-ears", outputDir,
+                       size: size)
+            try render(virtual(expanded: true, style: style).root, name + "-expanded", outputDir)
+        }
     }
 
     func testRenderSettingsPanes() throws {

@@ -175,6 +175,7 @@ final class Preferences: ObservableObject {
         static let background = "appearance.background"
         static let customBackground = "appearance.customBackground"
         static let tintCollapsed = "appearance.tintCollapsed"
+        static let virtualNotch = "appearance.virtualNotch"
         static let opacity = "appearance.backgroundOpacity"
         static let shadow = "appearance.shadow"
         static let animationSpeed = "appearance.animationSpeed"
@@ -199,7 +200,7 @@ final class Preferences: ObservableObject {
         static let notchSettings = [
             alwaysVisible, visibility, hiddenUntil, openTrigger, closeOnClickOutside, openDelay, closeDelay, haptics,
             toggleHotKey, hideHotKey, commandHotKey, fullScreen, screen, accent, panelSize, customWidth, background,
-            customBackground, tintCollapsed, opacity, shadow, animationSpeed, showEars, earTabs, hideFromCapture,
+            customBackground, tintCollapsed, virtualNotch, opacity, shadow, animationSpeed, showEars, earTabs, hideFromCapture,
             allowsDetach, bubbleReturnsOnRelaunch,
         ]
     }
@@ -393,6 +394,11 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(tintCollapsed, forKey: Key.tintCollapsed) }
     }
 
+    /// Notch repliée d'un écran sans encoche : encoche, pilule ou caméléon (voir `VirtualNotchStyle`).
+    @Published var virtualNotchStyle: VirtualNotchStyle {
+        didSet { defaults.set(virtualNotchStyle.rawValue, forKey: Key.virtualNotch) }
+    }
+
     /// Opacité du fond du panneau déplié ; la bande de la notch reste toujours opaque.
     @Published var backgroundOpacity: Double {
         didSet { defaults.set(backgroundOpacity, forKey: Key.opacity) }
@@ -494,6 +500,7 @@ final class Preferences: ObservableObject {
         customBackgroundHex = defaults.string(forKey: Key.customBackground)
             .flatMap { Color(hex: $0) != nil ? $0 : nil } ?? Self.defaultCustomBackground
         tintCollapsed = defaults.bool(forKey: Key.tintCollapsed)
+        virtualNotchStyle = choice(Key.virtualNotch, VirtualNotchStyle.notch)
         backgroundOpacity = double(Key.opacity, 1, Self.opacityRange)
         panelShadow = defaults.object(forKey: Key.shadow) as? Bool ?? true
         animationSpeed = choice(Key.animationSpeed, AnimationSpeed.normal)
@@ -618,6 +625,7 @@ final class Preferences: ObservableObject {
         panelBackground = fresh.panelBackground
         customBackgroundHex = fresh.customBackgroundHex
         tintCollapsed = fresh.tintCollapsed
+        virtualNotchStyle = fresh.virtualNotchStyle
         backgroundOpacity = fresh.backgroundOpacity
         panelShadow = fresh.panelShadow
         animationSpeed = fresh.animationSpeed

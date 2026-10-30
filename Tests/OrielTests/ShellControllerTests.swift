@@ -77,6 +77,12 @@ final class ShellControllerTests: XCTestCase {
         XCTAssertEqual(virtual.rect.midX, Self.external.frame.midX)
         XCTAssertEqual(virtual.rect.maxY, Self.external.frame.maxY)
 
+        // Pilule : même taille, `pillGap` sous le haut de l'écran ; une vraie encoche ne bouge pas.
+        let pill = NotchScreenPicker.notchRect(on: Self.external, menuBarThickness: 24, style: .pill)
+        XCTAssertEqual(pill.rect.size, virtual.rect.size)
+        XCTAssertEqual(pill.rect.maxY, Self.external.frame.maxY - NotchScreenPicker.pillGap)
+        XCTAssertEqual(NotchScreenPicker.notchRect(on: Self.builtin, menuBarThickness: 24, style: .pill).rect, real.rect)
+
         // Barre des menus masquée automatiquement : épaisseur système.
         let hidden = NotchScreenPicker.notchRect(on: Self.leftMain, menuBarThickness: 24)
         XCTAssertEqual(hidden.rect.height, 24)
