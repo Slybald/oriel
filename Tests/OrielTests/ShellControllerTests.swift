@@ -177,16 +177,21 @@ final class ShellControllerTests: XCTestCase {
     }
 
     /// Repliée et sans activité : invisible sur une vraie encoche, dessinée sur un écran sans encoche ; noire
-    /// sauf si « Teinter aussi la notch repliée » (et seulement sans encoche).
+    /// sauf si « Teinter aussi la notch repliée » (et seulement sans encoche). Caméléon : invisible, comme une vraie encoche.
     func testCollapsedNotchColorAndVirtualNotch() throws {
-        func collapsedPixel(hasNotch: Bool, tint: Bool) throws -> NSColor {
+        func collapsedPixel(hasNotch: Bool, tint: Bool, style: VirtualNotchStyle = .notch) throws -> NSColor {
             let notch = NotchHarness(self)
             notch.model.hasNotch = hasNotch
             notch.model.notchSize = CGSize(width: 200, height: 24)
             notch.prefs.panelBackground = .midnight
             notch.prefs.tintCollapsed = tint
+            notch.prefs.virtualNotchStyle = style
             return try pixel(of: notch.root, at: CGPoint(x: NotchController.panelSize.width / 2, y: 12))
         }
+        XCTAssertLessThan(try collapsedPixel(hasNotch: false, tint: true, style: .chameleon).alphaComponent, 0.05,
+                          "caméléon : invisible au repos")
+        XCTAssertGreaterThan(try collapsedPixel(hasNotch: false, tint: false, style: .pill).alphaComponent, 0.95,
+                             "pilule dessinée")
         XCTAssertLessThan(try collapsedPixel(hasNotch: true, tint: false).alphaComponent, 0.05,
                           "vraie encoche : la forme se fond dedans (transparente)")
         XCTAssertLessThan(try collapsedPixel(hasNotch: true, tint: true).alphaComponent, 0.05,
