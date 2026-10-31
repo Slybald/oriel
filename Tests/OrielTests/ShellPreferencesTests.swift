@@ -228,6 +228,7 @@ final class ShellPreferencesTests: XCTestCase {
         XCTAssertEqual(prefs.panelBackground, .black)
         XCTAssertEqual(prefs.panelColor.hexString, "000000")
         XCTAssertFalse(prefs.tintCollapsed)
+        XCTAssertEqual(prefs.virtualNotchStyle, .chameleon)
         XCTAssertTrue(prefs.panelShadow)
         XCTAssertEqual(prefs.animationSpeed, .normal)
         XCTAssertEqual(prefs.openTrigger, .hover)
@@ -242,6 +243,7 @@ final class ShellPreferencesTests: XCTestCase {
         prefs.panelBackground = .custom
         prefs.customBackgroundHex = "3A1F5D"
         prefs.tintCollapsed = true
+        prefs.virtualNotchStyle = .pill
         prefs.panelShadow = false
         prefs.animationSpeed = .gentle
         prefs.openTrigger = .click
@@ -255,6 +257,7 @@ final class ShellPreferencesTests: XCTestCase {
         XCTAssertEqual(reloaded.panelColor.hexString, "3A1F5D")
         XCTAssertEqual(defaults.string(forKey: "appearance.customBackground"), "3A1F5D", "rangée en hexadécimal")
         XCTAssertTrue(reloaded.tintCollapsed)
+        XCTAssertEqual(reloaded.virtualNotchStyle, .pill)
         XCTAssertFalse(reloaded.panelShadow)
         XCTAssertEqual(reloaded.animationSpeed, .gentle)
         XCTAssertEqual(reloaded.openTrigger, .click)
@@ -378,6 +381,7 @@ final class ShellPreferencesTests: XCTestCase {
         prefs.panelBackground = .custom
         prefs.customBackgroundHex = "112233"
         prefs.tintCollapsed = true
+        prefs.virtualNotchStyle = .pill
         prefs.backgroundOpacity = 0.7
         prefs.panelShadow = false
         prefs.animationSpeed = .fast
@@ -413,6 +417,7 @@ final class ShellPreferencesTests: XCTestCase {
             XCTAssertEqual(current.panelBackground, fresh.panelBackground)
             XCTAssertEqual(current.customBackgroundHex, fresh.customBackgroundHex)
             XCTAssertEqual(current.tintCollapsed, fresh.tintCollapsed)
+            XCTAssertEqual(current.virtualNotchStyle, fresh.virtualNotchStyle)
             XCTAssertEqual(current.backgroundOpacity, fresh.backgroundOpacity)
             XCTAssertEqual(current.panelShadow, fresh.panelShadow)
             XCTAssertEqual(current.animationSpeed, fresh.animationSpeed)

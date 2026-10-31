@@ -4,7 +4,8 @@ import SwiftUI
 /// Forme d'un intercalaire : le bord extérieur reprend celui de la notch (`NotchShape`) : évasement concave en haut, qui
 /// dépasse de la tranche et rejoint le haut de l'écran, et coin bas arrondi de même rayon et de même courbe ; coin
 /// intérieur bas arrondi une fois déployé, raccordé à la notch par un congé concave. Le prolongement derrière la notch ou derrière l'intercalaire précédent
-/// (`overlap`, sur `overlapHeight`) bouche le jour que laissent leurs coins arrondis.
+/// (`overlap`, sur `overlapHeight`) bouche le jour que laissent leurs coins arrondis. Pilule : coin du haut arrondi vers
+/// l'extérieur (`capRadius`) à la place de l'évasement.
 struct EarTabShape: Shape {
     var side: EarTabsLayout.Side
     var outerRadius: CGFloat
@@ -12,6 +13,7 @@ struct EarTabShape: Shape {
     var overlap: CGFloat = 0
     var overlapHeight: CGFloat = 0
     var flareRadius: CGFloat = EarTabs.flareRadius
+    var capRadius: CGFloat = 0
 
     var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, CGFloat> {
         get { AnimatablePair(AnimatablePair(outerRadius, innerRadius), overlapHeight) }
@@ -24,7 +26,8 @@ struct EarTabShape: Shape {
 
     func path(in rect: CGRect) -> Path {
         // Le coin bas extérieur garde le rayon de la notch même sur une languette plus étroite que lui : il finit sous le voisin.
-        let outer = max(0, min(outerRadius, (rect.width + overlap) / 2, rect.height))
+        let cap = max(0, min(capRadius, (rect.width + overlap) / 2, rect.height / 2))
+        let outer = max(0, min(outerRadius, (rect.width + overlap) / 2, rect.height - cap))
         let inner = max(0, min(innerRadius, rect.width / 2, rect.height))
         let flare = max(0, min(flareRadius, rect.height / 2))
         // `s` : du bord extérieur vers le bord intérieur.
@@ -33,9 +36,10 @@ struct EarTabShape: Shape {
         let i = side == .left ? rect.maxX : rect.minX
         var path = Path()
         // Mêmes courbes que `NotchShape` (quadratiques, point de contrôle dans l'angle) : l'évasement part de la pointe
-        // `flare` en dehors du bord, hors de la tranche.
-        path.move(to: CGPoint(x: o - s * flare, y: rect.minY))
-        path.addQuadCurve(to: CGPoint(x: o, y: rect.minY + flare), control: CGPoint(x: o, y: rect.minY))
+        // `flare` en dehors du bord, hors de la tranche ; le coin de la pilule, de `cap` en dedans.
+        let top = cap > 0 ? -cap : flare
+        path.move(to: CGPoint(x: o - s * top, y: rect.minY))
+        path.addQuadCurve(to: CGPoint(x: o, y: rect.minY + abs(top)), control: CGPoint(x: o, y: rect.minY))
         path.addLine(to: CGPoint(x: o, y: rect.maxY - outer))
         path.addQuadCurve(to: CGPoint(x: o + s * outer, y: rect.maxY), control: CGPoint(x: o, y: rect.maxY))
         if inner == 0, overlap > 0 {
@@ -73,15 +77,18 @@ struct EarTabEdge: Shape {
     var side: EarTabsLayout.Side
     var radius: CGFloat
     var flareRadius: CGFloat = EarTabs.flareRadius
+    var capRadius: CGFloat = 0
 
     func path(in rect: CGRect) -> Path {
-        let r = max(0, min(radius, (rect.width + EarTabs.overlap) / 2, rect.height))
+        let cap = max(0, min(capRadius, (rect.width + EarTabs.overlap) / 2, rect.height / 2))
+        let r = max(0, min(radius, (rect.width + EarTabs.overlap) / 2, rect.height - cap))
         let flare = max(0, min(flareRadius, rect.height / 2))
         let s: CGFloat = side == .left ? 1 : -1
         let o = side == .left ? rect.minX : rect.maxX
         var path = Path()
-        path.move(to: CGPoint(x: o - s * flare, y: rect.minY))
-        path.addQuadCurve(to: CGPoint(x: o, y: rect.minY + flare), control: CGPoint(x: o, y: rect.minY))
+        let top = cap > 0 ? -cap : flare
+        path.move(to: CGPoint(x: o - s * top, y: rect.minY))
+        path.addQuadCurve(to: CGPoint(x: o, y: rect.minY + abs(top)), control: CGPoint(x: o, y: rect.minY))
         path.addLine(to: CGPoint(x: o, y: rect.maxY - r))
         path.addQuadCurve(to: CGPoint(x: o + s * r, y: rect.maxY), control: CGPoint(x: o, y: rect.maxY))
         return path
@@ -104,6 +111,10 @@ struct EarTabsView: View {
     let hovered: String?
     let claudeEars: SessionStore.EarsContent?
     let fill: Color
+    /// Caméléon : verre dépoli à la place de `fill`.
+    var glass = false
+    /// Pilule : rayon de ses coins (0 : intercalaires d'une encoche).
+    var pillRadius: CGFloat = 0
     let animation: Animation
     @ObservedObject var registry: ModuleRegistry
     let openTab: (String) -> Void
@@ -116,7 +127,8 @@ struct EarTabsView: View {
             ForEach(layout.items) { item in
                 let isHovered = item.id == hovered
                 EarTabItemView(item: item, layout: layout, isHovered: isHovered, cardHeight: cardHeight,
-                               claudeEars: claudeEars, fill: fill, registry: registry, openTab: openTab)
+                               claudeEars: claudeEars, fill: fill, glass: glass, pillRadius: pillRadius,
+                               registry: registry, openTab: openTab)
                     .offset(x: frameOf(item, isHovered).midX)
                     // Le rang 0 est au-dessus. Déployé, un intercalaire garde son rang : il recouvre ceux qui sont plus
                     // loin que lui, jamais ceux qui sont plus près de la notch.
@@ -148,6 +160,8 @@ private struct EarTabItemView: View {
     let cardHeight: CGFloat
     let claudeEars: SessionStore.EarsContent?
     let fill: Color
+    let glass: Bool
+    let pillRadius: CGFloat
     @ObservedObject var registry: ModuleRegistry
     let openTab: (String) -> Void
 
@@ -180,11 +194,17 @@ private struct EarTabItemView: View {
                height: isHovered ? max(cardHeight, layout.notch.height) : item.height, alignment: .top)
         .clipShape(shape)
         .background(ZStack {
-            shape.fill(fill)
+            if glass {
+                // Le verre déborde du cadre comme la forme : le prolongement sous le voisin bouche aussi le jour.
+                NotchGlass().padding(.horizontal, -overlap).clipShape(shape)
+            } else {
+                shape.fill(fill)
+            }
             shape.fill(Color.white.opacity(tint))
         })
         // Filet clair sur le bord extérieur : sépare la tranche de celle qu'elle recouvre. Déployé, la carte n'en a pas.
-        .overlay(EarTabEdge(side: item.side, radius: EarTabs.restRadius)
+        .overlay(EarTabEdge(side: item.side, radius: restRadius, flareRadius: flare,
+                            capRadius: pillRadius > 0 ? restRadius : 0)
             .stroke(Color.white.opacity(isHovered ? 0 : 0.16), lineWidth: 2)
             .clipShape(shape))
         // Déployé, la carte se détache de la pile par une ombre. Au repos, aucune ombre ne dépasse sous la base : celle de la
@@ -199,12 +219,16 @@ private struct EarTabItemView: View {
         .accessibilityAction { openTab(item.id) }
     }
 
-    private var shape: EarTabShape { shape(flare: EarTabs.flareRadius) }
+    /// Pilule : coins arrondis comme elle. Caméléon : pas d'évasement, le verre ne mime pas une encoche.
+    private var restRadius: CGFloat { pillRadius > 0 ? pillRadius : EarTabs.restRadius }
+    private var flare: CGFloat { glass ? 0 : EarTabs.flareRadius }
+    private var shape: EarTabShape { shape(flare: flare) }
 
     private func shape(flare: CGFloat) -> EarTabShape {
-        EarTabShape(side: item.side, outerRadius: isHovered ? EarTabs.cardRadius : EarTabs.restRadius,
-                    innerRadius: isHovered ? layout.cardInnerRadius(height: cardHeight) : 0, overlap: overlap,
-                    overlapHeight: item.height, flareRadius: flare)
+        let outer = isHovered ? EarTabs.cardRadius : restRadius
+        return EarTabShape(side: item.side, outerRadius: outer,
+                           innerRadius: isHovered ? layout.cardInnerRadius(height: cardHeight) : 0, overlap: overlap,
+                           overlapHeight: item.height, flareRadius: flare, capRadius: pillRadius > 0 ? outer : 0)
     }
 
     // MARK: Au repos

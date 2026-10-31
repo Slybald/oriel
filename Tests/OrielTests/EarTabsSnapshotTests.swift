@@ -41,6 +41,7 @@ final class EarTabsSnapshotTests: XCTestCase {
         if virtualNotch {
             harness.model.hasNotch = false
             harness.model.notchSize = CGSize(width: 200, height: 24)
+            harness.prefs.virtualNotchStyle = .notch
         }
         let registry = ModuleRegistry(modules: [harness.claude] + modules, prefs: harness.prefs)
         registry.reconcile()

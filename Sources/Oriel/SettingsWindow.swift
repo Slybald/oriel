@@ -597,7 +597,16 @@ private struct AppearanceSettings: View {
                     + "montre son icône. Rétractés : une fine languette chacun. Dans les deux cas, passe la souris sur "
                     + "un intercalaire pour l'ouvrir, clique dessus pour ouvrir son onglet. Une alerte (Claude attend "
                     + "ta réponse) reste toujours visible."))
+                Picker("Écran sans encoche", selection: $prefs.virtualNotchStyle) {
+                    Text("Encoche").tag(VirtualNotchStyle.notch)
+                    Text("Pilule").tag(VirtualNotchStyle.pill)
+                    Text("Caméléon").tag(VirtualNotchStyle.chameleon)
+                }
+                .pickerStyle(.segmented)
+                SettingsNote(L("Encoche : dessinée en haut de l'écran. Pilule : elle flotte juste sous le bord. Caméléon : "
+                    + "invisible au repos, en verre dépoli pendant une activité ; la souris en haut au centre l'ouvre."))
                 Toggle("Teinter aussi la notch repliée", isOn: $prefs.tintCollapsed)
+                    .disabled(prefs.virtualNotchStyle == .chameleon)
                 SettingsNote(L("Écrans sans encoche seulement : sur une vraie encoche, elle reste noire."))
             }
         }

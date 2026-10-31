@@ -314,6 +314,11 @@
 "Douce" = "Douce";
 "« Réduire les animations » est activé dans macOS : simple fondu." = "« Réduire les animations » est activé dans macOS : simple fondu.";
 "Ouverture, fermeture et changement d'onglet." = "Ouverture, fermeture et changement d'onglet.";
+"Écran sans encoche" = "Écran sans encoche";
+"Encoche" = "Encoche";
+"Pilule" = "Pilule";
+"Caméléon" = "Caméléon";
+"Encoche : dessinée en haut de l'écran. Pilule : elle flotte juste sous le bord. Caméléon : invisible au repos, en verre dépoli pendant une activité ; la souris en haut au centre l'ouvre." = "Encoche : dessinée en haut de l'écran. Pilule : elle flotte juste sous le bord. Caméléon : invisible au repos, en verre dépoli pendant une activité ; la souris en haut au centre l'ouvre.";
 "Teinter aussi la notch repliée" = "Teinter aussi la notch repliée";
 "Écrans sans encoche seulement : sur une vraie encoche, elle reste noire." = "Écrans sans encoche seulement : sur une vraie encoche, elle reste noire.";
 "Confidentialité" = "Confidentialité";

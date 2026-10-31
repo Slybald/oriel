@@ -17,7 +17,8 @@ let notchSpring = Animation.spring(response: 0.42, dampingFraction: 0.78)
 
 // MARK: - Forme
 
-/// Bas arrondi et petits évasements concaves en haut, pour se fondre dans la vraie notch.
+/// Bas arrondi et petits évasements concaves en haut, pour se fondre dans la vraie notch ; ou, pour la pilule, coins du
+/// haut arrondis vers l'extérieur (`capRadius`, jamais avec un évasement).
 struct NotchShape: Shape {
     /// Rayons de la notch repliée : évasement concave du haut (l'encoche virtuelle ; une vraie encoche a le sien) et coins
     /// du bas. Les intercalaires les reprennent tels quels à leur bord extérieur (`EarTabShape`) : même courbe, même rayon.
@@ -26,21 +27,24 @@ struct NotchShape: Shape {
 
     var topRadius: CGFloat
     var bottomRadius: CGFloat
+    var capRadius: CGFloat = 0
 
-    var animatableData: AnimatablePair<CGFloat, CGFloat> {
-        get { AnimatablePair(topRadius, bottomRadius) }
+    var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, CGFloat> {
+        get { AnimatablePair(AnimatablePair(topRadius, bottomRadius), capRadius) }
         set {
-            topRadius = newValue.first
-            bottomRadius = newValue.second
+            topRadius = newValue.first.first
+            bottomRadius = newValue.first.second
+            capRadius = newValue.second
         }
     }
 
     func path(in rect: CGRect) -> Path {
         let top = max(0, min(topRadius, rect.width / 4, rect.height / 2))
-        let bottom = max(0, min(bottomRadius, (rect.width - 2 * top) / 2, rect.height - top))
+        let cap = max(0, min(capRadius, rect.width / 2, rect.height / 2))
+        let bottom = max(0, min(bottomRadius, (rect.width - 2 * top) / 2, rect.height - top - cap))
         var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addQuadCurve(to: CGPoint(x: rect.minX + top, y: rect.minY + top),
+        path.move(to: CGPoint(x: rect.minX + cap, y: rect.minY))
+        path.addQuadCurve(to: CGPoint(x: rect.minX + top, y: rect.minY + top + cap),
                           control: CGPoint(x: rect.minX + top, y: rect.minY))
         path.addLine(to: CGPoint(x: rect.minX + top, y: rect.maxY - bottom))
         path.addQuadCurve(to: CGPoint(x: rect.minX + top + bottom, y: rect.maxY),
@@ -48,12 +52,26 @@ struct NotchShape: Shape {
         path.addLine(to: CGPoint(x: rect.maxX - top - bottom, y: rect.maxY))
         path.addQuadCurve(to: CGPoint(x: rect.maxX - top, y: rect.maxY - bottom),
                           control: CGPoint(x: rect.maxX - top, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.maxX - top, y: rect.minY + top))
-        path.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.minY),
+        path.addLine(to: CGPoint(x: rect.maxX - top, y: rect.minY + top + cap))
+        path.addQuadCurve(to: CGPoint(x: rect.maxX - cap, y: rect.minY),
                           control: CGPoint(x: rect.maxX - top, y: rect.minY))
         path.closeSubpath()
         return path
     }
+}
+
+/// Verre dépoli du mode caméléon : le flou de ce qui est derrière la fenêtre (fond d'écran, barre des menus), teinté
+/// sombre pour que le contenu, blanc, reste lisible.
+struct NotchGlass: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .hudWindow
+        view.blendingMode = .behindWindow
+        view.state = .active
+        return view
+    }
+
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
 }
 
 /// `max` et non `value = nextValue()` : la valeur par défaut d'un voisin écraserait la mesure.
@@ -88,10 +106,27 @@ struct NotchRootView: View {
     private var fill: Color {
         expanded || (prefs.tintCollapsed && !model.hasNotch) ? prefs.panelColor : .black
     }
+    /// Sans encoche, le style choisi ; une vraie encoche reste une encoche.
+    private var style: VirtualNotchStyle { model.hasNotch ? .notch : prefs.virtualNotchStyle }
+    private var isPill: Bool { style == .pill }
+    /// Caméléon replié : verre dépoli à la place du fond.
+    private var isGlass: Bool { style == .chameleon && !expanded }
+    /// Repliée sans activité, invisible : sur une vraie encoche (la forme est exactement l'encoche) et en caméléon.
+    private var hiddenAtRest: Bool { model.hasNotch || style == .chameleon }
     /// Replié sur une vraie encoche : aucun évasement, la forme est exactement l'encoche (sinon 6 pt de noir de plus de
-    /// chaque côté, visibles du côté sans intercalaire, et une forme mesurée 12 pt plus large que l'encoche).
-    private var topRadius: CGFloat { expanded ? 12 : (model.hasNotch ? 0 : NotchShape.collapsedTopRadius) }
-    private var bottomRadius: CGFloat { expanded ? (compact ? 18 : 24) : NotchShape.collapsedBottomRadius }
+    /// chaque côté, visibles du côté sans intercalaire, et une forme mesurée 12 pt plus large que l'encoche). Le caméléon
+    /// replié non plus (le verre ne mime pas une encoche), la pilule jamais (elle ne touche pas le haut de l'écran).
+    private var topRadius: CGFloat {
+        if isPill || (hiddenAtRest && !expanded) { return 0 }
+        return expanded ? 12 : NotchShape.collapsedTopRadius
+    }
+    private var bottomRadius: CGFloat {
+        expanded ? (compact ? 18 : 24) : (isPill ? pillRadius : NotchShape.collapsedBottomRadius)
+    }
+    /// Pilule : coins du haut comme ceux du bas (capsule repliée, panneau arrondi déplié).
+    private var capRadius: CGFloat { isPill ? bottomRadius : 0 }
+    private var pillRadius: CGFloat { model.notchSize.height / 2 }
+    private var shape: NotchShape { NotchShape(topRadius: topRadius, bottomRadius: bottomRadius, capRadius: capRadius) }
     /// Repliée : la notch seule ; les intercalaires se posent contre elle (`EarTabsView`).
     private var bodyWidth: CGFloat {
         expanded ? prefs.expandedWidth(compact: compact && !model.isCommandBarOpen) : model.notchSize.width
@@ -109,6 +144,7 @@ struct NotchRootView: View {
                 .id(prefs.accentHex)
             Spacer(minLength: 0)
         }
+        .padding(.top, model.notchGap)
         // Décollage : la goutte (autre fenêtre, dessous) prend la place de la notch.
         .opacity(model.gooActive ? 0 : 1)
         .animation(.easeOut(duration: 0.15), value: model.gooActive)
@@ -139,7 +175,7 @@ struct NotchRootView: View {
         .frame(minHeight: model.notchSize.height, alignment: .top)
         .padding(.horizontal, topRadius)
         .background(background)
-        .clipShape(NotchShape(topRadius: topRadius, bottomRadius: bottomRadius))
+        .clipShape(shape)
         .overlay(alignment: .bottomTrailing) {
             if showsHandle {
                 DetachHandle(begin: actions.beginDetach, detach: { actions.detach?() }, cornerRadius: bottomRadius,
@@ -150,8 +186,8 @@ struct NotchRootView: View {
         }
         .shadow(color: .black.opacity(expanded && prefs.panelShadow ? 0.45 : 0), radius: 14, y: 6)
         // Replié et sans activité sur une vraie encoche : exactement l'encoche, donc invisible. Sans encoche,
-        // la forme reste dessinée : c'est l'encoche virtuelle.
-        .opacity(expanded || showsEars || !model.hasNotch ? 1 : 0)
+        // la forme reste dessinée (encoche virtuelle, pilule), sauf en caméléon.
+        .opacity(expanded || showsEars || !hiddenAtRest ? 1 : 0)
         .background(GeometryReader { proxy in
             Color.clear.preference(key: NotchSizeKey.self, value: proxy.size)
         })
@@ -166,7 +202,8 @@ struct NotchRootView: View {
         .overlay(alignment: .top) {
             if !expanded, showsEars {
                 EarTabsView(layout: layout, hovered: model.hoveredTab, claudeEars: store.ears, fill: fill,
-                            animation: motion, registry: registry, openTab: actions.openTab,
+                            glass: style == .chameleon, pillRadius: isPill ? pillRadius : 0, animation: motion,
+                            registry: registry, openTab: actions.openTab,
                             cardHeightChanged: { model.tabCardHeight = $0 })
                     .transition(.opacity)
             }
@@ -174,11 +211,15 @@ struct NotchRootView: View {
     }
 
     /// Fond choisi, translucide une fois déplié si les réglages le demandent ; la bande de la notch reste opaque.
+    /// Caméléon replié : verre dépoli.
     private var background: some View {
         ZStack(alignment: .top) {
-            NotchShape(topRadius: topRadius, bottomRadius: bottomRadius)
-                .fill(fill.opacity(expanded ? prefs.backgroundOpacity : 1))
-            fill.frame(height: model.notchSize.height)
+            if isGlass {
+                NotchGlass()
+            } else {
+                shape.fill(fill.opacity(expanded ? prefs.backgroundOpacity : 1))
+                fill.frame(height: model.notchSize.height)
+            }
         }
     }
 }

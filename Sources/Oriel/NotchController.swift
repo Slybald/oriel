@@ -18,6 +18,8 @@ final class NotchViewModel: ObservableObject {
     @Published var isEditingTabs = false
     @Published var notchSize = CGSize(width: 200, height: 32)
     @Published var hasNotch = false
+    /// Écart entre le haut de l'écran et la notch : 0, sauf la pilule qui flotte (`NotchScreenPicker.pillGap`).
+    @Published var notchGap: CGFloat = 0
     /// Onglet affiché (identifiant de module).
     @Published var selectedTab = ModuleRegistry.claudeId
     /// Une app est en plein écran sur l'écran de la notch.
@@ -327,10 +329,13 @@ final class NotchController {
         let previousDisplay = displayID
         displayID = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
         // Écran sans encoche (externe, capot fermé) : encoche virtuelle centrée, hauteur de la barre des menus.
-        let notch = NotchScreenPicker.notchRect(on: candidates[index], menuBarThickness: NSStatusBar.system.thickness)
+        let notch = NotchScreenPicker.notchRect(on: candidates[index], menuBarThickness: NSStatusBar.system.thickness,
+                                                style: prefs.virtualNotchStyle)
         notchRect = notch.rect
         if model.hasNotch != notch.hasNotch { model.hasNotch = notch.hasNotch }
         if model.notchSize != notchRect.size { model.notchSize = notchRect.size }
+        let gap = frame.maxY - notchRect.maxY
+        if model.notchGap != gap { model.notchGap = gap }
         if previousDisplay != nil, previousDisplay != displayID { updateFullScreen() }
 
         let size = Self.panelSize
@@ -389,7 +394,8 @@ final class NotchController {
     private func hoverZone() -> CGRect {
         let size = model.contentSize
         let width = max(size.width, prefs.expandedWidth(compact: isCompact)) + 8
-        let height = max(size.height, notchRect.height + 40) + 8
+        // L'écart au-dessus de la pilule compte : la souris peut être pile sur le bord haut de l'écran.
+        let height = max(size.height, notchRect.height + 40) + 8 + model.notchGap
         return CGRect(x: notchRect.midX - width / 2, y: screenFrame.maxY - height, width: width, height: height)
     }
 
@@ -410,7 +416,8 @@ final class NotchController {
         // Hors de la fenêtre : rien à calculer (cette fonction tourne à chaque mouvement de souris).
         guard abs(point.x - notchRect.midX) <= Self.panelSize.width / 2,
               point.y >= screenFrame.maxY - Self.panelSize.height else { return .none }
-        let local = CGPoint(x: point.x - notchRect.midX, y: screenFrame.maxY - point.y)
+        // Au-dessus de la pilule (bord haut de l'écran) : comme sur son haut.
+        let local = CGPoint(x: point.x - notchRect.midX, y: max(0, notchRect.maxY - point.y))
         return earLayout().hit(local, hovered: model.hoveredTab, cardHeight: model.tabCardHeight)
     }
 
@@ -908,7 +915,8 @@ final class NotchController {
 
     private func observeShellSettings() {
         // Le publieur donne la nouvelle valeur avant qu'elle ne soit rangée : on relit au tour suivant.
-        prefs.$screenChoice.dropFirst().removeDuplicates()
+        Publishers.Merge(prefs.$screenChoice.dropFirst().removeDuplicates().map { _ in () },
+                         prefs.$virtualNotchStyle.dropFirst().removeDuplicates().map { _ in () })
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self, !self.model.isExpanded else { return }
@@ -1129,7 +1137,7 @@ final class NotchController {
     /// Panneau déplié en coordonnées écran : la forme visible (sans les évasements du haut).
     private var expandedPanelRect: CGRect {
         let size = model.contentSize
-        return CGRect(x: notchRect.midX - size.width / 2, y: screenFrame.maxY - size.height, width: size.width,
+        return CGRect(x: notchRect.midX - size.width / 2, y: notchRect.maxY - size.height, width: size.width,
                       height: size.height).insetBy(dx: 12, dy: 0)
     }
 
