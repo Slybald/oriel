@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-10-31
+
+### Changed
+
+- **Screens without a notch** (a Mac without one, an external display): no more black block in the middle of the
+  menu bar. The notch stays invisible until something happens, then shows in frosted glass.
+
+### Added
+
+- Settings › Appearance › "Display Without a Notch": chameleon (the default), a pill floating just below the top
+  edge, or the drawn notch from before.
+
 ## [3.0.0] - 2026-10-26
 
 ### Changed
