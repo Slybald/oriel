@@ -115,6 +115,8 @@ final class EarTabsGeometryTests: XCTestCase {
         harness.prefs.earTabsMode = mode
         harness.model.notchSize = notch
         harness.model.hasNotch = hasNotch
+        // Sans encoche, le dessin d'encoche (évasements, bande noire) : c'est lui que ces mesures comparent.
+        harness.prefs.virtualNotchStyle = .notch
         harness.model.hoveredTab = hovered
         let timer = FakeModule(id: "timer", ears: ModuleEars(symbol: "timer", text: "4:59", priority: 5), keepsRunning: true)
         let others = [("media", "music.note", "", 1), ("messages", "message.fill", "3", 0), ("mail", "envelope.fill", "12", -1),

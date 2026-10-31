@@ -394,7 +394,8 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(tintCollapsed, forKey: Key.tintCollapsed) }
     }
 
-    /// Notch repliée d'un écran sans encoche : encoche, pilule ou caméléon (voir `VirtualNotchStyle`).
+    /// Notch repliée d'un écran sans encoche : encoche, pilule ou caméléon (voir `VirtualNotchStyle`). Caméléon par
+    /// défaut : rien n'est dessiné dans la barre des menus tant qu'il ne se passe rien.
     @Published var virtualNotchStyle: VirtualNotchStyle {
         didSet { defaults.set(virtualNotchStyle.rawValue, forKey: Key.virtualNotch) }
     }
@@ -500,7 +501,7 @@ final class Preferences: ObservableObject {
         customBackgroundHex = defaults.string(forKey: Key.customBackground)
             .flatMap { Color(hex: $0) != nil ? $0 : nil } ?? Self.defaultCustomBackground
         tintCollapsed = defaults.bool(forKey: Key.tintCollapsed)
-        virtualNotchStyle = choice(Key.virtualNotch, VirtualNotchStyle.notch)
+        virtualNotchStyle = choice(Key.virtualNotch, VirtualNotchStyle.chameleon)
         backgroundOpacity = double(Key.opacity, 1, Self.opacityRange)
         panelShadow = defaults.object(forKey: Key.shadow) as? Bool ?? true
         animationSpeed = choice(Key.animationSpeed, AnimationSpeed.normal)
