@@ -359,7 +359,7 @@ struct BubbleRootView: View {
             }
         }
             .background(RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(prefs.panelColor.opacity(prefs.backgroundOpacity)))
+                .fill(prefs.panelColor.opacity(prefs.panelBackground == .glass ? 1 : prefs.backgroundOpacity)))
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(.white.opacity(0.08)))
             .background(GeometryReader { proxy in
