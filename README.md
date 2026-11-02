@@ -60,8 +60,8 @@ Interface available in English and French (follows the system language). Screens
 - **Command bar**: one field, one-key prefixes (see [Command bar](#command-bar)): `t 25` starts a timer, `n idea`
   creates a note, `c link` searches your copies, `s presentation` applies a scene, `> message` writes to Claude.
 - Works on screens without a notch too (Mac without a notch, external display, closed lid): by default nothing is
-  drawn until something happens, then the notch shows in frosted glass. It can also be a pill floating just below
-  the top edge, or a drawn notch.
+  drawn at rest, a tiny pearl shows during an activity, and the pointer coming close turns it into a frosted-glass
+  notch. It can also stay a frosted-glass notch, a pill floating just below the top edge, or a drawn notch.
 
 <p align="center">
   <img src="docs/tools.png" width="620" alt="Expanded panel with the tools section: recent files, two Git repositories to deal with, today's usage">
@@ -238,12 +238,13 @@ Open **…** › **Settings…** (⌘,).
   [command bar](#command-bar). They work everywhere, without the Accessibility permission. Once the panel is open from the keyboard, ← and → switch tabs,
   ⌘1 to ⌘9 jump to a tab, and Esc closes it.
 - **Size and look**: panel width (compact, standard, large, or a custom width from 460 to 720 pt), background (black,
-  graphite, midnight blue or a custom color), opacity, shadow, accent color and animation speed. With "Reduce
+  graphite, midnight blue, glass, or a custom color; glass is Liquid Glass on macOS 26 and later), opacity, shadow, accent color and animation speed. With "Reduce
   motion" on in macOS, the animations become a simple fade.
 - **Screen**: the built-in display (the default), the main display, the display under the mouse, or a display
   picked by name. A screen without a notch gets a virtual one at the top center, in the style set in Appearance
-  ("Display Without a Notch"): chameleon (the default: invisible at rest, frosted glass during an activity), a pill
-  floating just below the top edge, or a drawn notch.
+  ("Display Without a Notch"): pearl (the default: a tiny 44 × 20 pt pearl with the activity's icon and number, nothing at rest; the pointer
+  coming close turns it into a frosted-glass notch, then the panel opens), chameleon (invisible at rest, frosted glass
+  during an activity), a pill floating just below the top edge, or a drawn notch.
 - **Bubble**: drag the bottom right corner of the open panel, and the notch peels off into a bubble you can put
   anywhere, its tabs in a revolver cylinder (scroll or click to turn, click the centre to open; the back button, Esc,
   a click outside or a pinch brings you back to the cylinder). Bring it close to the notch, which pulls it in like
@@ -664,8 +665,9 @@ français (suit la langue du système). Les captures ci-dessus utilisent des don
   lance un minuteur, `n idée` crée une note, `c lien` cherche dans tes copies, `s présentation` applique une scène,
   `> message` écrit à Claude.
 - Marche aussi sur un écran sans notch (Mac sans encoche, écran externe, capot fermé) : par défaut, rien n'est
-  dessiné tant qu'il ne se passe rien, puis la notch apparaît en verre dépoli. Elle peut aussi être une pilule qui
-  flotte juste sous le haut de l'écran, ou une notch dessinée.
+  dessiné au repos, une perle minuscule apparaît pendant une activité, et la souris qui s'approche la transforme en
+  notch en verre dépoli. Elle peut aussi rester une notch en verre dépoli, une pilule qui flotte juste sous le haut
+  de l'écran, ou une notch dessinée.
 
 ### Onglets
 
@@ -843,12 +845,13 @@ Ouvre **…** › **Réglages…** (⌘,).
   troisième ouvre la [barre de commande](#barre-de-commande). Ils marchent partout, sans l'autorisation d'accessibilité. Panneau ouvert au clavier : ← et → changent d'onglet, ⌘1 à
   ⌘9 vont à un onglet, Échap ferme.
 - **Taille et apparence** : largeur du panneau (compact, standard, grand, ou une largeur personnalisée de 460 à
-  720 pt), fond (noir, graphite, bleu nuit ou couleur libre), opacité, ombre, couleur d'accent et vitesse des
+  720 pt), fond (noir, graphite, bleu nuit, verre ou couleur libre ; le verre est du Liquid Glass sur macOS 26 et plus), opacité, ombre, couleur d'accent et vitesse des
   animations. Avec « Réduire les animations » activé dans macOS, les animations deviennent un simple fondu.
 - **Écran** : l'écran intégré (par défaut), l'écran principal, l'écran sous la souris, ou un écran choisi par son
   nom. Un écran sans encoche reçoit une encoche virtuelle en haut au centre, dans le style choisi dans Apparence
-  (« Écran sans encoche ») : caméléon (par défaut : invisible au repos, en verre dépoli pendant une activité),
-  pilule qui flotte juste sous le haut de l'écran, ou encoche dessinée.
+  (« Écran sans encoche ») : perle (par défaut : une perle de 44 × 20 pt avec l'icône et le chiffre de l'activité, rien au repos ; la souris qui
+  s'approche la transforme en encoche en verre dépoli, puis le panneau s'ouvre), caméléon (invisible au repos, en verre
+  dépoli pendant une activité), pilule qui flotte juste sous le haut de l'écran, ou encoche dessinée.
 - **Bulle** : glisse l'angle en bas à droite du panneau ouvert, et la notch se décolle en une bulle à poser où tu
   veux, ses onglets en barillet de revolver (molette ou clic pour tourner, clic au centre pour ouvrir ; le bouton
   retour, Échap, un clic à l'extérieur ou un pincement ramènent au barillet). Approche-la de la notch, qui l'attire et

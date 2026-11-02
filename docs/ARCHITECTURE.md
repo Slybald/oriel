@@ -492,16 +492,30 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     in every mode. "Hide the notch" for 1 h, until 8 am tomorrow or until turned back on (`visibility.hiddenUntil`, `distantFuture`): one `Timer` at the
     end date, only while hidden, re-read on wake. "Until turned back on" ends when the app is opened again
     (reopen event) or relaunched; reopening the app also opens the settings (no Dock or menu bar icon).
+  - Background `appearance.background` (`PanelBackground`) also accepts `glass`: `PanelGlass` is `NotchGlass(liquid:)`
+    plus a 55 % black tint under the text (`NSGlassEffectView` under `#if compiler(>=6.2)` and macOS 26, otherwise
+    `NSVisualEffectView`; CI builds the fallback). On a real notch, a black notch shape stays on top of the background
+    because the camera is physically black. `panelColor` is `glassFallbackHex` wherever there is no glass (detached
+    bubble, collapsed tint).
   - Screen `display.screen`: built-in (with the notch), main, under the mouse (follows it while collapsed, on
     mouse events only) or a screen by name (identical models are numbered). Without a notch, a 200 pt virtual
     notch is drawn at the top center, as high as that screen's menu bar. Its style is `appearance.virtualNotch`
-    (`VirtualNotchStyle`, `chameleon` by default): `notch` (that drawing), `pill` (a capsule
+    (`VirtualNotchStyle`, `pearl` by default): `notch` (that drawing), `pill` (a capsule
     `NotchScreenPicker.pillGap` = 4 pt below the top: `notchRect` moves down, the view is padded by
     `NotchViewModel.notchGap`, convex top corners through `NotchShape.capRadius` and `EarTabShape.capRadius`, and the
     hit test treats the gap above as the pill's top row) or `chameleon` (hidden at rest like a real notch; with ears,
     `NotchGlass`, a behind-window `NSVisualEffectView`, replaces the fill of the notch and of the ears; its blur does
     not show in offscreen renders, where the glass comes out flat grey). The ear geometry tests pin `notch`: it is the
     drawing they measure.
+    `pearl` (`Pearl`, `NotchShape` bottom-rounded, no ears): asleep, a 44 × 20 pt pearl (wider, up to 72 pt, for a long
+    text) stuck to the top edge, showing only the icon and number of the first activity (`EarTabIcon`, `EarTabInfo`),
+    nothing without activity. `NotchController` keeps a `Pearl.Presence` (awake / asleep) and publishes it as
+    `NotchViewModel.pearlAwake`; awake, the view draws the `chameleon` notch (200 pt, ears, glass), then the panel opens
+    after `hover.openDelay` as usual. Asleep, `collapsedHit` only answers `.notch` inside `Pearl.zone` (the pearl ±12 pt,
+    4 pt under it), everything else is `.none`: the menu bar stays usable and the window ignores the mouse. Awake, the
+    zone is the awake notch and its ears, always larger than the asleep zone, which is the spatial hysteresis; the
+    time hysteresis is `Pearl.wakeDelay` (0.1 s) and `sleepDelay` (0.3 s), counted from when the pointer is
+    continuously on the wrong side. Opening by click or by file drag skips the wake (`Pearl.Presence.wake`).
   - Global shortcuts (`keyboard.*`, a short list, never the same one twice): Carbon `RegisterEventHotKey`, no
     Accessibility permission; a combination macOS refuses is reported in the settings. Opened with the shortcut,
     the panel takes the keyboard (`NotchKeyboard.take`) and stays open when the mouse leaves: ← → and ⌘1…9
