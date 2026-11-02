@@ -63,7 +63,18 @@ struct NotchShape: Shape {
 /// Verre dépoli du mode caméléon : le flou de ce qui est derrière la fenêtre (fond d'écran, barre des menus), teinté
 /// sombre pour que le contenu, blanc, reste lisible.
 struct NotchGlass: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
+    /// Choix « Verre » du fond : le vrai Liquid Glass (`NSGlassEffectView`) sur macOS 26 et plus, le même flou que le
+    /// caméléon avant. `NSGlassEffectView` n'existe que dans le SDK de Swift 6.2 (Xcode 26) : sans lui, le flou.
+    var liquid = false
+
+    func makeNSView(context: Context) -> NSView {
+        #if compiler(>=6.2)
+        if liquid, #available(macOS 26, *) {
+            let view = NSGlassEffectView()
+            view.cornerRadius = 0
+            return view
+        }
+        #endif
         let view = NSVisualEffectView()
         view.material = .hudWindow
         view.blendingMode = .behindWindow
@@ -71,7 +82,28 @@ struct NotchGlass: NSViewRepresentable {
         return view
     }
 
-    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+    func updateNSView(_ view: NSView, context: Context) {}
+}
+
+/// Verre du choix « Verre » : le flou, et une teinte sombre par-dessus pour que le texte blanc reste lisible sur un
+/// fond d'écran clair (voir `PanelGlassContrastTests`).
+struct PanelGlass: View {
+    static let scrim = 0.55
+
+    /// Contraste du texte blanc sur le pire fond d'écran possible (blanc pur) sous la teinte : 4,5 est le seuil WCAG AA.
+    /// Le flou ne rend jamais plus clair que ce qu'il y a derrière ; la teinte est donc le pire cas.
+    static func worstCaseContrast(scrim: Double = scrim) -> Double {
+        let gray = 1 - scrim
+        let linear = pow((gray + 0.055) / 1.055, 2.4)
+        return 1.05 / (linear + 0.05)
+    }
+
+    var body: some View {
+        ZStack {
+            NotchGlass(liquid: true)
+            Color.black.opacity(Self.scrim)
+        }
+    }
 }
 
 /// `max` et non `value = nextValue()` : la valeur par défaut d'un voisin écraserait la mesure.
@@ -120,6 +152,8 @@ struct NotchRootView: View {
     private var pearlSize: CGSize { Pearl.size(for: pearlTab) }
     /// Caméléon replié : verre dépoli à la place du fond.
     private var isGlass: Bool { style == .chameleon && !expanded }
+    /// Choix « Verre » pour le fond : panneau déplié et intercalaires en verre.
+    private var isGlassPanel: Bool { prefs.panelBackground == .glass }
     /// Repliée sans activité, invisible : sur une vraie encoche (la forme est exactement l'encoche) et en caméléon.
     private var hiddenAtRest: Bool { model.hasNotch || style == .chameleon || style == .pearl }
     /// Replié sur une vraie encoche : aucun évasement, la forme est exactement l'encoche (sinon 6 pt de noir de plus de
@@ -220,7 +254,8 @@ struct NotchRootView: View {
         .overlay(alignment: .top) {
             if !expanded, showsEars, !isPearl {
                 EarTabsView(layout: layout, hovered: model.hoveredTab, claudeEars: store.ears, fill: fill,
-                            glass: style == .chameleon, pillRadius: isPill ? pillRadius : 0, animation: motion,
+                            glass: style == .chameleon || isGlassPanel, liquid: isGlassPanel,
+                            pillRadius: isPill ? pillRadius : 0, animation: motion,
                             registry: registry, openTab: actions.openTab,
                             cardHeightChanged: { model.tabCardHeight = $0 })
                     .transition(.opacity)
@@ -232,9 +267,17 @@ struct NotchRootView: View {
     /// Caméléon replié : verre dépoli.
     private var background: some View {
         ZStack(alignment: .top) {
-            if isGlass {
-                NotchGlass()
+            if expanded, isGlassPanel {
+                PanelGlass()
                     .transition(.opacity)
+                // Vraie encoche : la caméra reste noire, le verre continue autour et dessous.
+                if model.hasNotch {
+                    NotchShape(topRadius: 0, bottomRadius: NotchShape.collapsedBottomRadius)
+                        .fill(Color.black)
+                        .frame(width: model.notchSize.width, height: model.notchSize.height)
+                }
+            } else if isGlass {
+                if isGlassPanel { PanelGlass().transition(.opacity) } else { NotchGlass().transition(.opacity) }
             } else {
                 shape.fill(fill.opacity(expanded ? prefs.backgroundOpacity : 1))
                 fill.frame(height: bandHeight)

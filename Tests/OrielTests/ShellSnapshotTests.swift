@@ -79,6 +79,24 @@ final class ShellSnapshotTests: XCTestCase {
                    "shell-virtual-pearl-awake-ears", outputDir, size: size)
     }
 
+    /// Fond « Verre » : panneau déplié et intercalaires, avec une vraie encoche (la caméra reste noire) et sans. Hors
+    /// écran le verre sort en aplat ; le raccord noir / verre se juge sur la vraie fenêtre.
+    func testRenderGlassPanel() throws {
+        guard let outputDir else { throw XCTSkip("ORIEL_SNAPSHOT_DIR non défini") }
+        for hasNotch in [true, false] {
+            let name = hasNotch ? "shell-glass-notch" : "shell-glass-virtual"
+            for (suffix, expanded) in [("-collapsed-ears", false), ("-expanded", true)] {
+                let notch = NotchHarness(self, store: .working(1))
+                notch.model.hasNotch = hasNotch
+                if !hasNotch { notch.model.notchSize = CGSize(width: NotchScreenPicker.virtualNotchWidth, height: 24) }
+                notch.prefs.panelBackground = .glass
+                notch.model.isExpanded = expanded
+                try render(notch.root, name + suffix, outputDir,
+                           size: expanded ? NotchController.panelSize : CGSize(width: NotchController.panelSize.width, height: 120))
+            }
+        }
+    }
+
     func testRenderSettingsPanes() throws {
         guard let outputDir else { throw XCTSkip("ORIEL_SNAPSHOT_DIR non défini") }
         let notch = NotchHarness(self)

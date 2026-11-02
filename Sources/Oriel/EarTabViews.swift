@@ -113,6 +113,8 @@ struct EarTabsView: View {
     let fill: Color
     /// Caméléon : verre dépoli à la place de `fill`.
     var glass = false
+    /// Verre du choix « Verre » (Liquid Glass sur macOS 26 et plus) plutôt que le flou du caméléon.
+    var liquid = false
     /// Pilule : rayon de ses coins (0 : intercalaires d'une encoche).
     var pillRadius: CGFloat = 0
     let animation: Animation
@@ -127,7 +129,7 @@ struct EarTabsView: View {
             ForEach(layout.items) { item in
                 let isHovered = item.id == hovered
                 EarTabItemView(item: item, layout: layout, isHovered: isHovered, cardHeight: cardHeight,
-                               claudeEars: claudeEars, fill: fill, glass: glass, pillRadius: pillRadius,
+                               claudeEars: claudeEars, fill: fill, glass: glass, liquid: liquid, pillRadius: pillRadius,
                                registry: registry, openTab: openTab)
                     .offset(x: frameOf(item, isHovered).midX)
                     // Le rang 0 est au-dessus. Déployé, un intercalaire garde son rang : il recouvre ceux qui sont plus
@@ -161,6 +163,7 @@ private struct EarTabItemView: View {
     let claudeEars: SessionStore.EarsContent?
     let fill: Color
     let glass: Bool
+    let liquid: Bool
     let pillRadius: CGFloat
     @ObservedObject var registry: ModuleRegistry
     let openTab: (String) -> Void
@@ -196,7 +199,8 @@ private struct EarTabItemView: View {
         .background(ZStack {
             if glass {
                 // Le verre déborde du cadre comme la forme : le prolongement sous le voisin bouche aussi le jour.
-                NotchGlass().padding(.horizontal, -overlap).clipShape(shape)
+                Group { if liquid { PanelGlass() } else { NotchGlass() } }
+                    .padding(.horizontal, -overlap).clipShape(shape)
             } else {
                 shape.fill(fill)
             }
