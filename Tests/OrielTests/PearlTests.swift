@@ -21,6 +21,17 @@ final class PearlGeometryTests: XCTestCase {
         XCTAssertEqual(rect.maxY, notch.maxY)
     }
 
+    func testPearlShowsAnAlertFirstThenTheTopPriority() {
+        func tab(_ id: String, _ priority: Int, alert: Bool = false) -> EarTab {
+            EarTab(id: id, kind: .claude(.working), priority: priority, text: "", bars: false, isAlert: alert)
+        }
+        XCTAssertNil(Pearl.shown(in: []))
+        XCTAssertEqual(Pearl.shown(in: [tab("a", 100), tab("b", 5)])?.id, "a")
+        XCTAssertEqual(Pearl.shown(in: [tab("a", 5), tab("b", 100)])?.id, "b")
+        XCTAssertEqual(Pearl.shown(in: [tab("a", 100), tab("b", 5, alert: true)])?.id, "b", "une alerte d'abord")
+        XCTAssertEqual(Pearl.shown(in: [tab("a", 7), tab("b", 7)])?.id, "a", "à égalité, la première")
+    }
+
     /// La zone est étroite : 12 pt de chaque côté, 4 pt sous la perle ; un menu voisin n'y entre pas.
     func testZoneIsNarrow() {
         let rect = Pearl.rect(in: notch, size: Pearl.size(for: nil))

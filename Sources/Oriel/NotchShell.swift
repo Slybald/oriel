@@ -73,6 +73,14 @@ enum Pearl {
     static let wakeDelay: TimeInterval = 0.1
     static let sleepDelay: TimeInterval = 0.3
 
+    /// L'activité que montre la perle : une alerte d'abord, sinon la plus prioritaire (la première à égalité).
+    static func shown(in tabs: [EarTab]) -> EarTab? {
+        tabs.reduce(nil) { best, tab in
+            guard let best else { return tab }
+            return (tab.isAlert ? 1 : 0, tab.priority) > (best.isAlert ? 1 : 0, best.priority) ? tab : best
+        }
+    }
+
     /// Taille de la perle pour l'activité qu'elle montre (nil : rien à montrer, la place vide).
     static func size(for tab: EarTab?) -> CGSize {
         CGSize(width: min(max(tab?.restWidth ?? 0, minWidth), maxWidth), height: height)

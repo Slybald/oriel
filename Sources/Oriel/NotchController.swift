@@ -344,11 +344,14 @@ final class NotchController {
         let notch = NotchScreenPicker.notchRect(on: candidates[index], menuBarThickness: NSStatusBar.system.thickness,
                                                 style: prefs.virtualNotchStyle)
         notchRect = notch.rect
-        if model.hasNotch != notch.hasNotch { model.hasNotch = notch.hasNotch }
+        let notchChanged = model.hasNotch != notch.hasNotch
+        if notchChanged { model.hasNotch = notch.hasNotch }
         if model.notchSize != notchRect.size { model.notchSize = notchRect.size }
         let gap = frame.maxY - notchRect.maxY
         if model.notchGap != gap { model.notchGap = gap }
         if previousDisplay != nil, previousDisplay != displayID { updateFullScreen() }
+        // Un autre écran ou une autre encoche : la perle repart endormie.
+        if previousDisplay != displayID || notchChanged { resetPearl() }
 
         let size = Self.panelSize
         let origin = CGPoint(x: (notchRect.midX - size.width / 2).rounded(), y: frame.maxY - size.height)
@@ -442,7 +445,7 @@ final class NotchController {
 
     /// Perle endormie (sa place, même vide) en coordonnées écran.
     private var pearlRect: CGRect {
-        Pearl.rect(in: notchRect, size: Pearl.size(for: earLayout().left.first?.tab))
+        Pearl.rect(in: notchRect, size: Pearl.size(for: Pearl.shown(in: earLayout().items.map(\.tab))))
     }
 
     private var pearlZone: CGRect { Pearl.zone(around: pearlRect) }
@@ -462,10 +465,20 @@ final class NotchController {
         guard let deadline else { return }
         let work = DispatchWorkItem { [weak self] in
             self?.pearlWork = nil
-            self?.mouseMoved()
+            self?.refreshPearl()
         }
         pearlWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + max(0, deadline.timeIntervalSince(now())) + 0.01, execute: work)
+    }
+
+    /// Relit la position de la souris pour l'échéance d'un changement en attente (rien n'est perdu si `mouseMoved`
+    /// sortirait avant : bulle en déplacement, notch masquée).
+    private func refreshPearl() {
+        guard usesPearl, isShown, !model.isExpanded else { return }
+        let point = mouseLocation()
+        updatePearl(near: isNearPearl(point, hit: collapsedHit(point)))
+        // Éveillée à l'instant : le survol décide de l'ouverture du panneau.
+        if model.pearlAwake { mouseMoved() }
     }
 
     private func resetPearl() {
@@ -506,7 +519,7 @@ final class NotchController {
             }
             return
         }
-        if usesPearl { updatePearl(near: isNearPearl(point, hit: hit)) }
+        if usesPearl { updatePearl(near: !model.bubble.isDetached && isNearPearl(point, hit: hit)) }
         updateTabHover(hit)
         // Notch détachée : la bulle est le panneau, le survol de la notch n'en ouvre pas un second. Perle : elle
         // s'éveille d'abord (caméléon), puis le panneau s'ouvre.

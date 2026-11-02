@@ -116,7 +116,7 @@ struct NotchRootView: View {
     private var isPearl: Bool { style == .pearl && !expanded }
     /// Perle éveillée : le caméléon se montre même sans activité (la souris est là), puis le panneau s'ouvre.
     private var isAwakePearl: Bool { !model.hasNotch && prefs.virtualNotchStyle == .pearl && model.pearlAwake }
-    private var pearlTab: EarTab? { layout.left.first?.tab }
+    private var pearlTab: EarTab? { Pearl.shown(in: layout.items.map(\.tab)) }
     private var pearlSize: CGSize { Pearl.size(for: pearlTab) }
     /// Caméléon replié : verre dépoli à la place du fond.
     private var isGlass: Bool { style == .chameleon && !expanded }
