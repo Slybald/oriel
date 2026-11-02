@@ -303,6 +303,8 @@
 "Noir" = "Noir";
 "Graphite" = "Graphite";
 "Bleu nuit" = "Bleu nuit";
+"Verre" = "Verre";
+"Le flou de ce qu'il y a derrière (Liquid Glass sur macOS 26 et plus). Sur une vraie encoche, la zone de la caméra reste noire." = "Le flou de ce qu'il y a derrière (Liquid Glass sur macOS 26 et plus). Sur une vraie encoche, la zone de la caméra reste noire.";
 "Personnalisé" = "Personnalisé";
 "Fond libre" = "Fond libre";
 "Une couleur claire est assombrie : le texte du panneau reste lisible." = "Une couleur claire est assombrie : le texte du panneau reste lisible.";

@@ -63,6 +63,9 @@ enum PanelBackground: String, CaseIterable, Identifiable {
     case black
     case graphite
     case midnight
+    /// Verre : le fond du panneau et des intercalaires est le flou de ce qu'il y a derrière (Liquid Glass sur macOS 26
+    /// et plus). Sur une vraie encoche, la bande de la caméra reste noire.
+    case glass
     case custom
 
     var id: String { rawValue }
@@ -73,7 +76,7 @@ enum PanelBackground: String, CaseIterable, Identifiable {
         case .black: return "000000"
         case .graphite: return "2A2B30"
         case .midnight: return "101B33"
-        case .custom: return nil
+        case .glass, .custom: return nil
         }
     }
 }
@@ -559,9 +562,13 @@ final class Preferences: ObservableObject {
 
     /// Fond du panneau déplié, opaque (l'opacité est appliquée par la vue). Un fond libre trop clair est assombri.
     var panelColor: Color {
+        // Le verre n'a pas de couleur : celle-ci sert là où il n'y a pas de verre (bulle détachée, teinte repliée).
+        if panelBackground == .glass { return Color(hex: Self.glassFallbackHex) ?? .black }
         if let hex = panelBackground.hex { return Color(hex: hex) ?? .black }
         return Self.readable(Color(hex: customBackgroundHex) ?? .black)
     }
+
+    static let glassFallbackHex = "15171C"
 
     /// Luminance relative maximale d'un fond libre (les fonds proposés sont sous 0,03) : le texte blanc garde un
     /// contraste ≥ 9:1, le texte atténué et l'accent restent lisibles (à 0,18, le seuil WCAG du blanc, ils ne

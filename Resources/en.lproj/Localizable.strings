@@ -303,6 +303,8 @@
 "Noir" = "Black";
 "Graphite" = "Graphite";
 "Bleu nuit" = "Midnight Blue";
+"Verre" = "Glass";
+"Le flou de ce qu'il y a derrière (Liquid Glass sur macOS 26 et plus). Sur une vraie encoche, la zone de la caméra reste noire." = "The blur of what is behind it (Liquid Glass on macOS 26 and later). On a real notch, the camera area stays black.";
 "Personnalisé" = "Custom";
 "Fond libre" = "Custom Background";
 "Une couleur claire est assombrie : le texte du panneau reste lisible." = "A light color is darkened so the panel's text stays readable.";

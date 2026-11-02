@@ -541,9 +541,14 @@ private struct AppearanceSettings: View {
                     Text("Noir").tag(PanelBackground.black)
                     Text("Graphite").tag(PanelBackground.graphite)
                     Text("Bleu nuit").tag(PanelBackground.midnight)
+                    Text("Verre").tag(PanelBackground.glass)
                     Text("Personnalisé").tag(PanelBackground.custom)
                 }
                 .pickerStyle(.segmented)
+                if prefs.panelBackground == .glass {
+                    SettingsNote(L("Le flou de ce qu'il y a derrière (Liquid Glass sur macOS 26 et plus). Sur une vraie "
+                        + "encoche, la zone de la caméra reste noire."))
+                }
                 if prefs.panelBackground == .custom {
                     LabeledContent {
                         ColorPicker(selection: customBackground, supportsOpacity: false) {
@@ -567,6 +572,7 @@ private struct AppearanceSettings: View {
                 } label: {
                     Text("Opacité du fond")
                 }
+                .disabled(prefs.panelBackground == .glass)
                 Toggle("Ombre du panneau", isOn: $prefs.panelShadow)
             }
             Section("Animations") {
@@ -671,8 +677,14 @@ struct NotchAppearancePreview: View {
         .frame(width: prefs.expandedWidth(compact: false) * Self.scale)
         .padding(.horizontal, 6)
         .background(ZStack(alignment: .top) {
-            Rectangle().fill(color.opacity(prefs.backgroundOpacity))
-            color.frame(height: Self.band)
+            if prefs.panelBackground == .glass {
+                // Le flou du dégradé derrière, et la teinte sombre du vrai verre.
+                Rectangle().fill(.ultraThinMaterial)
+                Color.black.opacity(PanelGlass.scrim)
+            } else {
+                Rectangle().fill(color.opacity(prefs.backgroundOpacity))
+                color.frame(height: Self.band)
+            }
         })
         .clipShape(NotchShape(topRadius: 6, bottomRadius: 12))
         .shadow(color: .black.opacity(prefs.panelShadow ? 0.45 : 0), radius: 7, y: 3)
