@@ -20,6 +20,8 @@ final class NotchViewModel: ObservableObject {
     @Published var hasNotch = false
     /// Écart entre le haut de l'écran et la notch : 0, sauf la pilule qui flotte (`NotchScreenPicker.pillGap`).
     @Published var notchGap: CGFloat = 0
+    /// Style perle : la souris est près de la perle, qui est devenue l'encoche caméléon (`Pearl.Presence`).
+    @Published var pearlAwake = false
     /// Onglet affiché (identifiant de module).
     @Published var selectedTab = ModuleRegistry.claudeId
     /// Une app est en plein écran sur l'écran de la notch.
@@ -114,7 +116,12 @@ final class NotchController {
     private var pendingTab: (target: String?, work: DispatchWorkItem)?
     private var suppressUntilExit = false
     private var menuTracking = false
-    private var isShown = false { didSet { model.isShown = isShown } }
+    private var isShown = false {
+        didSet {
+            model.isShown = isShown
+            if !isShown { resetPearl() }
+        }
+    }
     private var cancellables = Set<AnyCancellable>()
     private var observers: [(NotificationCenter, NSObjectProtocol)] = []
     /// Compteur du presse-papiers de glisser relevé au dernier clic dans une autre app (Étagère).
@@ -129,6 +136,11 @@ final class NotchController {
     var now: () -> Date = Date.init
     /// Position de la souris relue après un délai d'intention ; remplaçable dans les tests.
     var mouseLocation: () -> CGPoint = { NSEvent.mouseLocation }
+    /// Écrans connus ; remplaçable dans les tests et l'aperçu (un écran sans encoche sur un Mac qui en a une).
+    var screens: () -> [ScreenCandidate] = { NSScreen.screens.map(ScreenCandidate.init) }
+    /// Style perle : éveillée (encoche caméléon) ou endormie (perle), avec l'échéance en attente.
+    private var pearl = Pearl.Presence()
+    private var pearlWork: DispatchWorkItem?
     /// Onglet d'avant qu'un glisser de fichiers montre l'Étagère ; nil dès qu'un dépôt a lieu.
     private var tabBeforeDrag: String?
     /// Glisser de décollage en cours (poignée de l'angle) : suit la souris jusqu'au relâchement.
@@ -248,6 +260,7 @@ final class NotchController {
             "shown": isShown,
             "expanded": model.isExpanded,
             "hasNotch": model.hasNotch,
+            "pearlAwake": model.pearlAwake,
             "notchRect": [notchRect.minX, notchRect.minY, notchRect.width, notchRect.height],
             "panelFrame": [panel.frame.minX, panel.frame.minY, panel.frame.width, panel.frame.height],
             "contentSize": [model.contentSize.width, model.contentSize.height],
@@ -318,16 +331,15 @@ final class NotchController {
 
     /// Écran choisi dans les réglages (intégré, principal, sous la souris, ou par nom), relu à chaque appel.
     private func updateGeometry() {
-        let screens = NSScreen.screens
-        let candidates = screens.map(ScreenCandidate.init)
+        let candidates = screens()
         guard let index = NotchScreenPicker.pick(prefs.screenChoice, among: candidates,
                                                  mouse: NSEvent.mouseLocation) else { return }
-        let screen = screens[index]
-        let frame = screen.frame
+        let frame = candidates[index].frame
         screenFrame = frame
 
         let previousDisplay = displayID
-        displayID = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
+        displayID = NSScreen.screens.first { $0.frame == frame }
+            .flatMap { $0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber }?.uint32Value
         // Écran sans encoche (externe, capot fermé) : encoche virtuelle centrée, hauteur de la barre des menus.
         let notch = NotchScreenPicker.notchRect(on: candidates[index], menuBarThickness: NSStatusBar.system.thickness,
                                                 style: prefs.virtualNotchStyle)
@@ -412,13 +424,55 @@ final class NotchController {
 
     /// Notch repliée : ce qui est sous `point`, la forme réelle de chaque intercalaire (déployé compris) ou le centre de la
     /// notch. Les zones ne se recouvrent pas : un intercalaire n'ouvre pas le panneau, et le centre n'en déploie aucun.
-    private func collapsedHit(_ point: CGPoint) -> EarTabsLayout.Hit {
+    func collapsedHit(_ point: CGPoint) -> EarTabsLayout.Hit {
         // Hors de la fenêtre : rien à calculer (cette fonction tourne à chaque mouvement de souris).
         guard abs(point.x - notchRect.midX) <= Self.panelSize.width / 2,
               point.y >= screenFrame.maxY - Self.panelSize.height else { return .none }
+        // Perle endormie : seule sa zone étroite compte (réveil, ou clic en mode « au clic »), le reste de la barre
+        // des menus n'est pas à nous.
+        if usesPearl, !model.pearlAwake { return Pearl.contains(pearlZone, point) ? .notch : .none }
         // Au-dessus de la pilule (bord haut de l'écran) : comme sur son haut.
         let local = CGPoint(x: point.x - notchRect.midX, y: max(0, notchRect.maxY - point.y))
         return earLayout().hit(local, hovered: model.hoveredTab, cardHeight: model.tabCardHeight)
+    }
+
+    // MARK: - Perle
+
+    private var usesPearl: Bool { !model.hasNotch && prefs.virtualNotchStyle == .pearl }
+
+    /// Perle endormie (sa place, même vide) en coordonnées écran.
+    private var pearlRect: CGRect {
+        Pearl.rect(in: notchRect, size: Pearl.size(for: earLayout().left.first?.tab))
+    }
+
+    private var pearlZone: CGRect { Pearl.zone(around: pearlRect) }
+
+    /// La souris est-elle assez près pour garder la perle éveillée (ou la réveiller) ? Éveillée, l'encoche et ses
+    /// intercalaires comptent aussi : la zone ne rétrécit qu'une fois la perle rendormie, d'où pas de clignotement.
+    private func isNearPearl(_ point: CGPoint, hit: EarTabsLayout.Hit) -> Bool {
+        hit != .none || Pearl.contains(pearlZone, point)
+    }
+
+    /// Événementiel : appelé à chaque mouvement de souris. L'échéance d'un changement en attente rappelle `mouseMoved`.
+    private func updatePearl(near: Bool) {
+        let deadline = pearl.update(near: near, now: now())
+        if model.pearlAwake != pearl.isAwake { model.pearlAwake = pearl.isAwake }
+        pearlWork?.cancel()
+        pearlWork = nil
+        guard let deadline else { return }
+        let work = DispatchWorkItem { [weak self] in
+            self?.pearlWork = nil
+            self?.mouseMoved()
+        }
+        pearlWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(0, deadline.timeIntervalSince(now())) + 0.01, execute: work)
+    }
+
+    private func resetPearl() {
+        pearlWork?.cancel()
+        pearlWork = nil
+        pearl.reset()
+        if model.pearlAwake { model.pearlAwake = false }
     }
 
     func mouseMoved() {
@@ -452,9 +506,12 @@ final class NotchController {
             }
             return
         }
+        if usesPearl { updatePearl(near: isNearPearl(point, hit: hit)) }
         updateTabHover(hit)
-        // Notch détachée : la bulle est le panneau, le survol de la notch n'en ouvre pas un second.
-        if hit == .notch, !suppressUntilExit, prefs.openTrigger == .hover, !model.bubble.isDetached {
+        // Notch détachée : la bulle est le panneau, le survol de la notch n'en ouvre pas un second. Perle : elle
+        // s'éveille d'abord (caméléon), puis le panneau s'ouvre.
+        if hit == .notch, !suppressUntilExit, prefs.openTrigger == .hover, !model.bubble.isDetached,
+           !usesPearl || model.pearlAwake {
             guard openWork == nil else { return }
             let work = DispatchWorkItem { [weak self] in
                 guard let self else { return }
@@ -598,6 +655,10 @@ final class NotchController {
             model.tabCardHeight = 0
         }
         panel.ignoresMouseEvents = false
+        if usesPearl {
+            pearl.wake()
+            model.pearlAwake = true
+        }
         model.selectedTab = tab ?? registry.initialTab(claudeNeedsAttention: store.indicator == .attention)
         model.isExpanded = true
         if prefs.hapticFeedback {
@@ -629,6 +690,11 @@ final class NotchController {
         tabBeforeDrag = nil
         registry.setPanelOpen(false)
         shownOnDemand = false
+        // Perle : retour au caméléon, qui se rendort si la souris est loin.
+        if usesPearl, isShown {
+            let point = mouseLocation()
+            updatePearl(near: isNearPearl(point, hit: collapsedHit(point)))
+        }
         // Dépliée, la notch restait affichée même sans activité : on relit la règle.
         if isShown { updateVisibility() }
     }
@@ -662,9 +728,7 @@ final class NotchController {
         // shortcut: notch détachée, pas d'Étagère par glisser vers la notch (ni vers la bulle) ; à ajouter si demandé.
         guard let baseline = fileDragBaseline, !model.isExpanded, !model.bubble.isDetached, !hiddenForFullScreen,
               !prefs.isHidden(at: now()),
-              Self.dropZone(notch: notchRect, screen: screenFrame,
-                            contentWidth: max(model.contentSize.width, 2 * earLayout().reach))
-                .contains(NSEvent.mouseLocation) else { return false }
+              dragZone.contains(NSEvent.mouseLocation) else { return false }
         let pasteboard = NSPasteboard(name: .drag)
         guard pasteboard.changeCount != baseline else { return false }
         fileDragBaseline = nil
@@ -674,6 +738,15 @@ final class NotchController {
         expand(tab: ShelfModule.moduleId)
         shelf?.isDropTargeted = true
         return true
+    }
+
+    /// Zone où un glisser de fichiers ouvre l'Étagère : la perle endormie seule, sinon la notch et ses oreilles.
+    private var dragZone: CGRect {
+        if usesPearl, !model.pearlAwake {
+            return Self.dropZone(notch: pearlRect, screen: screenFrame, contentWidth: pearlRect.width)
+        }
+        return Self.dropZone(notch: notchRect, screen: screenFrame,
+                             contentWidth: max(model.contentSize.width, 2 * earLayout().reach))
     }
 
     /// Notch repliée : la forme et la place des oreilles, élargies (le glisser arrive vite et de biais).
@@ -920,6 +993,7 @@ final class NotchController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self, !self.model.isExpanded else { return }
+                self.resetPearl()
                 self.updateGeometry()
             }
             .store(in: &cancellables)

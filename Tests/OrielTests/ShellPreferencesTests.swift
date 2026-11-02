@@ -228,7 +228,7 @@ final class ShellPreferencesTests: XCTestCase {
         XCTAssertEqual(prefs.panelBackground, .black)
         XCTAssertEqual(prefs.panelColor.hexString, "000000")
         XCTAssertFalse(prefs.tintCollapsed)
-        XCTAssertEqual(prefs.virtualNotchStyle, .chameleon)
+        XCTAssertEqual(prefs.virtualNotchStyle, .pearl)
         XCTAssertTrue(prefs.panelShadow)
         XCTAssertEqual(prefs.animationSpeed, .normal)
         XCTAssertEqual(prefs.openTrigger, .hover)

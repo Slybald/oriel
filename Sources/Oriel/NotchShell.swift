@@ -50,9 +50,82 @@ struct ScreenCandidate: Equatable {
 }
 
 /// Notch repliée d'un écran sans encoche (`appearance.virtualNotch`) : encoche dessinée contre le haut de l'écran,
-/// pilule qui flotte juste en dessous, ou caméléon (invisible au repos, en verre dépoli pendant une activité).
+/// pilule qui flotte juste en dessous, caméléon (invisible au repos, en verre dépoli pendant une activité) ou perle
+/// (une perle minuscule pendant une activité, qui devient le caméléon quand la souris s'approche).
 enum VirtualNotchStyle: String {
-    case notch, pill, chameleon
+    case notch, pill, chameleon, pearl
+}
+
+/// Style « perle » : géométrie de la perle et de sa zone de proximité, et l'état éveillé / endormi, sans vue ni fenêtre.
+/// Endormie, la perle montre l'icône et le chiffre de l'activité en cours (rien sans activité) ; éveillée, c'est
+/// l'encoche caméléon (`VirtualNotchStyle.chameleon`) qui prend sa place.
+enum Pearl {
+    static let height: CGFloat = 20
+    static let minWidth: CGFloat = 44
+    /// Une information longue (« 4:59 ») l'élargit, pas plus.
+    static let maxWidth: CGFloat = 72
+    /// Zone qui réveille la perle : la perle élargie de ces marges, jusqu'au haut de l'écran. Étroite, pour qu'un
+    /// clic dans un menu voisin ne la touche pas.
+    static let reachX: CGFloat = 12
+    static let reachY: CGFloat = 4
+    /// Intention : la souris doit rester dans la zone `wakeDelay` pour réveiller la perle (traverser la barre des
+    /// menus ne la réveille pas), et en rester dehors `sleepDelay` pour l'endormir (un écart ne la rendort pas).
+    static let wakeDelay: TimeInterval = 0.1
+    static let sleepDelay: TimeInterval = 0.3
+
+    /// Taille de la perle pour l'activité qu'elle montre (nil : rien à montrer, la place vide).
+    static func size(for tab: EarTab?) -> CGSize {
+        CGSize(width: min(max(tab?.restWidth ?? 0, minWidth), maxWidth), height: height)
+    }
+
+    /// Perle collée au haut de l'encoche virtuelle, centrée.
+    static func rect(in notch: CGRect, size: CGSize) -> CGRect {
+        CGRect(x: notch.midX - size.width / 2, y: notch.maxY - size.height, width: size.width, height: size.height)
+    }
+
+    /// Zone de proximité de la perle (repère de l'écran, bords inclusifs : la souris peut être pile en haut).
+    static func zone(around pearl: CGRect) -> CGRect {
+        CGRect(x: pearl.minX - reachX, y: pearl.minY - reachY, width: pearl.width + 2 * reachX,
+               height: pearl.height + reachY + 1)
+    }
+
+    static func contains(_ zone: CGRect, _ point: CGPoint) -> Bool {
+        point.x >= zone.minX && point.x <= zone.maxX && point.y >= zone.minY && point.y <= zone.maxY
+    }
+
+    /// Éveillée ou endormie. L'état ne bascule qu'après le délai d'intention, compté depuis que la souris est
+    /// continûment du mauvais côté : un va-et-vient à la limite de la zone ne fait donc rien clignoter.
+    struct Presence {
+        private(set) var isAwake = false
+        private var pendingSince: Date?
+
+        /// `near` : la souris est dans la zone (endormie) ou sur l'encoche éveillée. Rend l'échéance à laquelle
+        /// rappeler `update` si un changement est en attente.
+        mutating func update(near: Bool, now: Date) -> Date? {
+            guard near != isAwake else {
+                pendingSince = nil
+                return nil
+            }
+            let since = pendingSince ?? now
+            pendingSince = since
+            let deadline = since.addingTimeInterval(near ? Pearl.wakeDelay : Pearl.sleepDelay)
+            guard now >= deadline else { return deadline }
+            isAwake = near
+            pendingSince = nil
+            return nil
+        }
+
+        /// Éveillée d'emblée (le panneau s'ouvre sans attendre le délai).
+        mutating func wake() {
+            isAwake = true
+            pendingSince = nil
+        }
+
+        mutating func reset() {
+            isAwake = false
+            pendingSince = nil
+        }
+    }
 }
 
 enum NotchScreenPicker {
