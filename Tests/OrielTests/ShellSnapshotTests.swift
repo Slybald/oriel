@@ -44,7 +44,7 @@ final class ShellSnapshotTests: XCTestCase {
     /// caméléon (son verre, flou du fond d'écran, n'apparaît pas hors écran).
     func testRenderVirtualNotch() throws {
         guard let outputDir else { throw XCTSkip("ORIEL_SNAPSHOT_DIR non défini") }
-        func virtual(expanded: Bool, ears: Bool = false, style: VirtualNotchStyle = .notch,
+        func virtual(expanded: Bool, ears: Bool = false, style: VirtualNotchStyle = .notch, awake: Bool = false,
                      configure: (Preferences) -> Void = { _ in }) -> NotchHarness {
             let notch = NotchHarness(self, store: ears ? .working(1) : SessionStore())
             notch.model.hasNotch = false
@@ -52,6 +52,7 @@ final class ShellSnapshotTests: XCTestCase {
             notch.model.notchGap = style == .pill ? NotchScreenPicker.pillGap : 0
             notch.prefs.virtualNotchStyle = style
             configure(notch.prefs)
+            notch.model.pearlAwake = awake
             notch.model.isExpanded = expanded
             return notch
         }
@@ -64,13 +65,18 @@ final class ShellSnapshotTests: XCTestCase {
         }.root, "shell-virtual-collapsed-tinted", outputDir, size: size)
         try render(virtual(expanded: true) { $0.panelBackground = .graphite }.root, "shell-virtual-expanded",
                    outputDir)
-        for style in [VirtualNotchStyle.pill, .chameleon] {
+        for style in [VirtualNotchStyle.pill, .chameleon, .pearl] {
             let name = "shell-virtual-\(style.rawValue)"
             try render(virtual(expanded: false, style: style).root, name + "-collapsed", outputDir, size: size)
             try render(virtual(expanded: false, ears: true, style: style).root, name + "-collapsed-ears", outputDir,
                        size: size)
             try render(virtual(expanded: true, style: style).root, name + "-expanded", outputDir)
         }
+        // Perle éveillée par la souris : l'encoche caméléon, sans activité puis avec.
+        try render(virtual(expanded: false, style: .pearl, awake: true).root, "shell-virtual-pearl-awake", outputDir,
+                   size: size)
+        try render(virtual(expanded: false, ears: true, style: .pearl, awake: true).root,
+                   "shell-virtual-pearl-awake-ears", outputDir, size: size)
     }
 
     func testRenderSettingsPanes() throws {

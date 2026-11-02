@@ -106,13 +106,22 @@ struct NotchRootView: View {
     private var fill: Color {
         expanded || (prefs.tintCollapsed && !model.hasNotch) ? prefs.panelColor : .black
     }
-    /// Sans encoche, le style choisi ; une vraie encoche reste une encoche.
-    private var style: VirtualNotchStyle { model.hasNotch ? .notch : prefs.virtualNotchStyle }
+    /// Sans encoche, le style choisi ; une vraie encoche reste une encoche. Perle éveillée : l'encoche caméléon.
+    private var style: VirtualNotchStyle {
+        if model.hasNotch { return .notch }
+        return prefs.virtualNotchStyle == .pearl && model.pearlAwake ? .chameleon : prefs.virtualNotchStyle
+    }
     private var isPill: Bool { style == .pill }
+    /// Perle endormie : une perle minuscule collée au haut de l'écran, avec l'activité en cours (rien sans activité).
+    private var isPearl: Bool { style == .pearl && !expanded }
+    /// Perle éveillée : le caméléon se montre même sans activité (la souris est là), puis le panneau s'ouvre.
+    private var isAwakePearl: Bool { !model.hasNotch && prefs.virtualNotchStyle == .pearl && model.pearlAwake }
+    private var pearlTab: EarTab? { Pearl.shown(in: layout.items.map(\.tab)) }
+    private var pearlSize: CGSize { Pearl.size(for: pearlTab) }
     /// Caméléon replié : verre dépoli à la place du fond.
     private var isGlass: Bool { style == .chameleon && !expanded }
     /// Repliée sans activité, invisible : sur une vraie encoche (la forme est exactement l'encoche) et en caméléon.
-    private var hiddenAtRest: Bool { model.hasNotch || style == .chameleon }
+    private var hiddenAtRest: Bool { model.hasNotch || style == .chameleon || style == .pearl }
     /// Replié sur une vraie encoche : aucun évasement, la forme est exactement l'encoche (sinon 6 pt de noir de plus de
     /// chaque côté, visibles du côté sans intercalaire, et une forme mesurée 12 pt plus large que l'encoche). Le caméléon
     /// replié non plus (le verre ne mime pas une encoche), la pilule jamais (elle ne touche pas le haut de l'écran).
@@ -121,7 +130,7 @@ struct NotchRootView: View {
         return expanded ? 12 : NotchShape.collapsedTopRadius
     }
     private var bottomRadius: CGFloat {
-        expanded ? (compact ? 18 : 24) : (isPill ? pillRadius : NotchShape.collapsedBottomRadius)
+        expanded ? (compact ? 18 : 24) : (isPill ? pillRadius : isPearl ? Pearl.height / 2 : NotchShape.collapsedBottomRadius)
     }
     /// Pilule : coins du haut comme ceux du bas (capsule repliée, panneau arrondi déplié).
     private var capRadius: CGFloat { isPill ? bottomRadius : 0 }
@@ -129,8 +138,11 @@ struct NotchRootView: View {
     private var shape: NotchShape { NotchShape(topRadius: topRadius, bottomRadius: bottomRadius, capRadius: capRadius) }
     /// Repliée : la notch seule ; les intercalaires se posent contre elle (`EarTabsView`).
     private var bodyWidth: CGFloat {
-        expanded ? prefs.expandedWidth(compact: compact && !model.isCommandBarOpen) : model.notchSize.width
+        expanded ? prefs.expandedWidth(compact: compact && !model.isCommandBarOpen)
+            : isPearl ? pearlSize.width : model.notchSize.width
     }
+    /// Hauteur de la bande de la notch repliée : celle de la perle, ou de l'encoche.
+    private var bandHeight: CGFloat { isPearl ? Pearl.height : model.notchSize.height }
 
     /// Poignée de l'angle bas droit : panneau déplié (pas en plein écran compact ni en mode édition).
     private var showsHandle: Bool {
@@ -160,6 +172,9 @@ struct NotchRootView: View {
                 CommandBarView(registry: registry, prefs: prefs, notchHeight: model.notchSize.height,
                                close: actions.closeCommandBar)
                     .transition(.opacity)
+            } else if isPearl, let tab = pearlTab {
+                PearlContent(tab: tab, claudeEars: store.ears, title: registry.earTitle(tab.id))
+                    .transition(.opacity)
             } else if expanded {
                 ExpandedPanel(registry: registry, prefs: prefs, selection: $model.selectedTab,
                               editingTabs: $model.isEditingTabs, compact: compact, notchSize: model.notchSize,
@@ -172,7 +187,7 @@ struct NotchRootView: View {
             }
         }
         .frame(width: bodyWidth, alignment: .top)
-        .frame(minHeight: model.notchSize.height, alignment: .top)
+        .frame(minHeight: bandHeight, alignment: .top)
         .padding(.horizontal, topRadius)
         .background(background)
         .clipShape(shape)
@@ -186,21 +201,24 @@ struct NotchRootView: View {
         }
         .shadow(color: .black.opacity(expanded && prefs.panelShadow ? 0.45 : 0), radius: 14, y: 6)
         // Replié et sans activité sur une vraie encoche : exactement l'encoche, donc invisible. Sans encoche,
-        // la forme reste dessinée (encoche virtuelle, pilule), sauf en caméléon.
-        .opacity(expanded || showsEars || !hiddenAtRest ? 1 : 0)
+        // la forme reste dessinée (encoche virtuelle, pilule), sauf en caméléon et en perle (éveillée, elle se montre).
+        .opacity(expanded || showsEars || !hiddenAtRest || isAwakePearl ? 1 : 0)
         .background(GeometryReader { proxy in
             Color.clear.preference(key: NotchSizeKey.self, value: proxy.size)
         })
         .onPreferenceChange(NotchSizeKey.self) { size in model.contentSize = size }
         .animation(motion, value: expanded)
         .animation(motion, value: showsEars)
+        .animation(motion, value: isPearl)
+        .animation(motion, value: pearlSize.width)
+        .animation(motion, value: isAwakePearl)
         .animation(motion, value: compact)
         .animation(motion, value: model.selectedTab)
         .animation(motion, value: model.isEditingTabs)
         .animation(motion, value: model.isCommandBarOpen)
         // Hors de la forme de la notch (qui rogne) : les intercalaires dépassent de chaque côté.
         .overlay(alignment: .top) {
-            if !expanded, showsEars {
+            if !expanded, showsEars, !isPearl {
                 EarTabsView(layout: layout, hovered: model.hoveredTab, claudeEars: store.ears, fill: fill,
                             glass: style == .chameleon, pillRadius: isPill ? pillRadius : 0, animation: motion,
                             registry: registry, openTab: actions.openTab,
@@ -216,15 +234,39 @@ struct NotchRootView: View {
         ZStack(alignment: .top) {
             if isGlass {
                 NotchGlass()
+                    .transition(.opacity)
             } else {
                 shape.fill(fill.opacity(expanded ? prefs.backgroundOpacity : 1))
-                fill.frame(height: model.notchSize.height)
+                fill.frame(height: bandHeight)
+                if isPearl {
+                    // Un reflet sur le haut, pour que ce soit une perle et pas un trou.
+                    LinearGradient(colors: [.white.opacity(0.18), .clear], startPoint: .top, endPoint: .center)
+                }
             }
         }
     }
 }
 
 // MARK: - Replié
+
+/// Ce que montre la perle : l'icône et le chiffre de l'activité en cours, rien d'autre.
+private struct PearlContent: View {
+    let tab: EarTab
+    let claudeEars: SessionStore.EarsContent?
+    let title: String
+
+    private var accent: Color { tab.accentHex.flatMap { Color(hex: $0) } ?? Palette.accent }
+
+    var body: some View {
+        HStack(spacing: EarTabs.iconGap) {
+            EarTabIcon(tab: tab, accent: accent)
+            EarTabInfo(tab: tab, claudeEars: claudeEars, accent: accent)
+        }
+        .frame(height: Pearl.height)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(tab.spokenLabel(title: title))
+    }
+}
 
 /// Barres d'égaliseur d'un intercalaire, animées par Core Animation comme `AnimatedGlyphView` (rien par image côté app).
 struct EqualizerBars: NSViewRepresentable {

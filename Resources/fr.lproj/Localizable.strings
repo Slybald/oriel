@@ -316,9 +316,10 @@
 "Ouverture, fermeture et changement d'onglet." = "Ouverture, fermeture et changement d'onglet.";
 "Écran sans encoche" = "Écran sans encoche";
 "Encoche" = "Encoche";
+"Perle" = "Perle";
 "Pilule" = "Pilule";
 "Caméléon" = "Caméléon";
-"Encoche : dessinée en haut de l'écran. Pilule : elle flotte juste sous le bord. Caméléon : invisible au repos, en verre dépoli pendant une activité ; la souris en haut au centre l'ouvre." = "Encoche : dessinée en haut de l'écran. Pilule : elle flotte juste sous le bord. Caméléon : invisible au repos, en verre dépoli pendant une activité ; la souris en haut au centre l'ouvre.";
+"Perle : une perle minuscule pendant une activité, rien sinon ; la souris qui s'approche la transforme en encoche en verre dépoli, puis le panneau s'ouvre. Encoche : dessinée en haut de l'écran. Pilule : elle flotte juste sous le bord. Caméléon : invisible au repos, en verre dépoli pendant une activité." = "Perle : une perle minuscule pendant une activité, rien sinon ; la souris qui s'approche la transforme en encoche en verre dépoli, puis le panneau s'ouvre. Encoche : dessinée en haut de l'écran. Pilule : elle flotte juste sous le bord. Caméléon : invisible au repos, en verre dépoli pendant une activité.";
 "Teinter aussi la notch repliée" = "Teinter aussi la notch repliée";
 "Écrans sans encoche seulement : sur une vraie encoche, elle reste noire." = "Écrans sans encoche seulement : sur une vraie encoche, elle reste noire.";
 "Confidentialité" = "Confidentialité";

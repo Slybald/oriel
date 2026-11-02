@@ -316,8 +316,13 @@ private struct EarTabItemView: View {
         .frame(width: width, alignment: .leading)
     }
 
-    private var accessibilityLabel: String {
-        switch item.tab.kind {
+    private var accessibilityLabel: String { item.tab.spokenLabel(title: title) }
+}
+
+extension EarTab {
+    /// Ce que VoiceOver lit : l'état de l'activité et son information courte.
+    func spokenLabel(title: String) -> String {
+        switch kind {
         case .claude(let indicator):
             let state: String
             switch indicator {
@@ -325,11 +330,11 @@ private struct EarTabItemView: View {
             case .working: state = L("Claude travaille")
             case .done, .none: state = L("Claude a terminé")
             }
-            return item.tab.text.isEmpty ? state : String(format: L("%@ : %@"), state, item.tab.text)
+            return text.isEmpty ? state : String(format: L("%@ : %@"), state, text)
         case .module:
-            return item.tab.text.isEmpty ? title : String(format: L("%@ : %@"), title, item.tab.text)
+            return text.isEmpty ? title : String(format: L("%@ : %@"), title, text)
         case .more(let hidden):
-            return Self.moreTitle(hidden.count)
+            return EarTabItemView.moreTitle(hidden.count)
         }
     }
 }
