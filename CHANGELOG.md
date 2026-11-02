@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-11-02
+
+### Added
+
+- **Pearl for screens without a notch** (the new default): nothing at rest, a tiny pearl with the activity's icon and
+  number during an activity, and the pointer coming close turns it into a frosted-glass notch. The menu bar stays
+  usable around it.
+- **Glass background** in Settings › Appearance › Background, with or without a notch: Liquid Glass on macOS 26 and
+  later, a blur on older versions.
+
 ## [3.1.0] - 2026-10-31
 
 ### Changed
