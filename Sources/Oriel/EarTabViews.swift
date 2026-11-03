@@ -209,7 +209,7 @@ private struct EarTabItemView: View {
             shape.fill(Color.white.opacity(tint))
         })
         // Le vrai verre prend la forme, prolongement sous le voisin compris, et fusionne avec les autres (`LiquidGlassGroup`).
-        .liquidGlass(glass && liquid && LiquidGlass.isAvailable, in: shape)
+        .liquidGlass(enabled: glass && liquid && LiquidGlass.isAvailable, active: true, in: shape)
         // Filet clair sur le bord extérieur : sépare la tranche de celle qu'elle recouvre. Déployé, la carte n'en a pas.
         .overlay(EarTabEdge(side: item.side, radius: restRadius, flareRadius: flare,
                             capRadius: pillRadius > 0 ? restRadius : 0)

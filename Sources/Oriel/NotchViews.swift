@@ -179,7 +179,7 @@ struct NotchRootView: View {
     }
 
     var body: some View {
-        LiquidGlassGroup {
+        LiquidGlassGroup(enabled: LiquidGlass.isAvailable && isGlassPanel) {
             VStack(spacing: 0) {
                 notch
                     // Les couleurs d'accent sont lues au rendu : la vue est reconstruite quand l'accent change.
@@ -222,7 +222,7 @@ struct NotchRootView: View {
         .padding(.horizontal, topRadius)
         .background(background)
         .clipShape(shape)
-        .liquidGlass(usesLiquidGlass, in: shape)
+        .liquidGlass(enabled: LiquidGlass.isAvailable && isGlassPanel, active: usesLiquidGlass, in: shape)
         .overlay(alignment: .bottomTrailing) {
             if showsHandle {
                 DetachHandle(begin: actions.beginDetach, detach: { actions.detach?() }, cornerRadius: bottomRadius,

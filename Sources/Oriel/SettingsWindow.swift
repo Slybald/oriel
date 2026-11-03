@@ -687,7 +687,7 @@ struct NotchAppearancePreview: View {
             }
         })
         .clipShape(NotchShape(topRadius: 6, bottomRadius: 12))
-        .liquidGlass(prefs.panelBackground == .glass, in: NotchShape(topRadius: 6, bottomRadius: 12))
+        .liquidGlass(enabled: prefs.panelBackground == .glass, active: true, in: NotchShape(topRadius: 6, bottomRadius: 12))
         .shadow(color: .black.opacity(prefs.panelShadow ? 0.45 : 0), radius: 7, y: 3)
     }
 
