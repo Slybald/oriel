@@ -19,7 +19,13 @@ final class PanelGlassTests: XCTestCase {
         XCTAssertEqual(prefs.panelColor.hexString, PanelBackground.graphite.hex)
     }
 
-    func testWhiteTextStaysReadableOnTheBrightestBackdrop() {
+    func testRealGlassTintIsInsideTheMaterialAndLighterThanTheBlurFallbackVeil() {
+        XCTAssertEqual(PanelGlass.fallbackScrim, 0.55, "repli macOS 13 à 25 inchangé")
+        XCTAssertGreaterThan(LiquidGlass.tintOpacity, 0)
+        XCTAssertLessThan(LiquidGlass.tintOpacity, PanelGlass.fallbackScrim, "teinte dans le matériau, plus légère que le voile du repli")
+    }
+
+    func testWhiteTextStaysReadableOnTheBrightestBackdropWithTheBlurFallback() {
         XCTAssertGreaterThanOrEqual(PanelGlass.worstCaseContrast(), 4.5, "WCAG AA, fond d'écran blanc pur")
         XCTAssertLessThan(PanelGlass.worstCaseContrast(scrim: 0), 1.1, "sans teinte, le blanc sur blanc est illisible")
         XCTAssertGreaterThan(PanelGlass.worstCaseContrast(scrim: 0.8), PanelGlass.worstCaseContrast(scrim: 0.5))
