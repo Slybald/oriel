@@ -15,7 +15,9 @@ jobs:
 
   release:
     needs: ci
-    runs-on: macos-15
+    # macos-26 : le SDK de macOS 26 contient le Liquid Glass, absent du SDK de macos-15 (`#if compiler(>=6.2)`).
+    # La cible de déploiement reste macOS 13 (Package.swift) : le DMG tourne toujours sur macOS 13 à 25, avec le repli flou.
+    runs-on: macos-26
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -70,6 +72,23 @@ jobs:
           RELEASE_CHANNEL=1 VERSION="$VERSION" scripts/build.sh
           lipo -archs build/Oriel.app/Contents/MacOS/Oriel
           test "$(/usr/libexec/PlistBuddy -c 'Print :OrielUpdateChannel' build/Oriel.app/Contents/Info.plist)" = release
+
+      # Garde-fou : avec un SDK trop ancien, `#if compiler(>=6.2)` retire le Liquid Glass sans aucune erreur (la 3.2.0
+      # est partie ainsi : flou de repli seulement). Le symbole importé `glassEffect` doit être dans chaque
+      # architecture (`nm -u` : `strings` ne lit pas la table des symboles), et la cible doit rester macOS 13.
+      - name: Check Liquid Glass is built in
+        run: |
+          BIN=build/Oriel.app/Contents/MacOS/Oriel
+          for arch in arm64 x86_64; do
+            if ! nm -arch "$arch" -u "$BIN" | grep -q 'glassEffect'; then
+              echo "::error::Liquid Glass absent du binaire $arch : le SDK de ce runner est trop ancien (il faut Xcode 26, Swift 6.2)."
+              exit 1
+            fi
+            if ! vtool -arch "$arch" -show-build "$BIN" | grep -q 'minos 13\.0'; then
+              echo "::error::Cible de déploiement $arch différente de macOS 13.0."
+              exit 1
+            fi
+          done
 
       # Une exigence désignée « certificate leaf = H"…" » ne dépend que du certificat ; « cdhash » voudrait dire
       # que la signature est ad hoc (autorisations perdues à chaque mise à jour).

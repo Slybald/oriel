@@ -677,16 +677,19 @@ struct NotchAppearancePreview: View {
         .frame(width: prefs.expandedWidth(compact: false) * Self.scale)
         .padding(.horizontal, 6)
         .background(ZStack(alignment: .top) {
-            if prefs.panelBackground == .glass {
-                // Le flou du dégradé derrière, et la teinte sombre du vrai verre.
-                Rectangle().fill(.ultraThinMaterial)
-                Color.black.opacity(PanelGlass.scrim)
-            } else {
+            if prefs.panelBackground != .glass {
                 Rectangle().fill(color.opacity(prefs.backgroundOpacity))
                 color.frame(height: Self.band)
+            } else if !LiquidGlass.isAvailable {
+                // Repli : le flou du dégradé derrière, et la teinte sombre.
+                Rectangle().fill(.ultraThinMaterial)
+                Color.black.opacity(PanelGlass.scrim(liquid: false))
             }
         })
         .clipShape(NotchShape(topRadius: 6, bottomRadius: 12))
+        .background {
+            if prefs.panelBackground == .glass { LiquidGlassFill(shape: NotchShape(topRadius: 6, bottomRadius: 12)) }
+        }
         .shadow(color: .black.opacity(prefs.panelShadow ? 0.45 : 0), radius: 7, y: 3)
     }
 
