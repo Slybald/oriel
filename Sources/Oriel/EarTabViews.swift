@@ -198,8 +198,7 @@ private struct EarTabItemView: View {
         .clipShape(shape)
         .background(ZStack {
             if glass, liquid, LiquidGlass.isAvailable {
-                // Le vrai verre prend la forme, prolongement sous le voisin compris, et fusionne avec lui (`LiquidGlassGroup`).
-                LiquidGlassFill(shape: shape)
+                EmptyView()  // le vrai verre est appliqué à la vue (`liquidGlass`, plus bas)
             } else if glass {
                 // Le verre déborde du cadre comme la forme : le prolongement sous le voisin bouche aussi le jour.
                 Group { if liquid { PanelGlass() } else { NotchGlass() } }
@@ -209,6 +208,8 @@ private struct EarTabItemView: View {
             }
             shape.fill(Color.white.opacity(tint))
         })
+        // Le vrai verre prend la forme, prolongement sous le voisin compris, et fusionne avec les autres (`LiquidGlassGroup`).
+        .liquidGlass(glass && liquid && LiquidGlass.isAvailable, in: shape)
         // Filet clair sur le bord extérieur : sépare la tranche de celle qu'elle recouvre. Déployé, la carte n'en a pas.
         .overlay(EarTabEdge(side: item.side, radius: restRadius, flareRadius: flare,
                             capRadius: pillRadius > 0 ? restRadius : 0)

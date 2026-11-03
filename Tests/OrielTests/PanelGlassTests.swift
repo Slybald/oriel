@@ -23,6 +23,7 @@ final class PanelGlassTests: XCTestCase {
         XCTAssertEqual(PanelGlass.scrim(liquid: true), 0, "le Liquid Glass assure seul la lisibilité, sans voile noir")
         XCTAssertEqual(PanelGlass.scrim(liquid: false), PanelGlass.fallbackScrim)
         XCTAssertEqual(PanelGlass.fallbackScrim, 0.55, "repli macOS 13 à 25 inchangé")
+        XCTAssertLessThan(LiquidGlass.tintOpacity, PanelGlass.fallbackScrim, "teinte dans le matériau, plus légère que le voile du repli")
     }
 
     func testWhiteTextStaysReadableOnTheBrightestBackdropWithTheBlurFallback() {
