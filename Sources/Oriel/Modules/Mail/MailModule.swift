@@ -78,6 +78,11 @@ final class MailModule: NotchModule {
     private let scheduler: ModuleScheduler
     private let clock: () -> Date
     private let openURL: (URL) -> Void
+    private let popups: NotificationPopups
+    /// Non lus à la dernière lecture ; nil tant qu'aucune n'a eu lieu : les mails déjà là au lancement ne sont pas nouveaux.
+    private var lastUnread: Int?
+    /// Mails arrivés vus par le compteur, dont l'expéditeur et l'objet sont à lire (une seule lecture de liste de plus).
+    private var announceDelta = 0
 
     private var isStarted = false
     /// Vues de l'onglet à l'écran : la liste n'est lue que si le panneau est ouvert.
@@ -95,7 +100,9 @@ final class MailModule: NotchModule {
                  && !NSRunningApplication.runningApplications(withBundleIdentifier: MailScript.bundleIdentifier).isEmpty
          },
          workspace: NotificationCenter = NSWorkspace.shared.notificationCenter, scheduler: ModuleScheduler = .system,
-         clock: @escaping () -> Date = Date.init, openURL: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) }) {
+         clock: @escaping () -> Date = Date.init, openURL: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) },
+         popups: NotificationPopups = .shared) {
+        self.popups = popups
         self.defaults = defaults
         self.runner = runner
         self.probe = probe
@@ -127,7 +134,7 @@ final class MailModule: NotchModule {
 
     // MARK: Contrat
 
-    var keepsRunningWhenCollapsed: Bool { showBadge && armed }
+    var keepsRunningWhenCollapsed: Bool { (showBadge || popups.isEnabled) && armed }
 
     var ears: ModuleEars? {
         guard showBadge, state == .ready, unread > 0 else { return nil }
@@ -144,6 +151,8 @@ final class MailModule: NotchModule {
     func stop() {
         isStarted = false
         generation += 1
+        lastUnread = nil
+        announceDelta = 0
         openViews = 0
         cancelPoll?()
         cancelPoll = nil
@@ -186,6 +195,7 @@ final class MailModule: NotchModule {
         cancelPoll?()
         cancelPoll = nil
         guard isMailRunning() else {
+            lastUnread = nil
             unread = 0
             messages = []
             listLoaded = false
@@ -204,12 +214,14 @@ final class MailModule: NotchModule {
             break
         }
         // Texte masqué dans les réglages : on ne lit même pas le début des messages.
-        let wantsList = openViews > 0 && showSubjects
+        let wantsList = (openViews > 0 || announceDelta > 0) && showSubjects
         let current = generation
         runner.run(MailScript.source, arguments: [String(wantsList ? recentCount : 0)],
                    timeout: interactive ? 60 : 20) { [weak self] result in
             guard let self, isStarted, current == generation else { return }
             apply(result, wantsList: wantsList)
+            // Le compteur a monté mais la liste n'a pas été lue : une lecture de plus, pour le pop-up.
+            if announceDelta > 0, state == .ready { refresh() }
         }
     }
 
@@ -218,6 +230,7 @@ final class MailModule: NotchModule {
         case .success(let output):
             switch MailScript.parse(output, now: clock()) {
             case .notRunning?:
+                lastUnread = nil
                 unread = 0
                 messages = []
                 listLoaded = false
@@ -230,6 +243,7 @@ final class MailModule: NotchModule {
                 }
                 armed = true
                 state = reading.accounts == 0 ? .noAccount : .ready
+                announce(reading, wantsList: wantsList)
             case nil:
                 state = .failed
             }
@@ -240,6 +254,33 @@ final class MailModule: NotchModule {
             state = .failed
         }
         schedulePoll()
+    }
+
+    /// Pop-up pour les mails arrivés depuis la lecture d'avant (la première ne fait que poser la référence). Le compteur
+    /// dit combien, la liste (relue une fois, et seulement si les objets sont permis) dit qui et quoi.
+    private func announce(_ reading: MailReading, wantsList: Bool) {
+        let previous = lastUnread
+        lastUnread = reading.unread
+        let pendingDelta = announceDelta
+        announceDelta = 0
+        guard popups.accepts(id) else { return }
+        let delta = pendingDelta > 0 ? pendingDelta : (previous.map { reading.unread - $0 } ?? 0)
+        guard delta > 0 else { return }
+        guard showSubjects else {
+            let text = String(format: L(delta, one: "%d nouveau mail", other: "%d nouveaux mails", table: "Popup"), delta)
+            popups.post(PopupEvent(source: id, symbol: "envelope.fill", title: title, text: text,
+                                   key: "count|\(reading.unread)"))
+            return
+        }
+        guard wantsList else {
+            announceDelta = delta
+            return
+        }
+        for message in reading.messages.filter(\.isUnread).prefix(delta).reversed() {
+            popups.post(PopupEvent(source: id, symbol: "envelope.fill", title: message.sender,
+                                   text: message.subject.isEmpty ? L("Nouveau mail", table: "Popup") : message.subject,
+                                   key: message.id))
+        }
     }
 
     /// Le mail auquel on écrit reste dans la liste même si de nouveaux mails l'ont fait sortir des derniers reçus.

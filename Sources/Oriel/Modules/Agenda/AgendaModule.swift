@@ -75,12 +75,18 @@ final class AgendaModule: NotchModule {
     private var cancelWake: (() -> Void)?
     private var loading = false
     private var reloadAgain = false
+    private let popups: NotificationPopups
+    /// Rendez-vous imminent déjà vu (annoncé, ou déjà là au démarrage) ; `announcedBaseline` : la première lecture a eu lieu.
+    private var announcedEvent: String?
+    private var announcedBaseline = false
 
     init(defaults: UserDefaults = .standard, calendar: CalendarSource = EventKitCalendar(),
          clock: @escaping () -> Date = Date.init, scheduler: ModuleScheduler = .system,
          center: NotificationCenter = .default,
          workspaceCenter: NotificationCenter = NSWorkspace.shared.notificationCenter,
-         opener: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) }) {
+         opener: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) },
+         popups: NotificationPopups = .shared) {
+        self.popups = popups
         self.defaults = defaults
         self.calendar = calendar
         self.clock = clock
@@ -124,6 +130,8 @@ final class AgendaModule: NotchModule {
 
     func stop() {
         isRunning = false
+        announcedEvent = nil
+        announcedBaseline = false
         unobserve()
         cancelWake?()
         cancelWake = nil
@@ -235,9 +243,28 @@ final class AgendaModule: NotchModule {
         cancelWake?()
         cancelWake = nil
         nextWake = AgendaMath.nextWake(events, after: now)
+        announce()
         guard isRunning, let nextWake else { return }
         cancelWake = scheduler.after(nextWake.timeIntervalSince(now)) { [weak self] in self?.wake() }
     }
+
+    /// Pop-up quand un rendez-vous devient imminent (5 minutes avant). Celui qui l'était déjà au démarrage ne s'annonce pas.
+    private func announce() {
+        let imminent = AgendaMath.focus(events, at: now).flatMap { $0.phase == .imminent ? $0.event : nil }
+        defer {
+            announcedBaseline = true
+            if let imminent { announcedEvent = Self.occurrence(imminent) }
+        }
+        guard announcedBaseline, showEars, let imminent, Self.occurrence(imminent) != announcedEvent,
+              popups.accepts(id) else { return }
+        let minutes = max(1, Int((imminent.start.timeIntervalSince(now) / 60).rounded(.up)))
+        popups.post(PopupEvent(source: id, symbol: imminent.meeting == nil ? "calendar" : "video.fill",
+                               title: imminent.title, text: String(format: L("Dans %d min", table: "Popup"), minutes),
+                               key: Self.occurrence(imminent), accentHex: Self.imminentHex))
+    }
+
+    /// Un événement récurrent garde son identifiant : l'occurrence se distingue par son début.
+    private static func occurrence(_ event: MediaEvent) -> String { "\(event.id)|\(event.start.timeIntervalSince1970)" }
 
     // MARK: Actions
 

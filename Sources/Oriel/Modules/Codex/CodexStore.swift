@@ -7,7 +7,22 @@ import Foundation
 /// (fin du « Terminé » affiché 5 s, retrait d'une session finie), et un `kqueue` par processus Codex (sa fin ferme ses
 /// sessions sans scrutation). Arrêté (onglet désactivé), le magasin oublie tout et ignore les événements.
 final class CodexStore: ObservableObject {
-    @Published private(set) var sessions: [String: CodexSession] = [:]
+    @Published private(set) var sessions: [String: CodexSession] = [:] {
+        didSet { announce(from: oldValue) }
+    }
+
+    var popups = NotificationPopups.shared
+
+    /// Pop-up quand une session attend une approbation ou termine : le nom de la session et l'état, rien de plus.
+    private func announce(from old: [String: CodexSession]) {
+        guard popups.accepts(ModuleRegistry.codexId) else { return }
+        for (id, session) in sessions.sorted(by: { $0.key < $1.key }) {
+            guard let moment = PopupMoment.codex(old: old[id], new: session) else { continue }
+            popups.post(PopupEvent(source: ModuleRegistry.codexId, symbol: moment.symbol, title: session.projectName,
+                                   text: moment == .done ? L("Terminé", table: "Popup") : L("Attend votre accord", table: "Popup"),
+                                   key: "\(id)|\(moment)|\(session.lastActivity.timeIntervalSince1970)"))
+        }
+    }
 
     static let doneFlashDuration: TimeInterval = 5
     static let endedLinger: TimeInterval = 10

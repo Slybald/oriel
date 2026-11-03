@@ -274,6 +274,13 @@ private struct GeneralSettings: View {
                         + "chaque onglet). Les oreilles restent les mêmes.")
                     : L("Compact : demi-largeur, seulement le résumé de chaque onglet. Les oreilles restent les mêmes."))
             }
+            Section(L("Pop-ups", table: "Popup")) {
+                Toggle(L("Pop-up à l'arrivée d'un événement", table: "Popup"), isOn: $prefs.popupsEnabled)
+                SettingsNote(L("Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin "
+                               + "du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout "
+                               + "seul, reste ouvert sous la souris, et un clic ouvre l'onglet. Rien en plein écran si la "
+                               + "notch y est masquée, ni quand le panneau est ouvert.", table: "Popup"))
+            }
             Section("Écran") {
                 Picker("Écran de la notch", selection: $prefs.screenChoice) {
                     Text("Écran intégré (avec encoche)").tag(ScreenChoice.builtin)

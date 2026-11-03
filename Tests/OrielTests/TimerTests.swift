@@ -102,6 +102,7 @@ final class TimerRig {
     }()
 
     private var modules: [TimerModule] = []
+    var popups = NotificationPopups(scheduler: ManualScheduler().scheduler)
 
     init(_ test: XCTestCase) throws {
         directory = try makeTemporaryDirectory(test)
@@ -117,7 +118,7 @@ final class TimerRig {
         let module = TimerModule(defaults: defaults, directory: directory, clock: clock.read,
                                  scheduler: ticks.scheduler, notifier: notifier,
                                  playSound: { [self] in sounds.append($0) }, calendar: calendar, center: center,
-                                 fileScheduler: writes.scheduler)
+                                 fileScheduler: writes.scheduler, popups: popups)
         modules.append(module)
         return module
     }

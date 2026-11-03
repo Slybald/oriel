@@ -37,6 +37,8 @@ final class NotchViewModel: ObservableObject {
     @Published var hoveredTab: String?
     /// Hauteur mesurée de l'intercalaire déployé : avec sa largeur, la zone de survol qui le garde ouvert.
     var tabCardHeight: CGFloat = 0
+    /// Pop-up affiché sous la notch repliée (`NotificationPopups.current`).
+    @Published var popup: PopupEvent?
     /// Notch détachée en bulle (voir `BubbleController`).
     @Published var bubble = BubblePhase.attached
     /// La goutte remplace la notch dépliée pendant le décollage : la notch est cachée dessous.
@@ -124,6 +126,8 @@ final class NotchController {
     }
     private var cancellables = Set<AnyCancellable>()
     private var observers: [(NotificationCenter, NSObjectProtocol)] = []
+    /// File des pop-ups (la logique est dans `NotificationPopups`, le contrôleur lui dit où est la souris).
+    private let popups = NotificationPopups.shared
     /// Compteur du presse-papiers de glisser relevé au dernier clic dans une autre app (Étagère).
     private var fileDragBaseline: Int?
     /// Notch montrée seulement à la demande (dépôt sur l'Étagère, raccourci) : recachée au repli.
@@ -242,6 +246,7 @@ final class NotchController {
         installMouseMonitors()
         observeChanges()
         observeShellSettings()
+        observePopups()
         updateFullScreen()
         updateVisibility()
         bubble.restore()
@@ -498,6 +503,7 @@ final class NotchController {
         // Avant `isShown` : le panneau de la bulle se referme à la sortie de la souris même notch cachée.
         bubble.mouseMoved(point)
         guard isShown else { return }
+        updatePopupHover(point)
         let hit = model.isExpanded ? .none : collapsedHit(point)
         let inside = model.isExpanded ? isInsideZone(point) : hit != .none
         if !inside { suppressUntilExit = false }
@@ -593,7 +599,7 @@ final class NotchController {
         guard model.hoveredTab != id else { return }
         model.hoveredTab = id
         if id == nil { model.tabCardHeight = 0 }
-        panel.ignoresMouseEvents = id == nil && !model.isExpanded
+        updateMouseCapture()
         if id != nil {
             startPolling()
         } else if !model.isExpanded {
@@ -602,6 +608,46 @@ final class NotchController {
     }
 
     /// L'activité de l'intercalaire déployé a disparu (Claude a fini, minuteur arrêté) : on le replie.
+    // MARK: - Pop-ups
+
+    private func observePopups() {
+        popups.isSourceEnabled = { [weak self] id in self?.registry.isEnabled(id) ?? false }
+        // Pas de pop-up là où la notch n'en montre pas : panneau ou bulle ouverts, plein écran « masquée », masquage demandé.
+        popups.isBlocked = { [weak self] in
+            guard let self else { return true }
+            return model.isExpanded || model.bubble != .attached || hiddenForFullScreen || hiddenByUser
+        }
+        popups.$current
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] event in
+                guard let self else { return }
+                model.popup = event
+                updateMouseCapture()
+                updateVisibility()
+                if event != nil { updatePopupHover(mouseLocation()) }
+            }
+            .store(in: &cancellables)
+        model.$bubble
+            .removeDuplicates()
+            .sink { [weak self] phase in if phase != .attached { self?.popups.clear() } }
+            .store(in: &cancellables)
+    }
+
+    /// Zone du pop-up en coordonnées écran, un peu élargie pour que le bord ne le referme pas.
+    private func popupZone() -> CGRect {
+        let band = usesPearl && !model.pearlAwake ? Pearl.height : notchRect.height
+        return PopupLayout.rect(notch: notchRect, band: band).insetBy(dx: -4, dy: -4)
+    }
+
+    private func updatePopupHover(_ point: CGPoint) {
+        popups.setHovering(model.popup != nil && !model.isExpanded && popupZone().contains(point))
+    }
+
+    /// La fenêtre ne prend la souris que si un intercalaire déployé ou un pop-up a des boutons à offrir.
+    private func updateMouseCapture() {
+        panel.ignoresMouseEvents = model.hoveredTab == nil && model.popup == nil && !model.isExpanded
+    }
+
     private func syncHoveredTab() {
         guard let id = model.hoveredTab, earLayout().item(id) == nil else { return }
         cancelPendingTab()
@@ -662,6 +708,7 @@ final class NotchController {
         // Notch détachée : un intercalaire ouvre la bulle sur son onglet.
         if model.bubble.isDetached { return bubble.open(tab: tab) }
         guard !model.isExpanded, model.bubble == .attached else { return }
+        popups.clear()
         cancelPendingTab()
         if model.hoveredTab != nil {
             model.hoveredTab = nil
@@ -941,6 +988,7 @@ final class NotchController {
             claudeOpen: claude && (monitor.desktopRunning || !monitor.cliPids.isEmpty || store.hasLiveSessions),
             claudeActive: claude && store.indicator != .none,
             moduleEars: registry.moduleEars != nil,
+            popup: model.popup != nil,
             onDemand: shownOnDemand,
             // Le panneau de la bulle ouvert compte comme déplié : il ne se ferme pas parce que la notch se cache.
             expanded: model.isExpanded || model.bubble == .bubblePanel,
@@ -978,6 +1026,7 @@ final class NotchController {
         hideWork?.cancel()
         hideWork = nil
         isShown = false
+        popups.clear()
         collapse()
         panel.orderOut(nil)
     }

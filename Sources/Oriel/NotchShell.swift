@@ -12,6 +12,8 @@ enum NotchVisibilityRule {
         var claudeActive = false
         /// Un module affiche des oreilles (minuteur, lecture…).
         var moduleEars = false
+        /// Un pop-up est à l'écran : la notch se montre le temps qu'il dure, même sans autre activité.
+        var popup = false
         /// Montrée à la demande : glisser de fichiers vers l'Étagère, raccourci clavier.
         var onDemand = false
         /// Panneau déplié : on ne le retire pas sous la souris quand l'activité s'arrête.
@@ -28,8 +30,8 @@ enum NotchVisibilityRule {
         if inputs.expanded { return true }
         switch mode {
         case .always: return true
-        case .whenClaudeOpen: return inputs.claudeOpen || inputs.claudeActive || inputs.moduleEars
-        case .duringActivity: return inputs.claudeActive || inputs.moduleEars
+        case .whenClaudeOpen: return inputs.claudeOpen || inputs.claudeActive || inputs.moduleEars || inputs.popup
+        case .duringActivity: return inputs.claudeActive || inputs.moduleEars || inputs.popup
         }
     }
 }

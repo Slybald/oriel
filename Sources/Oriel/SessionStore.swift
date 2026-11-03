@@ -168,7 +168,33 @@ struct Session: Identifiable, Equatable {
 /// État de toutes les sessions suivies, alimenté par les hooks et un timer de 2 s.
 final class SessionStore: ObservableObject {
     @Published private(set) var sessions: [String: Session] = [:] {
-        didSet { updateTimer() }
+        didSet {
+            updateTimer()
+            announce(from: oldValue)
+        }
+    }
+
+    var popups = NotificationPopups.shared
+
+    /// Pop-up quand une session se met à attendre l'utilisateur ou termine. Seulement le changement d'état, avec le nom
+    /// de la session : ni sa conversation ni ses outils ne sont lus.
+    private func announce(from old: [String: Session]) {
+        guard popups.accepts(ModuleRegistry.claudeId) else { return }
+        for (id, session) in sessions.sorted(by: { $0.key < $1.key }) {
+            guard let moment = PopupMoment.claude(old: old[id], new: session) else { continue }
+            popups.post(PopupEvent(source: ModuleRegistry.claudeId, symbol: moment.symbol,
+                                   title: session.title ?? session.projectName, text: Self.popupText(moment, session.phase),
+                                   key: "\(id)|\(moment)|\(session.lastActivity.timeIntervalSince1970)"))
+        }
+    }
+
+    static func popupText(_ moment: PopupMoment, _ phase: Phase) -> String {
+        switch (moment, phase) {
+        case (.done, _): return L("Terminé", table: "Popup")
+        case (.attention, .waitingPermission): return L("Attend votre accord", table: "Popup")
+        case (.attention, .planReview): return L("Plan à valider", table: "Popup")
+        case (.attention, _): return L("Attend votre réponse", table: "Popup")
+        }
     }
 
     static let doneFlashDuration: TimeInterval = 5
