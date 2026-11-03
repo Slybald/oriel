@@ -6,6 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-11-03
+
+### Added
+
+- An app icon, in the DMG, the Finder, Launchpad and System Settings.
+
+### Fixed
+
+- The Glass background is now Apple's real Liquid Glass on macOS 26 and later: 3.2.0 shipped only the fallback blur by
+  mistake. Older macOS versions keep the blur. On a very light, saturated background, text contrast drops to about 3:1.
+
 ## [3.2.0] - 2026-11-02
 
 ### Added
