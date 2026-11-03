@@ -61,6 +61,8 @@ if [ "${RELEASE_CHANNEL:-}" = 1 ]; then
     plutil -replace OrielUpdateChannel -string release "$APP/Contents/Info.plist"
     CHANNEL=release
 fi
+# Icône (Resources/AppIcon.icns, régénérée par scripts/make-icon.sh) : référencée par CFBundleIconFile.
+cp "$ROOT/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cp "$ROOT/hooks/oriel-hook.sh" "$APP/Contents/Resources/oriel-hook.sh"
 chmod 755 "$APP/Contents/Resources/oriel-hook.sh"
 cp "$ROOT/hooks/codex-notch-hook.sh" "$APP/Contents/Resources/codex-notch-hook.sh"

@@ -8,6 +8,8 @@
 	<string>Oriel</string>
 	<key>CFBundleExecutable</key>
 	<string>Oriel</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>io.github.slybald.oriel</string>
 	<key>CFBundleInfoDictionaryVersion</key>

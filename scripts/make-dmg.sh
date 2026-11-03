@@ -45,12 +45,23 @@ make_dmg() {
     ditto "$APP" "$STAGING/$NAME.app"
     ln -s /Applications "$STAGING/Applications"
     cp "$ROOT/scripts/dmg-first-launch.txt" "$STAGING/$INSTRUCTIONS"
+    # Icône du volume monté (celle de l'app) : .VolumeIcon.icns ; l'indicateur « icône personnalisée » est posé plus bas.
+    cp "$APP/Contents/Resources/AppIcon.icns" "$STAGING/.VolumeIcon.icns"
 
+    # hdiutil ne garde pas l'indicateur du dossier racine : image modifiable, indicateur posé une fois montée, puis compression.
     rm -f "$DMG" "$DMG.sha256"
-    hdiutil create -quiet -volname "$VOLUME" -srcfolder "$STAGING" -fs HFS+ -format UDZO \
-        -imagekey zlib-level=9 -ov "$DMG"
+    RW="$STAGING.rw.dmg"
+    hdiutil create -quiet -volname "$VOLUME" -srcfolder "$STAGING" -fs HFS+ -format UDRW -ov "$RW"
     rm -rf "$STAGING"
     STAGING=""
+    MOUNT=$(mktemp -d "${TMPDIR:-/tmp}/oriel-mount.XXXXXX")
+    hdiutil attach -quiet -nobrowse -noautoopen -mountpoint "$MOUNT" "$RW"
+    SetFile -a C "$MOUNT"
+    hdiutil detach -quiet "$MOUNT"
+    rmdir "$MOUNT"
+    MOUNT=""
+    hdiutil convert -quiet "$RW" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG"
+    rm -f "$RW"
 
     # 2. Vérifications.
     hdiutil verify -quiet "$DMG"
@@ -59,6 +70,9 @@ make_dmg() {
     [ -x "$MOUNT/$NAME.app/Contents/MacOS/Oriel" ] || fail "$NAME.app absente ou incomplète"
     [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$MOUNT/$NAME.app/Contents/Info.plist")" = \
         io.github.slybald.oriel ] || fail "identifiant de $NAME.app inattendu"
+    [ -s "$MOUNT/$NAME.app/Contents/Resources/AppIcon.icns" ] || fail "icône de $NAME.app absente"
+    [ -s "$MOUNT/.VolumeIcon.icns" ] || fail "icône du volume absente"
+    [ "$(GetFileInfo -aC "$MOUNT")" = 1 ] || fail "icône personnalisée du volume non activée"
     [ -s "$MOUNT/$INSTRUCTIONS" ] || fail "fichier d'instructions absent"
     [ -L "$MOUNT/Applications" ] || fail "lien Applications absent"
     [ "$(readlink "$MOUNT/Applications")" = /Applications ] || fail "le lien Applications ne pointe pas vers /Applications"
