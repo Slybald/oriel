@@ -683,7 +683,7 @@ struct NotchAppearancePreview: View {
             } else if !LiquidGlass.isAvailable {
                 // Repli : le flou du dégradé derrière, et la teinte sombre.
                 Rectangle().fill(.ultraThinMaterial)
-                Color.black.opacity(PanelGlass.scrim(liquid: false))
+                Color.black.opacity(PanelGlass.fallbackScrim)
             }
         })
         .clipShape(NotchShape(topRadius: 6, bottomRadius: 12))

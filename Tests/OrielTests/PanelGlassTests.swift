@@ -19,10 +19,9 @@ final class PanelGlassTests: XCTestCase {
         XCTAssertEqual(prefs.panelColor.hexString, PanelBackground.graphite.hex)
     }
 
-    func testRealGlassHasNoDarkVeilAndTheBlurFallbackKeepsIt() {
-        XCTAssertEqual(PanelGlass.scrim(liquid: true), 0, "le Liquid Glass assure seul la lisibilité, sans voile noir")
-        XCTAssertEqual(PanelGlass.scrim(liquid: false), PanelGlass.fallbackScrim)
+    func testRealGlassTintIsInsideTheMaterialAndLighterThanTheBlurFallbackVeil() {
         XCTAssertEqual(PanelGlass.fallbackScrim, 0.55, "repli macOS 13 à 25 inchangé")
+        XCTAssertGreaterThan(LiquidGlass.tintOpacity, 0)
         XCTAssertLessThan(LiquidGlass.tintOpacity, PanelGlass.fallbackScrim, "teinte dans le matériau, plus légère que le voile du repli")
     }
 

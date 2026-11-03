@@ -80,9 +80,6 @@ struct NotchGlass: NSViewRepresentable {
 struct PanelGlass: View {
     static let fallbackScrim = 0.55
 
-    /// Teinte sous le texte : aucune sur le vrai verre, `fallbackScrim` sur le flou.
-    static func scrim(liquid: Bool) -> Double { liquid ? 0 : fallbackScrim }
-
     /// Contraste du texte blanc sur le pire fond d'écran possible (blanc pur) sous la teinte : 4,5 est le seuil WCAG AA.
     /// Le flou ne rend jamais plus clair que ce qu'il y a derrière ; la teinte est donc le pire cas.
     static func worstCaseContrast(scrim: Double = fallbackScrim) -> Double {
