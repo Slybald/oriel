@@ -277,6 +277,22 @@ final class ShellPreferencesTests: XCTestCase {
         XCTAssertEqual(fallback.screenChoice, ScreenChoice.builtin)
     }
 
+    /// Le fond Verre a existé de la 3.2.0 à la 3.3.1 : qui l'avait choisi repasse au noir, sans perdre ses autres réglages.
+    func testRemovedGlassBackgroundFallsBackToBlackAndKeepsTheOtherSettings() {
+        let defaults = makeEphemeralDefaults(self)
+        defaults.set("glass", forKey: "appearance.background")
+        defaults.set("#203040", forKey: "appearance.customBackground")
+        defaults.set(0.8, forKey: "appearance.backgroundOpacity")
+
+        let prefs = Preferences(defaults: defaults)
+
+        XCTAssertEqual(prefs.panelBackground, .black)
+        XCTAssertEqual(prefs.panelColor.hexString, "000000")
+        XCTAssertEqual(prefs.customBackgroundHex, "#203040", "le fond libre reste disponible")
+        XCTAssertEqual(prefs.backgroundOpacity, 0.8)
+        XCTAssertFalse(PanelBackground.allCases.map(\.rawValue).contains("glass"))
+    }
+
     func testAnimationSpeedAndReduceMotion() {
         XCTAssertEqual(NotchMotion.animation(.normal, reduceMotion: false), notchSpring, "Normale = ressort validé")
         XCTAssertNotEqual(NotchMotion.animation(.fast, reduceMotion: false), notchSpring)

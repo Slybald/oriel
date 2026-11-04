@@ -19,8 +19,7 @@ concurrency:
 
 jobs:
   test:
-    # macos-26 (Xcode 26.x, Swift 6.2) et non macos-15 : le Liquid Glass (`glassEffect`) n'existe que dans le SDK de
-    # macOS 26, protégé par `#if compiler(>=6.2)`. Sur macos-15 la CI et la release ne compilaient que le repli flou.
+    # macos-26, comme la release : le même SDK que le binaire publié, dont dépend l'apparence des contrôles système.
     runs-on: macos-26
     steps:
       - name: Checkout

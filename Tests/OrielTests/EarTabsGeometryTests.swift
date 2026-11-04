@@ -401,31 +401,6 @@ final class EarTabsGeometryTests: XCTestCase {
         XCTAssertEqual(flare, NotchShape.collapsedTopRadius, "le congé a le rayon de l'évasement de la notch")
     }
 
-    // MARK: - Fond Verre replié
-
-    /// Encoche virtuelle et pilule, vrai verre : le fond reste, centré sur l'encoche, à sa largeur.
-    /// Sans intercalaire : dès qu'un verre est actif, `layer.render` rend une image entièrement transparente (mesuré en CI,
-    /// macos-26). La vraie encoche avec intercalaires ne se mesure donc pas ici : `PanelGlassTests` couvre ce choix.
-    func testGlassKeepsTheVirtualFillsCentered() throws {
-        guard LiquidGlass.isAvailable else { throw XCTSkip("sans le vrai verre") }
-        for style in [VirtualNotchStyle.notch, .pill] {
-            let harness = NotchHarness(self)
-            harness.model.hasNotch = false
-            harness.model.notchSize = CGSize(width: 200, height: 24)
-            harness.prefs.virtualNotchStyle = style
-            harness.prefs.panelBackground = .glass
-            let sil = try silhouette(Scene(harness: harness, registry: harness.registry))
-            let left = try XCTUnwrap(sil.extent(row: 12, toward: -1), "\(style)")
-            let right = try XCTUnwrap(sil.extent(row: 12, toward: 1), "\(style)")
-            XCTAssertEqual(left, -right, accuracy: 0.5, "\(style) centré")
-            XCTAssertEqual(right, 100, accuracy: 1, "\(style) à la largeur de l'encoche")
-            if style == .notch {
-                let flare = try XCTUnwrap(sil.extent(row: 1, toward: 1))
-                XCTAssertGreaterThan(flare, 101.5, "les évasements du haut restent remplis")
-            }
-        }
-    }
-
     // MARK: - Rendus PNG (ORIEL_SNAPSHOT_DIR)
 
     /// Rendus sur fond de bureau, avec l'encoche physique en contour (cyan) : `geometry-<état>.png`, 300 × 40 pt à 4×.
