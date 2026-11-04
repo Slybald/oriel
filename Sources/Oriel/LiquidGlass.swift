@@ -44,6 +44,12 @@ extension View {
     func liquidGlass<S: Shape>(enabled: Bool, active: Bool, in shape: S) -> some View {
         modifier(LiquidGlassModifier(enabled: enabled, active: active, shape: shape))
     }
+
+    /// L'ombre du panneau. Pas sur le vrai verre : sans forme connue, elle se recalcule à chaque image de l'animation, et
+    /// le matériau a déjà la sienne. La bulle détachée, sans verre, garde la sienne.
+    func panelShadow(_ visible: Bool, realGlass: Bool) -> some View {
+        modifier(PanelShadowModifier(visible: visible, realGlass: realGlass))
+    }
 }
 
 private struct LiquidGlassModifier<S: Shape>: ViewModifier {
@@ -61,6 +67,19 @@ private struct LiquidGlassModifier<S: Shape>: ViewModifier {
         #else
         content
         #endif
+    }
+}
+
+private struct PanelShadowModifier: ViewModifier {
+    let visible: Bool
+    let realGlass: Bool
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if realGlass {
+            content
+        } else {
+            content.shadow(color: .black.opacity(visible ? 0.45 : 0), radius: 14, y: 6)
+        }
     }
 }
 

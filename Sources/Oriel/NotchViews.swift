@@ -151,6 +151,10 @@ struct NotchRootView: View {
     }
     /// Repliée sans activité, invisible : sur une vraie encoche (la forme est exactement l'encoche) et en caméléon.
     private var hiddenAtRest: Bool { model.hasNotch || style == .chameleon || style == .pearl }
+    /// Le vrai verre sur une vraie encoche n'a rien à cacher au repos (`Glass.identity`, aucun fond) : pas de fondu du
+    /// panneau, qui passerait tout le verre hors écran pendant l'animation.
+    private var fadesAtRest: Bool { hiddenAtRest && !(realGlass && model.hasNotch) }
+    private var realGlass: Bool { LiquidGlass.isAvailable && isGlassPanel }
     /// Replié sur une vraie encoche : aucun évasement, la forme est exactement l'encoche (sinon 6 pt de noir de plus de
     /// chaque côté, visibles du côté sans intercalaire, et une forme mesurée 12 pt plus large que l'encoche). Le caméléon
     /// replié non plus (le verre ne mime pas une encoche), la pilule jamais (elle ne touche pas le haut de l'écran).
@@ -232,10 +236,10 @@ struct NotchRootView: View {
                     .transition(.opacity)
             }
         }
-        .shadow(color: .black.opacity(expanded && prefs.panelShadow ? 0.45 : 0), radius: 14, y: 6)
+        .panelShadow(expanded && prefs.panelShadow, realGlass: realGlass)
         // Replié et sans activité sur une vraie encoche : exactement l'encoche, donc invisible. Sans encoche,
         // la forme reste dessinée (encoche virtuelle, pilule), sauf en caméléon et en perle (éveillée, elle se montre).
-        .opacity(expanded || showsEars || !hiddenAtRest || isAwakePearl ? 1 : 0)
+        .opacity(expanded || showsEars || !fadesAtRest || isAwakePearl ? 1 : 0)
         .background(GeometryReader { proxy in
             Color.clear.preference(key: NotchSizeKey.self, value: proxy.size)
         })
@@ -257,7 +261,9 @@ struct NotchRootView: View {
                             pillRadius: isPill ? pillRadius : 0, animation: motion,
                             registry: registry, openTab: actions.openTab,
                             cardHeightChanged: { model.tabCardHeight = $0 })
-                    .transition(.opacity)
+                    // Vrai verre : un verre en fondu passe hors écran, donc le moins longtemps possible à l'ouverture.
+                    .transition(.asymmetric(insertion: .opacity,
+                                            removal: realGlass ? .opacity.animation(.easeOut(duration: 0.12)) : .opacity))
             }
         }
     }

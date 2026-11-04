@@ -688,7 +688,8 @@ struct NotchAppearancePreview: View {
         })
         .clipShape(NotchShape(topRadius: 6, bottomRadius: 12))
         .liquidGlass(enabled: prefs.panelBackground == .glass, active: true, in: NotchShape(topRadius: 6, bottomRadius: 12))
-        .shadow(color: .black.opacity(prefs.panelShadow ? 0.45 : 0), radius: 7, y: 3)
+        // Comme le vrai panneau : pas d'ombre sur le vrai verre (`panelShadow`).
+        .shadow(color: .black.opacity(prefs.panelShadow && !(prefs.panelBackground == .glass && LiquidGlass.isAvailable) ? 0.45 : 0), radius: 7, y: 3)
     }
 
     private var header: some View {
