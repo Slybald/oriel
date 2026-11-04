@@ -53,7 +53,8 @@ struct NotchPopupView: View {
         })
         .liquidGlass(enabled: glass && liquid && LiquidGlass.isAvailable, active: true, in: shape)
         .overlay(shape.strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
-        .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
+        // Pas d'ombre sous le vrai verre : elle noircirait sa transparence.
+        .shadow(color: .black.opacity(glass && liquid && LiquidGlass.isAvailable ? 0 : 0.35), radius: 8, y: 3)
         .contentShape(shape)
         .onTapGesture(perform: open)
         .accessibilityElement(children: .ignore)

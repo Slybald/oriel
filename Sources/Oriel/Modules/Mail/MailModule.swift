@@ -196,6 +196,7 @@ final class MailModule: NotchModule {
         cancelPoll = nil
         guard isMailRunning() else {
             lastUnread = nil
+            announceDelta = 0
             unread = 0
             messages = []
             listLoaded = false
@@ -231,6 +232,7 @@ final class MailModule: NotchModule {
             switch MailScript.parse(output, now: clock()) {
             case .notRunning?:
                 lastUnread = nil
+                announceDelta = 0
                 unread = 0
                 messages = []
                 listLoaded = false
@@ -249,14 +251,17 @@ final class MailModule: NotchModule {
             }
         case .failure(.notAuthorized):
             armed = false
+            announceDelta = 0
             state = .denied
         case .failure:
+            announceDelta = 0
             state = .failed
         }
         schedulePoll()
     }
 
-    /// Pop-up pour les mails arrivés depuis la lecture d'avant (la première ne fait que poser la référence). Le compteur
+    /// Limite connue : seul le solde du compteur compte (un mail lu et un autre arrivé entre deux lectures ne donnent
+    /// rien ; un mail remis « non lu » à la main en annonce un). Pop-up pour les mails arrivés depuis la lecture d'avant (la première ne fait que poser la référence). Le compteur
     /// dit combien, la liste (relue une fois, et seulement si les objets sont permis) dit qui et quoi.
     private func announce(_ reading: MailReading, wantsList: Bool) {
         let previous = lastUnread

@@ -98,13 +98,24 @@ final class PopupTests: XCTestCase {
         XCTAssertNil(queue.current)
     }
 
-    func testHoverAfterTheCloseDoesNothing() {
+    func testStaleHoverAfterTheCloseDoesNotShortenTheNextPopup() {
+        let (queue, scheduler) = makeQueue()
+        queue.post(event("claude", key: "a"))
+        queue.post(event("mail", key: "b"))
+        scheduler.fire(delay: NotificationPopups.displayDuration)
+        queue.setHovering(true)
+        scheduler.fire(delay: NotificationPopups.gap)
+        XCTAssertEqual(queue.current?.source, "mail")
+        queue.setHovering(false)
+        XCTAssertEqual(scheduler.pending.map(\.delay), [NotificationPopups.displayDuration], "durée pleine, pas la grâce")
+    }
+
+    func testHoverBeforeAnyPopupIsIgnored() {
         let (queue, scheduler) = makeQueue()
         queue.setHovering(true)
         queue.post(event())
         queue.setHovering(false)
-        scheduler.fire(delay: NotificationPopups.hoverGrace)
-        XCTAssertNil(queue.current)
+        XCTAssertEqual(scheduler.pending.map(\.delay), [NotificationPopups.displayDuration])
     }
 
     // MARK: - Quand rien ne s'affiche
@@ -248,6 +259,25 @@ final class PopupTests: XCTestCase {
         XCTAssertEqual(rig.runner.calls.count, 2)
         XCTAssertEqual(rig.popups.current?.title, "Mail")
         XCTAssertEqual(rig.popups.current?.text, "2 nouveaux mails")
+    }
+
+    func testMailLeavingBeforeTheListReadDoesNotAnnounceAnOldMailAtRelaunch() {
+        let rig = MailRig(self)
+        rig.popups.isEnabled = true
+        rig.runner.answers = [.success(MailRig.answer(unread: 2))]
+        let module = rig.makeModule()
+        module.start()
+        rig.runner.hold = true
+        rig.runner.answers = [.success(MailRig.answer(unread: 3))]
+        rig.schedule.runPending()
+        rig.runner.complete(.success(MailRig.answer(unread: 3)))
+        rig.running = false
+        module.refresh()
+        rig.runner.hold = false
+        rig.running = true
+        rig.runner.answers = [.success(MailRig.answer(unread: 3, messages: [FakeMail(sender: "Ancien", subject: "Vieux", age: 9_000, id: "m0")]))]
+        module.refresh()
+        XCTAssertNil(rig.popups.current)
     }
 
     func testMailDoesNotPopWhenTheCountFalls() {

@@ -82,9 +82,10 @@ final class NotificationPopups: ObservableObject {
 
     /// Souris sur le pop-up : il reste ouvert.
     func setHovering(_ isHovering: Bool) {
+        // Sans pop-up à l'écran, la souris ne compte pas : le suivant ne doit pas démarrer « survolé » à tort.
+        guard current != nil else { hovering = false; return }
         guard isHovering != hovering else { return }
         hovering = isHovering
-        guard current != nil else { return }
         cancelTimer?()
         cancelTimer = nil
         if !isHovering { arm(Self.hoverGrace) }
