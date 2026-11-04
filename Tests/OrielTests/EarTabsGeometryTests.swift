@@ -419,6 +419,10 @@ final class EarTabsGeometryTests: XCTestCase {
             let right = try XCTUnwrap(sil.extent(row: 12, toward: 1), "\(style)")
             XCTAssertEqual(left, -right, accuracy: 0.5, "\(style) centré")
             XCTAssertEqual(right, 100, accuracy: 1, "\(style) à la largeur de l'encoche")
+            if style == .notch {
+                let flare = try XCTUnwrap(sil.extent(row: 1, toward: 1))
+                XCTAssertGreaterThan(flare, 101.5, "les évasements du haut restent remplis")
+            }
         }
     }
 

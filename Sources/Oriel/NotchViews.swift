@@ -302,8 +302,7 @@ struct NotchRootView: View {
         ZStack(alignment: .top) {
             if collapsedFill == .behindGlass {
                 ZStack(alignment: .top) { opaqueFill }
-                    .frame(width: bodyWidth, height: bandHeight)
-                    .padding(.horizontal, topRadius)
+                    .frame(width: bodyWidth + 2 * topRadius, height: bandHeight)
                     .clipShape(shape)
                     .opacity(showsEars || !hiddenAtRest ? 1 : 0)
                     .transition(.opacity)
