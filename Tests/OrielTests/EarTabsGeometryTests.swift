@@ -414,6 +414,25 @@ final class EarTabsGeometryTests: XCTestCase {
         XCTAssertGreaterThan(color.redComponent + color.greenComponent + color.blueComponent, 0.1, "pas de noir au centre de l'encoche")
     }
 
+    func testDiagGlassRows() throws {
+        func runs(_ bitmap: NSBitmapImageRep, y: Int) -> String {
+            var out: [String] = []; var last = ""; var start = 0
+            for x in 0...800 {
+                let c = bitmap.colorAt(x: min(x * 4, bitmap.pixelsWide - 1), y: y * 4)?.usingColorSpace(.deviceRGB)
+                let key = c.map { String(format: "%.1f,%.1f,%.1f,a%.1f", $0.redComponent, $0.greenComponent, $0.blueComponent, $0.alphaComponent) } ?? "?"
+                if key != last { if !last.isEmpty { out.append("\(start - 400)..\(x - 401):\(last)") }; last = key; start = x }
+            }
+            out.append("\(start - 400)..400:\(last)")
+            return out.joined(separator: " ")
+        }
+        for (name, hasNotch, background) in [("glass-real-ears", true, PanelBackground.glass), ("glass-virtual-ears", false, .glass), ("black-real-ears", true, .black)] {
+            let scene = scene(.claudeAndTimer, notch: hasNotch ? Self.measured : CGSize(width: 200, height: 24), hasNotch: hasNotch)
+            scene.harness.prefs.panelBackground = background
+            let bitmap = try render(scene.root)
+            for y in [10, 50] { print("DIAG \(name) y=\(y) \(runs(bitmap, y: y))") }
+        }
+    }
+
     /// Encoche virtuelle et pilule, vrai verre : le fond reste, centré sur l'encoche, à sa largeur.
     func testGlassKeepsTheVirtualFillsCentered() throws {
         guard LiquidGlass.isAvailable else { throw XCTSkip("sans le vrai verre") }
