@@ -16,6 +16,22 @@ enum LiquidGlass {
     }
 }
 
+/// Où dessiner le fond plein de la notch repliée. Dans la vue qui porte le verre, un fond inséré à la fermeture restait sur
+/// la gauche jusqu'à 1 s avant de revenir au centre (3.3.0, vidéo de l'écran réel) : le vrai verre n'en a donc jamais dans cette vue.
+enum CollapsedFill {
+    /// Dans la vue de la notch : tous les fonds sauf le vrai verre, rendu inchangé.
+    case inNotchView
+    /// Derrière le conteneur de verre, hors de son système : encoche virtuelle, pilule, perle.
+    case behindGlass
+    /// Aucun : une vraie encoche est noire d'elle-même, le caméléon est en verre, le panneau déplié aussi.
+    case absent
+
+    static func choose(liquidGlass: Bool, expanded: Bool, hasNotch: Bool, chameleon: Bool) -> CollapsedFill {
+        guard liquidGlass else { return .inNotchView }
+        return expanded || hasNotch || chameleon ? .absent : .behindGlass
+    }
+}
+
 extension View {
     /// Le verre sous cette vue, à sa forme exacte : la lentille, la réfraction et les reflets du bord viennent du matériau
     /// (teinte interne légère, pas de voile ni de flou ajouté), qui adapte lui-même sa teinte à ce qu'il y a derrière.

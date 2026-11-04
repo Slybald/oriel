@@ -401,6 +401,36 @@ final class EarTabsGeometryTests: XCTestCase {
         XCTAssertEqual(flare, NotchShape.collapsedTopRadius, "le congé a le rayon de l'évasement de la notch")
     }
 
+    // MARK: - Fond Verre replié
+
+    /// Vraie encoche, vrai verre : plus aucun noir dessiné, même au centre (la caméra l'est physiquement). Rendu hors écran :
+    /// le compositeur du verre n'y est pas, mais c'est le dessin qui disparaît, donc rien ne peut être décalé.
+    func testGlassDrawsNoBlackOnARealNotch() throws {
+        guard LiquidGlass.isAvailable else { throw XCTSkip("sans le vrai verre") }
+        let scene = scene(.claudeAndTimer, notch: Self.measured, hasNotch: true)
+        scene.harness.prefs.panelBackground = .glass
+        let bitmap = try render(scene.root)
+        let color = try XCTUnwrap(bitmap.colorAt(x: bitmap.pixelsWide / 2, y: 10 * Int(Self.scale))?.usingColorSpace(.deviceRGB))
+        XCTAssertGreaterThan(color.redComponent + color.greenComponent + color.blueComponent, 0.1, "pas de noir au centre de l'encoche")
+    }
+
+    /// Encoche virtuelle et pilule, vrai verre : le fond reste, centré sur l'encoche, à sa largeur.
+    func testGlassKeepsTheVirtualFillsCentered() throws {
+        guard LiquidGlass.isAvailable else { throw XCTSkip("sans le vrai verre") }
+        for style in [VirtualNotchStyle.notch, .pill] {
+            let harness = NotchHarness(self)
+            harness.model.hasNotch = false
+            harness.model.notchSize = CGSize(width: 200, height: 24)
+            harness.prefs.virtualNotchStyle = style
+            harness.prefs.panelBackground = .glass
+            let sil = try silhouette(Scene(harness: harness, registry: harness.registry))
+            let left = try XCTUnwrap(sil.extent(row: 12, toward: -1), "\(style)")
+            let right = try XCTUnwrap(sil.extent(row: 12, toward: 1), "\(style)")
+            XCTAssertEqual(left, -right, accuracy: 0.5, "\(style) centré")
+            XCTAssertEqual(right, 100, accuracy: 1, "\(style) à la largeur de l'encoche")
+        }
+    }
+
     // MARK: - Rendus PNG (ORIEL_SNAPSHOT_DIR)
 
     /// Rendus sur fond de bureau, avec l'encoche physique en contour (cyan) : `geometry-<état>.png`, 300 × 40 pt à 4×.
