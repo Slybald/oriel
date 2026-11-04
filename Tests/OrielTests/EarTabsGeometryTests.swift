@@ -403,37 +403,9 @@ final class EarTabsGeometryTests: XCTestCase {
 
     // MARK: - Fond Verre replié
 
-    /// Vraie encoche, vrai verre : plus aucun noir dessiné, même au centre (la caméra l'est physiquement). Rendu hors écran :
-    /// le compositeur du verre n'y est pas, mais c'est le dessin qui disparaît, donc rien ne peut être décalé.
-    func testGlassDrawsNoBlackOnARealNotch() throws {
-        guard LiquidGlass.isAvailable else { throw XCTSkip("sans le vrai verre") }
-        let scene = scene(.claudeAndTimer, notch: Self.measured, hasNotch: true)
-        scene.harness.prefs.panelBackground = .glass
-        let bitmap = try render(scene.root)
-        let color = try XCTUnwrap(bitmap.colorAt(x: bitmap.pixelsWide / 2, y: 10 * Int(Self.scale))?.usingColorSpace(.deviceRGB))
-        XCTAssertGreaterThan(color.redComponent + color.greenComponent + color.blueComponent, 0.1, "pas de noir au centre de l'encoche")
-    }
-
-    func testDiagGlassRows() throws {
-        func runs(_ bitmap: NSBitmapImageRep, y: Int) -> String {
-            var out: [String] = []; var last = ""; var start = 0
-            for x in 0...800 {
-                let c = bitmap.colorAt(x: min(x * 4, bitmap.pixelsWide - 1), y: y * 4)?.usingColorSpace(.deviceRGB)
-                let key = c.map { String(format: "%.1f,%.1f,%.1f,a%.1f", $0.redComponent, $0.greenComponent, $0.blueComponent, $0.alphaComponent) } ?? "?"
-                if key != last { if !last.isEmpty { out.append("\(start - 400)..\(x - 401):\(last)") }; last = key; start = x }
-            }
-            out.append("\(start - 400)..400:\(last)")
-            return out.joined(separator: " ")
-        }
-        for (name, hasNotch, background) in [("glass-real-ears", true, PanelBackground.glass), ("glass-virtual-ears", false, .glass), ("black-real-ears", true, .black)] {
-            let scene = scene(.claudeAndTimer, notch: hasNotch ? Self.measured : CGSize(width: 200, height: 24), hasNotch: hasNotch)
-            scene.harness.prefs.panelBackground = background
-            let bitmap = try render(scene.root)
-            for y in [10, 50] { print("DIAG \(name) y=\(y) \(runs(bitmap, y: y))") }
-        }
-    }
-
     /// Encoche virtuelle et pilule, vrai verre : le fond reste, centré sur l'encoche, à sa largeur.
+    /// Sans intercalaire : dès qu'un verre est actif, `layer.render` rend une image entièrement transparente (mesuré en CI,
+    /// macos-26). La vraie encoche avec intercalaires ne se mesure donc pas ici : `PanelGlassTests` couvre ce choix.
     func testGlassKeepsTheVirtualFillsCentered() throws {
         guard LiquidGlass.isAvailable else { throw XCTSkip("sans le vrai verre") }
         for style in [VirtualNotchStyle.notch, .pill] {
