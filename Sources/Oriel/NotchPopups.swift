@@ -132,8 +132,9 @@ final class NotificationPopups: ObservableObject {
 enum PopupLayout {
     static let width: CGFloat = 288
     static let height: CGFloat = 50
-    /// Écart entre le bas de la notch et le haut du pop-up.
-    static let gap: CGFloat = 6
+    /// Écart entre le bas de la notch et le haut du pop-up. Plus grand que l'espacement du `GlassEffectContainer` (12 pt) :
+    /// avec le fond Verre, le pop-up ne fusionne pas avec le verre de la notch.
+    static let gap: CGFloat = 14
     static let cornerRadius: CGFloat = 18
 
     /// Zone du pop-up en coordonnées écran (origine en bas à gauche) : `notch` est le rectangle de la notch, `band` la

@@ -255,7 +255,8 @@ struct NotchRootView: View {
                 NotchPopupView(event: popup, fill: fill, glass: style == .chameleon || isGlassPanel,
                                liquid: isGlassPanel, open: { actions.openTab(popup.source) })
                     .padding(.top, bandHeight + PopupLayout.gap)
-                    .transition(model.reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
+                    // Fond Verre : fondu seul, le système de verre ne déplace rien pendant l'animation (`CollapsedFill`).
+                    .transition(model.reduceMotion || isGlassPanel ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
         }
         .animation(motion, value: model.popup)
