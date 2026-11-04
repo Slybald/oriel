@@ -219,11 +219,9 @@ struct NotchRootView: View {
         // Pop-up : sous la bande de la notch (ou de la perle), hors de sa forme comme les intercalaires.
         .overlay(alignment: .top) {
             if !expanded, let popup = model.popup {
-                NotchPopupView(event: popup, fill: fill, glass: style == .chameleon || isGlassPanel,
-                               liquid: isGlassPanel, open: { actions.openTab(popup.source) })
+                NotchPopupView(event: popup, fill: fill, glass: style == .chameleon, open: { actions.openTab(popup.source) })
                     .padding(.top, bandHeight + PopupLayout.gap)
-                    // Fond Verre : fondu seul, le système de verre ne déplace rien pendant l'animation (`CollapsedFill`).
-                    .transition(model.reduceMotion || isGlassPanel ? .opacity : .opacity.combined(with: .move(edge: .top)))
+                    .transition(model.reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
         }
         .animation(motion, value: model.popup)

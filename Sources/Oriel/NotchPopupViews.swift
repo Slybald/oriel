@@ -1,12 +1,12 @@
 import SwiftUI
 
 /// Le pop-up qui descend sous la notch repliée : icône, titre, une ligne. Même fond que les intercalaires (noir, teinte
-/// choisie, flou ou Liquid Glass). Un clic ouvre l'onglet de la source ; le survol (suivi par le contrôleur) le garde ouvert.
+/// choisie, ou flou pour le caméléon). Un clic ouvre l'onglet de la source ; le survol (suivi par le contrôleur) le garde ouvert.
 struct NotchPopupView: View {
     let event: PopupEvent
     let fill: Color
+    /// Caméléon : flou dépoli à la place du fond.
     let glass: Bool
-    let liquid: Bool
     let open: () -> Void
 
     private var accent: Color { event.accentHex.flatMap { Color(hex: $0) } ?? Palette.accent }
@@ -43,18 +43,14 @@ struct NotchPopupView: View {
         .padding(.horizontal, 14)
         .frame(width: PopupLayout.width, height: PopupLayout.height)
         .background(ZStack {
-            if glass, liquid, LiquidGlass.isAvailable {
-                EmptyView()  // le vrai verre est appliqué à la vue (`liquidGlass`, plus bas)
-            } else if glass {
-                Group { if liquid { PanelGlass() } else { NotchGlass() } }.clipShape(shape)
+            if glass {
+                NotchGlass().clipShape(shape)
             } else {
                 shape.fill(fill)
             }
         })
-        .liquidGlass(enabled: glass && liquid && LiquidGlass.isAvailable, active: true, in: shape)
         .overlay(shape.strokeBorder(Color.white.opacity(0.1), lineWidth: 1))
-        // Pas d'ombre sous le vrai verre : elle noircirait sa transparence.
-        .shadow(color: .black.opacity(glass && liquid && LiquidGlass.isAvailable ? 0 : 0.35), radius: 8, y: 3)
+        .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
         .contentShape(shape)
         .onTapGesture(perform: open)
         .accessibilityElement(children: .ignore)
