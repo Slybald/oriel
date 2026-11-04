@@ -497,8 +497,9 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
   - Background `appearance.background` (`PanelBackground`) also accepts `glass`. `liquidGlass(enabled:active:in:)` is
     `.glassEffect(.regular.tint(black 0.3), in: shape)` (macOS 26 and the Swift 6.2 SDK), applied to the view itself, never
     as a `background` (the glass would cover and blur the content). `LiquidGlassGroup` is a `GlassEffectContainer`, only
-    with the Glass choice (even `Glass.identity` changes off-screen rendering). The real notch's black camera area lives in
-    the view carrying the glass (`cameraCover`). Without them, `PanelGlass` (blur plus 55 % black). `panelColor` is
+    with the Glass choice (even `Glass.identity` changes off-screen rendering). With real glass, no opaque fill ever lives in the view
+    carrying the glass (`CollapsedFill`): none on a real notch, behind the `GlassEffectContainer` for the virtual notch, pill
+    and pearl (inside it, the glass system moved the fill away on close, 3.3.0); `cameraCover` only remains for the blur fallback. Without them, `PanelGlass` (blur plus 55 % black). `panelColor` is
     `glassFallbackHex` wherever there is no glass (detached bubble, collapsed tint). CI and release run on `macos-26`; the
     release checks `glassEffect` (`nm -u`, each architecture) and `minos 13.0`, because 3.2.0 shipped the blur alone.
   - Screen `display.screen`: built-in (with the notch), main, under the mouse (follows it while collapsed, on
