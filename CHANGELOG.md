@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [3.3.1] - 2026-11-04
+
+### Fixed
+
+- Glass background: no more black block shifted across the menu bar when the panel opens and closes.
+
 ## [3.3.0] - 2026-11-03
 
 ### Added
