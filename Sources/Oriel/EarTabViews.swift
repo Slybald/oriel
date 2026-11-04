@@ -113,8 +113,6 @@ struct EarTabsView: View {
     let fill: Color
     /// Caméléon : verre dépoli à la place de `fill`.
     var glass = false
-    /// Verre du choix « Verre » (Liquid Glass sur macOS 26 et plus) plutôt que le flou du caméléon.
-    var liquid = false
     /// Pilule : rayon de ses coins (0 : intercalaires d'une encoche).
     var pillRadius: CGFloat = 0
     let animation: Animation
@@ -129,7 +127,7 @@ struct EarTabsView: View {
             ForEach(layout.items) { item in
                 let isHovered = item.id == hovered
                 EarTabItemView(item: item, layout: layout, isHovered: isHovered, cardHeight: cardHeight,
-                               claudeEars: claudeEars, fill: fill, glass: glass, liquid: liquid, pillRadius: pillRadius,
+                               claudeEars: claudeEars, fill: fill, glass: glass, pillRadius: pillRadius,
                                registry: registry, openTab: openTab)
                     .offset(x: frameOf(item, isHovered).midX)
                     // Le rang 0 est au-dessus. Déployé, un intercalaire garde son rang : il recouvre ceux qui sont plus
@@ -163,7 +161,6 @@ private struct EarTabItemView: View {
     let claudeEars: SessionStore.EarsContent?
     let fill: Color
     let glass: Bool
-    let liquid: Bool
     let pillRadius: CGFloat
     @ObservedObject var registry: ModuleRegistry
     let openTab: (String) -> Void
@@ -197,19 +194,14 @@ private struct EarTabItemView: View {
                height: isHovered ? max(cardHeight, layout.notch.height) : item.height, alignment: .top)
         .clipShape(shape)
         .background(ZStack {
-            if glass, liquid, LiquidGlass.isAvailable {
-                EmptyView()  // le vrai verre est appliqué à la vue (`liquidGlass`, plus bas)
-            } else if glass {
+            if glass {
                 // Le verre déborde du cadre comme la forme : le prolongement sous le voisin bouche aussi le jour.
-                Group { if liquid { PanelGlass() } else { NotchGlass() } }
-                    .padding(.horizontal, -overlap).clipShape(shape)
+                NotchGlass().padding(.horizontal, -overlap).clipShape(shape)
             } else {
                 shape.fill(fill)
             }
             shape.fill(Color.white.opacity(tint))
         })
-        // Le vrai verre prend la forme, prolongement sous le voisin compris, et fusionne avec les autres (`LiquidGlassGroup`).
-        .liquidGlass(enabled: glass && liquid && LiquidGlass.isAvailable, active: true, in: shape)
         // Filet clair sur le bord extérieur : sépare la tranche de celle qu'elle recouvre. Déployé, la carte n'en a pas.
         .overlay(EarTabEdge(side: item.side, radius: restRadius, flareRadius: flare,
                             capRadius: pillRadius > 0 ? restRadius : 0)
