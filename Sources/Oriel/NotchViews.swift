@@ -146,6 +146,9 @@ struct NotchRootView: View {
     private var isGlassPanel: Bool { prefs.panelBackground == .glass }
     /// Le panneau déplié et le caméléon replié du choix « Verre » sont en Liquid Glass, là où le système le permet.
     private var usesLiquidGlass: Bool { LiquidGlass.isAvailable && isGlassPanel && (expanded || isGlass) }
+    private var collapsedFill: CollapsedFill {
+        .choose(liquidGlass: LiquidGlass.isAvailable && isGlassPanel, expanded: expanded, hasNotch: model.hasNotch, chameleon: isGlass)
+    }
     /// Repliée sans activité, invisible : sur une vraie encoche (la forme est exactement l'encoche) et en caméléon.
     private var hiddenAtRest: Bool { model.hasNotch || style == .chameleon || style == .pearl }
     /// Replié sur une vraie encoche : aucun évasement, la forme est exactement l'encoche (sinon 6 pt de noir de plus de
@@ -184,6 +187,7 @@ struct NotchRootView: View {
                 Spacer(minLength: 0)
             }
         }
+        .background(alignment: .top) { fillBehindGlass }
         .padding(.top, model.notchGap)
         // Décollage : la goutte (autre fenêtre, dessous) prend la place de la notch.
         .opacity(model.gooActive ? 0 : 1)
@@ -258,7 +262,7 @@ struct NotchRootView: View {
         }
     }
 
-    /// Vraie encoche : la caméra reste noire, le verre continue autour et dessous.
+    /// Repli flou sur une vraie encoche : la caméra reste noire, le flou continue autour et dessous.
     private var cameraCover: some View {
         NotchShape(topRadius: 0, bottomRadius: NotchShape.collapsedBottomRadius)
             .fill(Color.black)
@@ -270,22 +274,43 @@ struct NotchRootView: View {
     private var background: some View {
         ZStack(alignment: .top) {
             if expanded, isGlassPanel {
-                // Liquid Glass : `liquidGlass`, sur la vue elle-même (`usesLiquidGlass`). Sinon, le flou teinté.
-                // `Color.clear` : sans fond plein, le ZStack se réduirait à la forme de l'encoche et la centrerait.
-                if LiquidGlass.isAvailable { Color.clear } else { PanelGlass().transition(.opacity) }
-                // La caméra doit être dans la vue qui porte le verre : posée en `overlay`, le verre la recouvrait et la floutait.
-                if model.hasNotch { cameraCover }
+                // Liquid Glass : `liquidGlass`, sur la vue elle-même (`usesLiquidGlass`), rien de plein dedans (`CollapsedFill`).
+                // Sinon, le flou teinté.
+                if !LiquidGlass.isAvailable {
+                    PanelGlass().transition(.opacity)
+                    if model.hasNotch { cameraCover }
+                }
             } else if isGlass {
                 if !isGlassPanel { NotchGlass().transition(.opacity) } else if !LiquidGlass.isAvailable { PanelGlass().transition(.opacity) }
-            } else {
-                shape.fill(fill.opacity(expanded ? prefs.backgroundOpacity : 1))
-                fill.frame(height: bandHeight)
-                if isPearl {
-                    // Un reflet sur le haut, pour que ce soit une perle et pas un trou.
-                    LinearGradient(colors: [.white.opacity(0.18), .clear], startPoint: .top, endPoint: .center)
-                }
+            } else if collapsedFill == .inNotchView {
+                opaqueFill
             }
         }
+    }
+
+    @ViewBuilder private var opaqueFill: some View {
+        shape.fill(fill.opacity(expanded ? prefs.backgroundOpacity : 1))
+        fill.frame(height: bandHeight)
+        if isPearl {
+            // Un reflet sur le haut, pour que ce soit une perle et pas un trou.
+            LinearGradient(colors: [.white.opacity(0.18), .clear], startPoint: .top, endPoint: .center)
+        }
+    }
+
+    /// Le fond replié du vrai verre (`CollapsedFill.behindGlass`) : centré par la mise en page, à sa taille finale.
+    private var fillBehindGlass: some View {
+        ZStack(alignment: .top) {
+            if collapsedFill == .behindGlass {
+                ZStack(alignment: .top) { opaqueFill }
+                    .frame(width: bodyWidth + 2 * topRadius, height: bandHeight)
+                    .clipShape(shape)
+                    .opacity(showsEars || !hiddenAtRest ? 1 : 0)
+                    .transition(.opacity)
+            }
+        }
+        .animation(motion, value: collapsedFill)
+        .animation(motion, value: showsEars)
+        .animation(motion, value: pearlSize.width)
     }
 }
 

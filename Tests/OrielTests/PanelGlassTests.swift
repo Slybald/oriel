@@ -25,6 +25,31 @@ final class PanelGlassTests: XCTestCase {
         XCTAssertLessThan(LiquidGlass.tintOpacity, PanelGlass.fallbackScrim, "teinte dans le matériau, plus légère que le voile du repli")
     }
 
+    /// Le bloc noir décalé de la 3.3.0 : avec le vrai verre, aucun fond plein dans la vue qui porte le verre, quel que soit l'état.
+    func testRealGlassNeverPutsAFillInTheViewCarryingTheGlass() {
+        for expanded in [false, true] {
+            for hasNotch in [false, true] {
+                for chameleon in [false, true] {
+                    XCTAssertNotEqual(CollapsedFill.choose(liquidGlass: true, expanded: expanded, hasNotch: hasNotch, chameleon: chameleon),
+                                      .inNotchView, "déplié \(expanded), encoche \(hasNotch), caméléon \(chameleon)")
+                    XCTAssertEqual(CollapsedFill.choose(liquidGlass: false, expanded: expanded, hasNotch: hasNotch, chameleon: chameleon),
+                                   .inNotchView, "autres fonds et repli flou : inchangés")
+                }
+            }
+        }
+    }
+
+    func testRealGlassDrawsNoBlackOnARealNotchAndKeepsTheVirtualOnes() {
+        XCTAssertEqual(CollapsedFill.choose(liquidGlass: true, expanded: false, hasNotch: true, chameleon: false), .absent,
+                       "la caméra est noire d'elle-même")
+        XCTAssertEqual(CollapsedFill.choose(liquidGlass: true, expanded: false, hasNotch: false, chameleon: false), .behindGlass,
+                       "encoche virtuelle, pilule, perle : le fond reste, hors du verre")
+        XCTAssertEqual(CollapsedFill.choose(liquidGlass: true, expanded: false, hasNotch: false, chameleon: true), .absent,
+                       "le caméléon est en verre")
+        XCTAssertEqual(CollapsedFill.choose(liquidGlass: true, expanded: true, hasNotch: false, chameleon: false), .absent,
+                       "le panneau déplié est en verre")
+    }
+
     func testWhiteTextStaysReadableOnTheBrightestBackdropWithTheBlurFallback() {
         XCTAssertGreaterThanOrEqual(PanelGlass.worstCaseContrast(), 4.5, "WCAG AA, fond d'écran blanc pur")
         XCTAssertLessThan(PanelGlass.worstCaseContrast(scrim: 0), 1.1, "sans teinte, le blanc sur blanc est illisible")
