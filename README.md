@@ -238,7 +238,7 @@ Open **…** › **Settings…** (⌘,).
   [command bar](#command-bar). They work everywhere, without the Accessibility permission. Once the panel is open from the keyboard, ← and → switch tabs,
   ⌘1 to ⌘9 jump to a tab, and Esc closes it.
 - **Size and look**: panel width (compact, standard, large, or a custom width from 460 to 720 pt), background (black,
-  graphite, midnight blue, glass, or a custom color; glass is Liquid Glass on macOS 26 and later), opacity, shadow, accent color and animation speed. With "Reduce
+  graphite, midnight blue or a custom color), opacity, shadow, accent color and animation speed. With "Reduce
   motion" on in macOS, the animations become a simple fade.
 - **Screen**: the built-in display (the default), the main display, the display under the mouse, or a display
   picked by name. A screen without a notch gets a virtual one at the top center, in the style set in Appearance
@@ -845,7 +845,7 @@ Ouvre **…** › **Réglages…** (⌘,).
   troisième ouvre la [barre de commande](#barre-de-commande). Ils marchent partout, sans l'autorisation d'accessibilité. Panneau ouvert au clavier : ← et → changent d'onglet, ⌘1 à
   ⌘9 vont à un onglet, Échap ferme.
 - **Taille et apparence** : largeur du panneau (compact, standard, grand, ou une largeur personnalisée de 460 à
-  720 pt), fond (noir, graphite, bleu nuit, verre ou couleur libre ; le verre est du Liquid Glass sur macOS 26 et plus), opacité, ombre, couleur d'accent et vitesse des
+  720 pt), fond (noir, graphite, bleu nuit ou couleur libre), opacité, ombre, couleur d'accent et vitesse des
   animations. Avec « Réduire les animations » activé dans macOS, les animations deviennent un simple fondu.
 - **Écran** : l'écran intégré (par défaut), l'écran principal, l'écran sous la souris, ou un écran choisi par son
   nom. Un écran sans encoche reçoit une encoche virtuelle en haut au centre, dans le style choisi dans Apparence

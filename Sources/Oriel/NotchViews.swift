@@ -74,28 +74,6 @@ struct NotchGlass: NSViewRepresentable {
     func updateNSView(_ view: NSView, context: Context) {}
 }
 
-/// Repli du choix « Verre » (avant macOS 26, ou sans le SDK de macOS 26) : le flou, et une teinte sombre par-dessus
-/// pour que le texte blanc reste lisible sur un fond d'écran clair (voir `PanelGlassTests`). Le vrai Liquid Glass
-/// (`liquidGlass`) n'a pas de teinte : sa lisibilité vient du matériau.
-struct PanelGlass: View {
-    static let fallbackScrim = 0.55
-
-    /// Contraste du texte blanc sur le pire fond d'écran possible (blanc pur) sous la teinte : 4,5 est le seuil WCAG AA.
-    /// Le flou ne rend jamais plus clair que ce qu'il y a derrière ; la teinte est donc le pire cas.
-    static func worstCaseContrast(scrim: Double = fallbackScrim) -> Double {
-        let gray = 1 - scrim
-        let linear = pow((gray + 0.055) / 1.055, 2.4)
-        return 1.05 / (linear + 0.05)
-    }
-
-    var body: some View {
-        ZStack {
-            NotchGlass()
-            Color.black.opacity(Self.fallbackScrim)
-        }
-    }
-}
-
 /// `max` et non `value = nextValue()` : la valeur par défaut d'un voisin écraserait la mesure.
 private struct NotchSizeKey: PreferenceKey {
     static var defaultValue: CGSize = .zero
@@ -142,13 +120,6 @@ struct NotchRootView: View {
     private var pearlSize: CGSize { Pearl.size(for: pearlTab) }
     /// Caméléon replié : verre dépoli à la place du fond.
     private var isGlass: Bool { style == .chameleon && !expanded }
-    /// Choix « Verre » pour le fond : panneau déplié et intercalaires en verre.
-    private var isGlassPanel: Bool { prefs.panelBackground == .glass }
-    /// Le panneau déplié et le caméléon replié du choix « Verre » sont en Liquid Glass, là où le système le permet.
-    private var usesLiquidGlass: Bool { LiquidGlass.isAvailable && isGlassPanel && (expanded || isGlass) }
-    private var collapsedFill: CollapsedFill {
-        .choose(liquidGlass: LiquidGlass.isAvailable && isGlassPanel, expanded: expanded, hasNotch: model.hasNotch, chameleon: isGlass)
-    }
     /// Repliée sans activité, invisible : sur une vraie encoche (la forme est exactement l'encoche) et en caméléon.
     private var hiddenAtRest: Bool { model.hasNotch || style == .chameleon || style == .pearl }
     /// Replié sur une vraie encoche : aucun évasement, la forme est exactement l'encoche (sinon 6 pt de noir de plus de
@@ -179,15 +150,12 @@ struct NotchRootView: View {
     }
 
     var body: some View {
-        LiquidGlassGroup(enabled: LiquidGlass.isAvailable && isGlassPanel) {
-            VStack(spacing: 0) {
-                notch
-                    // Les couleurs d'accent sont lues au rendu : la vue est reconstruite quand l'accent change.
-                    .id(prefs.accentHex)
-                Spacer(minLength: 0)
-            }
+        VStack(spacing: 0) {
+            notch
+                // Les couleurs d'accent sont lues au rendu : la vue est reconstruite quand l'accent change.
+                .id(prefs.accentHex)
+            Spacer(minLength: 0)
         }
-        .background(alignment: .top) { fillBehindGlass }
         .padding(.top, model.notchGap)
         // Décollage : la goutte (autre fenêtre, dessous) prend la place de la notch.
         .opacity(model.gooActive ? 0 : 1)
@@ -223,7 +191,6 @@ struct NotchRootView: View {
         .padding(.horizontal, topRadius)
         .background(background)
         .clipShape(shape)
-        .liquidGlass(enabled: LiquidGlass.isAvailable && isGlassPanel, active: usesLiquidGlass, in: shape)
         .overlay(alignment: .bottomTrailing) {
             if showsHandle {
                 DetachHandle(begin: actions.beginDetach, detach: { actions.detach?() }, cornerRadius: bottomRadius,
@@ -264,7 +231,7 @@ struct NotchRootView: View {
         .overlay(alignment: .top) {
             if !expanded, showsEars, !isPearl {
                 EarTabsView(layout: layout, hovered: model.hoveredTab, claudeEars: store.ears, fill: fill,
-                            glass: style == .chameleon || isGlassPanel, liquid: isGlassPanel,
+                            glass: style == .chameleon,
                             pillRadius: isPill ? pillRadius : 0, animation: motion,
                             registry: registry, openTab: actions.openTab,
                             cardHeightChanged: { model.tabCardHeight = $0 })
@@ -273,55 +240,21 @@ struct NotchRootView: View {
         }
     }
 
-    /// Repli flou sur une vraie encoche : la caméra reste noire, le flou continue autour et dessous.
-    private var cameraCover: some View {
-        NotchShape(topRadius: 0, bottomRadius: NotchShape.collapsedBottomRadius)
-            .fill(Color.black)
-            .frame(width: model.notchSize.width, height: model.notchSize.height)
-    }
-
     /// Fond choisi, translucide une fois déplié si les réglages le demandent ; la bande de la notch reste opaque.
     /// Caméléon replié : verre dépoli.
     private var background: some View {
         ZStack(alignment: .top) {
-            if expanded, isGlassPanel {
-                // Liquid Glass : `liquidGlass`, sur la vue elle-même (`usesLiquidGlass`), rien de plein dedans (`CollapsedFill`).
-                // Sinon, le flou teinté.
-                if !LiquidGlass.isAvailable {
-                    PanelGlass().transition(.opacity)
-                    if model.hasNotch { cameraCover }
+            if isGlass {
+                NotchGlass().transition(.opacity)
+            } else {
+                shape.fill(fill.opacity(expanded ? prefs.backgroundOpacity : 1))
+                fill.frame(height: bandHeight)
+                if isPearl {
+                    // Un reflet sur le haut, pour que ce soit une perle et pas un trou.
+                    LinearGradient(colors: [.white.opacity(0.18), .clear], startPoint: .top, endPoint: .center)
                 }
-            } else if isGlass {
-                if !isGlassPanel { NotchGlass().transition(.opacity) } else if !LiquidGlass.isAvailable { PanelGlass().transition(.opacity) }
-            } else if collapsedFill == .inNotchView {
-                opaqueFill
             }
         }
-    }
-
-    @ViewBuilder private var opaqueFill: some View {
-        shape.fill(fill.opacity(expanded ? prefs.backgroundOpacity : 1))
-        fill.frame(height: bandHeight)
-        if isPearl {
-            // Un reflet sur le haut, pour que ce soit une perle et pas un trou.
-            LinearGradient(colors: [.white.opacity(0.18), .clear], startPoint: .top, endPoint: .center)
-        }
-    }
-
-    /// Le fond replié du vrai verre (`CollapsedFill.behindGlass`) : centré par la mise en page, à sa taille finale.
-    private var fillBehindGlass: some View {
-        ZStack(alignment: .top) {
-            if collapsedFill == .behindGlass {
-                ZStack(alignment: .top) { opaqueFill }
-                    .frame(width: bodyWidth + 2 * topRadius, height: bandHeight)
-                    .clipShape(shape)
-                    .opacity(showsEars || !hiddenAtRest ? 1 : 0)
-                    .transition(.opacity)
-            }
-        }
-        .animation(motion, value: collapsedFill)
-        .animation(motion, value: showsEars)
-        .animation(motion, value: pearlSize.width)
     }
 }
 
