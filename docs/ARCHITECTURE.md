@@ -494,14 +494,9 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     in every mode. "Hide the notch" for 1 h, until 8 am tomorrow or until turned back on (`visibility.hiddenUntil`, `distantFuture`): one `Timer` at the
     end date, only while hidden, re-read on wake. "Until turned back on" ends when the app is opened again
     (reopen event) or relaunched; reopening the app also opens the settings (no Dock or menu bar icon).
-  - Background `appearance.background` (`PanelBackground`) also accepts `glass`. `liquidGlass(enabled:active:in:)` is
-    `.glassEffect(.regular.tint(black 0.3), in: shape)` (macOS 26 and the Swift 6.2 SDK), applied to the view itself, never
-    as a `background` (the glass would cover and blur the content). `LiquidGlassGroup` is a `GlassEffectContainer`, only
-    with the Glass choice (even `Glass.identity` changes off-screen rendering). With real glass, no opaque fill ever lives in the view
-    carrying the glass (`CollapsedFill`): none on a real notch, behind the `GlassEffectContainer` for the virtual notch, pill
-    and pearl (inside it, the glass system moved the fill away on close, 3.3.0); `cameraCover` only remains for the blur fallback. Without them, `PanelGlass` (blur plus 55 % black). `panelColor` is
-    `glassFallbackHex` wherever there is no glass (detached bubble, collapsed tint). CI and release run on `macos-26`; the
-    release checks `glassEffect` (`nm -u`, each architecture) and `minos 13.0`, because 3.2.0 shipped the blur alone.
+  - Background `appearance.background` (`PanelBackground`): an old stored `glass` value reads as black (the Glass
+    background was removed: it slowed the notch animation, 88 against 111 fps). The release runs on `macos-26` and checks
+    `minos 13.0`.
   - Screen `display.screen`: built-in (with the notch), main, under the mouse (follows it while collapsed, on
     mouse events only) or a screen by name (identical models are numbered). Without a notch, a 200 pt virtual
     notch is drawn at the top center, as high as that screen's menu bar. Its style is `appearance.virtualNotch`
