@@ -59,6 +59,8 @@ final class NotificationPopups: ObservableObject {
     private(set) var isFullScreen = false
     private var held: [String: HeldCount] = [:]
     private var summaries = 0
+    /// Un plein écran vient de finir et son résumé n'a pas pu descendre (panneau ouvert, bulle détachée…) : il attend.
+    private var summaryDue = false
     private var cancelTimer: (() -> Void)?
     private var cancelGap: (() -> Void)?
 
@@ -66,9 +68,15 @@ final class NotificationPopups: ObservableObject {
         self.scheduler = scheduler
     }
 
+    // La file et tout ce qu'elle lit (`situation`, `isBlocked`…) vivent sur le fil principal. Aujourd'hui chaque module
+    // y arrive déjà ; ces entrées le garantissent aussi pour un appel venu d'ailleurs : l'ordre des appels d'un même fil
+    // est gardé ; seul `accepts`, qui doit répondre, attend le fil principal (un fil dont le principal dépendrait ne
+    // doit donc pas l'appeler : aucun appelant actuel).
+
     /// Les modules testent ceci avant tout travail ajouté pour un pop-up.
     func accepts(_ source: String) -> Bool {
-        decision(for: source) != nil
+        guard Thread.isMainThread else { return DispatchQueue.main.sync { accepts(source) } }
+        return decision(for: source) != nil
     }
 
     /// La seule porte : nil = rien (réglage, module, notch, Concentration) ; sinon `show` ou `redact`.
@@ -79,6 +87,7 @@ final class NotificationPopups: ObservableObject {
     }
 
     func post(_ original: PopupEvent) {
+        guard Thread.isMainThread else { return DispatchQueue.main.async { self.post(original) } }
         guard let decision = decision(for: original.source) else { return }
         let event = decision == .redact ? original.redacted(title: sourceTitle(original.source)) : original
         // Plein écran : compté seulement ici, après la porte (un événement refusé ou masqué ne revient jamais en clair).
@@ -102,6 +111,7 @@ final class NotificationPopups: ObservableObject {
 
     /// Souris sur le pop-up : il reste ouvert.
     func setHovering(_ isHovering: Bool) {
+        guard Thread.isMainThread else { return DispatchQueue.main.async { self.setHovering(isHovering) } }
         // Sans pop-up à l'écran, la souris ne compte pas : le suivant ne doit pas démarrer « survolé » à tort.
         guard current != nil else { hovering = false; return }
         guard isHovering != hovering else { return }
@@ -113,6 +123,7 @@ final class NotificationPopups: ObservableObject {
 
     /// Tout est oublié : panneau ouvert, notch masquée, réglage coupé.
     func clear() {
+        guard Thread.isMainThread else { return DispatchQueue.main.async { self.clear() } }
         cancelTimer?()
         cancelTimer = nil
         cancelGap?()
@@ -168,16 +179,27 @@ extension NotificationPopups {
     }
 
     func setFullScreen(_ on: Bool) {
+        guard Thread.isMainThread else { return DispatchQueue.main.async { self.setFullScreen(on) } }
         guard on != isFullScreen else { return }
         isFullScreen = on
+        summaryDue = !on
         if on {
             // Ce qui attendait en file est gardé ; ce qui est à l'écran a déjà été vu (mais ne sera pas recompté).
             if let current { held[current.source] = HeldCount(lastKey: current.key.hashValue) }
             for event in pending { hold(event) }
             clear()
-        } else if let summary = takeSummary() {
-            post(summary)
+        } else {
+            flushSummary()
         }
+    }
+
+    /// Montre le résumé en attente dès que la notch peut le faire (le contrôleur l'appelle quand le panneau se referme ou
+    /// que la bulle revient). Sans minuteur : rien ne tourne tant qu'il n'y a rien à dire. Il repasse par la même porte.
+    func flushSummary() {
+        guard Thread.isMainThread else { return DispatchQueue.main.async { self.flushSummary() } }
+        guard summaryDue, !isFullScreen, !isBlocked() else { return }
+        summaryDue = false
+        if let summary = takeSummary() { post(summary) }
     }
 
     fileprivate func hold(_ event: PopupEvent) {

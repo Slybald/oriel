@@ -643,7 +643,17 @@ final class NotchController {
             .store(in: &cancellables)
         model.$bubble
             .removeDuplicates()
-            .sink { [weak self] phase in if phase != .attached { self?.popups.clear() } }
+            .sink { [weak self] phase in
+                guard let self else { return }
+                if phase != .attached { popups.clear() } else { popups.flushSummary() }
+            }
+            .store(in: &cancellables)
+        // Le résumé d'un plein écran qui attendait un panneau ouvert descend dès que le panneau est refermé.
+        model.$isExpanded
+            .removeDuplicates()
+            .filter { !$0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.popups.flushSummary() }
             .store(in: &cancellables)
     }
 

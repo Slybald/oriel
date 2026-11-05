@@ -591,6 +591,8 @@ private struct AppearanceSettings: View {
                 .pickerStyle(.segmented)
                 SettingsNote(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
                     ? L("« Réduire les animations » est activé dans macOS : simple fondu.")
+                    : SoberMode.current
+                    ? L("Mode sobre actif (économie d'énergie ou Mac très chaud) : simple fondu.", table: "Health")
                     : L("Ouverture, fermeture et changement d'onglet."))
             }
             Section("Notch repliée") {
