@@ -1,0 +1,10 @@
+/* Oriel : textes français du module Micro et caméra (la clé est le texte). */
+"Micro et caméra" = "Micro et caméra";
+"Micro" = "Micro";
+"Caméra" = "Caméra";
+"Micro + cam" = "Micro + cam";
+"Inactif" = "Inactif";
+"Oriel lit seulement l'état des appareils. Il n'ouvre jamais le micro ni la caméra." = "Oriel lit seulement l'état des appareils. Il n'ouvre jamais le micro ni la caméra.";
+"Intercalaire quand le micro ou la caméra tourne" = "Intercalaire quand le micro ou la caméra tourne";
+"Notch repliée" = "Notch repliée";
+"Orange pour un micro, vert pour une caméra. Oriel ne demande aucune autorisation et n'ouvre jamais le micro ni la caméra : il lit seulement l'état « en marche » des appareils, sans dire quelle app s'en sert. Les casques et interfaces audio qui jouent aussi du son ne sont pas détectés." = "Orange pour un micro, vert pour une caméra. Oriel ne demande aucune autorisation et n'ouvre jamais le micro ni la caméra : il lit seulement l'état « en marche » des appareils, sans dire quelle app s'en sert. Les casques et interfaces audio qui jouent aussi du son ne sont pas détectés.";
