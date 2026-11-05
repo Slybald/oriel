@@ -17,6 +17,8 @@ struct PopupEvent: Equatable {
     var extra = 0
     /// Couleur d'accent (hex) ; nil = celle de l'app.
     var accentHex: String?
+    /// Ligne neutre à montrer quand le contenu doit rester caché (`PopupDecision.redact`) ; nil = le texte n'a rien de privé.
+    var redactedText: String?
 }
 
 /// File des pop-ups de la notch repliée : un seul à l'écran, les suivants attendent (regroupés par source), jamais
@@ -46,6 +48,10 @@ final class NotificationPopups: ObservableObject {
     var isSourceEnabled: (String) -> Bool = { _ in true }
     /// La notch ne peut pas montrer de pop-up maintenant.
     var isBlocked: () -> Bool = { false }
+    /// Ce que l'on sait du Mac à l'arrivée d'un pop-up (le contrôleur branche `PopupProbes` et l'agenda).
+    var situation: () -> PopupSituation = { PopupSituation() }
+    /// Nom de l'onglet d'une source, montré à la place du titre quand le contenu est caché.
+    var sourceTitle: (String) -> String = { $0 }
 
     private let scheduler: ModuleScheduler
     private var hovering = false
@@ -58,11 +64,19 @@ final class NotificationPopups: ObservableObject {
 
     /// Les modules testent ceci avant tout travail ajouté pour un pop-up.
     func accepts(_ source: String) -> Bool {
-        isEnabled && isSourceEnabled(source) && !isBlocked()
+        decision(for: source) != nil
     }
 
-    func post(_ event: PopupEvent) {
-        guard accepts(event.source) else { return }
+    /// La seule porte : nil = rien (réglage, module, notch, Concentration) ; sinon `show` ou `redact`.
+    private func decision(for source: String) -> PopupDecision? {
+        guard isEnabled, isSourceEnabled(source), !isBlocked() else { return nil }
+        let decision = PopupSilence.decide(situation())
+        return decision == .drop ? nil : decision
+    }
+
+    func post(_ original: PopupEvent) {
+        guard let decision = decision(for: original.source) else { return }
+        let event = decision == .redact ? original.redacted(title: sourceTitle(original.source)) : original
         if current?.source == event.source, current?.key == event.key { return }
         if let index = pending.firstIndex(where: { $0.source == event.source }) {
             // Même source déjà en attente : regroupé, le plus récent donne le texte.
