@@ -612,10 +612,11 @@ final class NotchController {
 
     private func observePopups() {
         popups.isSourceEnabled = { [weak self] id in self?.registry.isEnabled(id) ?? false }
-        // Pas de pop-up là où la notch n'en montre pas : panneau ou bulle ouverts, plein écran « masquée », masquage demandé.
+        // Pas de pop-up là où la notch n'en montre pas : panneau ou bulle ouverts, masquage demandé. Le plein écran, lui,
+        // garde les événements pour un résumé à la sortie (`setFullScreen`).
         popups.isBlocked = { [weak self] in
             guard let self else { return true }
-            return model.isExpanded || model.bubble != .attached || hiddenForFullScreen || hiddenByUser
+            return model.isExpanded || model.bubble != .attached || hiddenByUser
         }
         popups.sourceTitle = { [weak self] id in self?.registry.modules.first { $0.id == id }?.title ?? id }
         // Lu à l'arrivée d'un pop-up seulement : aucune surveillance.
@@ -978,6 +979,7 @@ final class NotchController {
         let fullScreen = displayID.map { FullScreenDetector.frontmostAppIsFullScreen(onDisplay: $0) } ?? false
         guard fullScreen != model.isFullScreen else { return }
         model.isFullScreen = fullScreen
+        popups.setFullScreen(fullScreen)
         updateVisibility()
     }
 
