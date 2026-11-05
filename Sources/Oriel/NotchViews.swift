@@ -216,6 +216,15 @@ struct NotchRootView: View {
         .animation(motion, value: model.selectedTab)
         .animation(motion, value: model.isEditingTabs)
         .animation(motion, value: model.isCommandBarOpen)
+        // Pop-up : sous la bande de la notch (ou de la perle), hors de sa forme comme les intercalaires.
+        .overlay(alignment: .top) {
+            if !expanded, let popup = model.popup {
+                NotchPopupView(event: popup, fill: fill, glass: style == .chameleon, open: { actions.openTab(popup.source) })
+                    .padding(.top, bandHeight + PopupLayout.gap)
+                    .transition(model.reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .animation(motion, value: model.popup)
         // Hors de la forme de la notch (qui rogne) : les intercalaires dépassent de chaque côté.
         .overlay(alignment: .top) {
             if !expanded, showsEars, !isPearl {

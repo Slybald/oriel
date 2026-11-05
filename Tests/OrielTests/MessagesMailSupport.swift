@@ -159,16 +159,26 @@ final class MessagesRig {
     let watcher = FakeWatcher()
     let sender = FakeSender()
     let schedule = ManualSchedule()
+    /// File de pop-ups à soi (jamais celle de l'app), coupée : les tests des modules voient le comportement sans pop-up ;
+    /// ceux de `PopupTests` l'allument.
+    var popups = MessagesRig.offQueue()
     private(set) var opened: [URL] = []
 
     init(_ test: XCTestCase) {
         defaults = makeEphemeralDefaults(test)
     }
 
+    static func offQueue() -> NotificationPopups {
+        let queue = NotificationPopups(scheduler: ManualSchedule().scheduler)
+        queue.isEnabled = false
+        return queue
+    }
+
     func makeModule() -> MessagesModule {
         MessagesModule(defaults: defaults, database: database, contacts: contacts, watcher: watcher, sender: sender,
                        scheduler: schedule.scheduler, clock: { MessagesFixtures.now }, background: { $0() },
-                       main: { $0() }, openURL: { [unowned self] in opened.append($0) }, directory: "/fake/Messages")
+                       main: { $0() }, openURL: { [unowned self] in opened.append($0) }, directory: "/fake/Messages",
+                       popups: popups)
     }
 
     /// Un module démarré qui a déjà lu la base d'exemple.
@@ -227,6 +237,7 @@ final class MailRig {
     let workspace = NotificationCenter()
     var running = true
     var probeStatus = AutomationStatus.granted
+    var popups = MessagesRig.offQueue()
     private(set) var opened: [URL] = []
 
     init(_ test: XCTestCase) {
@@ -236,7 +247,8 @@ final class MailRig {
     func makeModule() -> MailModule {
         MailModule(defaults: defaults, runner: runner, probe: FakeAutomationProbe(status: probeStatus),
                    isMailRunning: { [unowned self] in running }, workspace: workspace, scheduler: schedule.scheduler,
-                   clock: { MessagesFixtures.now }, openURL: { [unowned self] in opened.append($0) })
+                   clock: { MessagesFixtures.now }, openURL: { [unowned self] in opened.append($0) },
+                   popups: popups)
     }
 
     /// Réponse du script : compteurs, puis un enregistrement par message (âge en secondes).

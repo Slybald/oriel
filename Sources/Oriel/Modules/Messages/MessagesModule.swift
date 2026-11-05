@@ -75,6 +75,10 @@ final class MessagesModule: NotchModule {
     private let main: Async
     private let openURL: (URL) -> Void
     private let directory: String
+    private let popups: NotificationPopups
+    /// Date du dernier message déjà vu depuis le démarrage ; nil tant que la première lecture n'est pas faite : ce qui
+    /// existe au lancement n'est pas nouveau.
+    private var popupBaseline: Date?
 
     private var rows: [ThreadRow] = []
     private var book: ContactBook?
@@ -92,7 +96,9 @@ final class MessagesModule: NotchModule {
          background: @escaping Async = { DispatchQueue.global(qos: .utility).async(execute: $0) },
          main: @escaping Async = { DispatchQueue.main.async(execute: $0) },
          openURL: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) },
-         directory: String = (SQLiteMessagesDatabase.defaultPath as NSString).deletingLastPathComponent) {
+         directory: String = (SQLiteMessagesDatabase.defaultPath as NSString).deletingLastPathComponent,
+         popups: NotificationPopups = .shared) {
+        self.popups = popups
         self.defaults = defaults
         self.database = database
         self.contacts = contacts
@@ -121,7 +127,7 @@ final class MessagesModule: NotchModule {
 
     /// Replié, tant que la pastille est permise et que l'accès a déjà fonctionné : l'écoute des fichiers suffit.
     var keepsRunningWhenCollapsed: Bool {
-        guard showBadge else { return false }
+        guard showBadge || popups.isEnabled else { return false }
         switch access {
         case .ready: return true
         case .unknown: return armed
@@ -144,6 +150,7 @@ final class MessagesModule: NotchModule {
     func stop() {
         isStarted = false
         generation += 1
+        popupBaseline = nil
         stopWatching()
         cancelSentReset?()
         cancelSentReset = nil
@@ -178,6 +185,7 @@ final class MessagesModule: NotchModule {
     private func apply(_ result: MessagesRead) {
         switch result {
         case .snapshot(let snapshot):
+            announce(snapshot.rows)
             rows = snapshot.rows
             unread = snapshot.unread
             armed = true
@@ -192,6 +200,20 @@ final class MessagesModule: NotchModule {
             armed = false
             access = state
             stopWatching()
+        }
+    }
+
+    /// Pop-up pour chaque conversation dont le dernier message, reçu et non lu, est plus récent que tout ce qui avait été
+    /// vu. La première lecture ne fait que poser la référence. Le texte coupé dans les réglages ne sort pas non plus ici.
+    private func announce(_ latest: [ThreadRow]) {
+        let newest = latest.map(\.date).max()
+        defer { if let newest { popupBaseline = max(newest, popupBaseline ?? newest) } else if popupBaseline == nil { popupBaseline = .distantPast } }
+        guard let baseline = popupBaseline, popups.accepts(id) else { return }
+        for row in latest.filter({ $0.date > baseline && !$0.fromMe && $0.unread > 0 }).sorted(by: { $0.date < $1.date }) {
+            let text = showText ? snippet(of: row) : ""
+            popups.post(PopupEvent(source: id, symbol: "message.fill", title: title(of: row),
+                                   text: text.isEmpty ? L("Nouveau message", table: "Popup") : text,
+                                   key: "\(row.guid)|\(row.date.timeIntervalSince1970)"))
         }
     }
 

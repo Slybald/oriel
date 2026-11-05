@@ -180,6 +180,7 @@ final class Preferences: ObservableObject {
         static let shadow = "appearance.shadow"
         static let animationSpeed = "appearance.animationSpeed"
         static let showEars = "appearance.showEars"
+        static let popups = "popup.enabled"
         static let earTabs = "appearance.earTabs"
         /// Réglage de la 1.2.2 à la 1.7.0 (« Alterner Claude et les autres oreilles »), remplacé par `earTabs`.
         static let legacyAlternateEars = "appearance.alternateEars"
@@ -201,7 +202,7 @@ final class Preferences: ObservableObject {
             alwaysVisible, visibility, hiddenUntil, openTrigger, closeOnClickOutside, openDelay, closeDelay, haptics,
             toggleHotKey, hideHotKey, commandHotKey, fullScreen, screen, accent, panelSize, customWidth, background,
             customBackground, tintCollapsed, virtualNotch, opacity, shadow, animationSpeed, showEars, earTabs, hideFromCapture,
-            allowsDetach, bubbleReturnsOnRelaunch,
+            allowsDetach, bubbleReturnsOnRelaunch, popups,
         ]
     }
 
@@ -417,6 +418,15 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(showEars, forKey: Key.showEars) }
     }
 
+    /// Pop-up qui descend de la notch repliée à l'arrivée d'un message, d'un mail, d'une réponse de Claude… (`NotificationPopups`).
+    @Published var popupsEnabled: Bool {
+        didSet {
+            defaults.set(popupsEnabled, forKey: Key.popups)
+            NotificationPopups.shared.isEnabled = popupsEnabled
+            if !popupsEnabled { NotificationPopups.shared.clear() }
+        }
+    }
+
     /// Intercalaires de la notch repliée : languettes qui se déploient au survol, ou toujours visibles.
     @Published var earTabsMode: EarTabsMode {
         didSet { defaults.set(earTabsMode.rawValue, forKey: Key.earTabs) }
@@ -506,6 +516,9 @@ final class Preferences: ObservableObject {
         panelShadow = defaults.object(forKey: Key.shadow) as? Bool ?? true
         animationSpeed = choice(Key.animationSpeed, AnimationSpeed.normal)
         showEars = defaults.object(forKey: Key.showEars) as? Bool ?? true
+        let popups = defaults.object(forKey: Key.popups) as? Bool ?? true
+        popupsEnabled = popups
+        NotificationPopups.shared.isEnabled = popups
         let legacyAlternate = defaults.object(forKey: Key.legacyAlternateEars) as? Bool
         let tabsMode = choice(Key.earTabs, Self.migratedEarTabs(alternateEars: legacyAlternate))
         earTabsMode = tabsMode
@@ -631,6 +644,7 @@ final class Preferences: ObservableObject {
         panelShadow = fresh.panelShadow
         animationSpeed = fresh.animationSpeed
         showEars = fresh.showEars
+        popupsEnabled = fresh.popupsEnabled
         earTabsMode = fresh.earTabsMode
     }
 }

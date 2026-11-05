@@ -33,3 +33,17 @@ jobs:
 
       - name: Test
         run: swift test
+
+      # Rendus PNG du pop-up de la notch, à regarder dans les artefacts de l'exécution (rien ne se lance sur le Mac).
+      - name: Popup renders
+        env:
+          ORIEL_SNAPSHOT_DIR: ${{ runner.temp }}/popup-renders
+        run: swift test --filter PopupSnapshotTests
+
+      - name: Upload popup renders
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: popup-renders
+          path: ${{ runner.temp }}/popup-renders
+          retention-days: 14

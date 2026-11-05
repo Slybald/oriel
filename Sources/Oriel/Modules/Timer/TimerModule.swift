@@ -86,12 +86,14 @@ final class TimerModule: NotchModule {
     private var terminateObserver: NSObjectProtocol?
     /// Notification de fin programmée pour le décompte en cours.
     private var scheduledNotification: String?
+    private let popups: NotificationPopups
 
     init(defaults: UserDefaults = .standard, directory: URL = ModuleDataDirectory.standard,
          clock: @escaping () -> Date = Date.init, scheduler: ModuleScheduler = .system,
          notifier: TimerNotifier = SystemTimerNotifier(), playSound: @escaping (String) -> Void = TimerSound.play,
          calendar: Calendar = .current, center: NotificationCenter = .default,
-         fileScheduler: ModuleScheduler? = nil) {
+         fileScheduler: ModuleScheduler? = nil, popups: NotificationPopups = .shared) {
+        self.popups = popups
         self.defaults = defaults
         self.clock = clock
         self.scheduler = scheduler
@@ -351,6 +353,11 @@ final class TimerModule: NotchModule {
         // La notification de la phase terminée est remise par le système : on la laisse partir.
         scheduledNotification = nil
         if !ended.silent, !soundName.isEmpty { playSound(soundName) }
+        if !ended.silent, popups.accepts(id) {
+            let message = Self.endMessage(mode: ended.mode, phase: ended.phase, duration: ended.duration)
+            popups.post(PopupEvent(source: id, symbol: "timer", title: message.title, text: message.body,
+                                   key: "\(ended.at.timeIntervalSince1970)"))
+        }
         // Panneau ouvert : le résultat est sous les yeux, pas d'oreille « Terminé » au repli qui suit.
         if state.status == .finished, openViews == 0 { showFinishedEars() }
         commit()
@@ -416,11 +423,15 @@ final class TimerModule: NotchModule {
 
     /// Texte de la notification du décompte en cours.
     private var endMessage: (title: String, body: String) {
-        guard state.mode == .pomodoro else {
+        Self.endMessage(mode: state.mode, phase: state.phase, duration: state.duration)
+    }
+
+    static func endMessage(mode: TimerMode, phase: TimerPhase, duration: TimeInterval) -> (title: String, body: String) {
+        guard mode == .pomodoro else {
             return (L("Minuteur terminé", table: "Timer"),
-                    String(format: L("%@ écoulées.", table: "Timer"), TimerFormat.duration(state.duration)))
+                    String(format: L("%@ écoulées.", table: "Timer"), TimerFormat.duration(duration)))
         }
-        switch state.phase {
+        switch phase {
         case .focus:
             return (L("Concentration terminée", table: "Timer"), L("C'est l'heure de la pause.", table: "Timer"))
         case .shortBreak, .longBreak:
