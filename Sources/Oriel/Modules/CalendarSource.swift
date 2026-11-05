@@ -56,7 +56,7 @@ final class EventKitCalendar: CalendarSource {
 
     var access: CalendarAccess { Self.currentAccess }
 
-    private static var currentAccess: CalendarAccess {
+    static var currentAccess: CalendarAccess {
         let status = EKEventStore.authorizationStatus(for: .event)
         switch status {
         case .notDetermined: return .notDetermined
