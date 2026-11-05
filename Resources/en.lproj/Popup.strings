@@ -1,7 +1,7 @@
 /* English texts of the notch pop-ups (Settings › General, pop-up lines). The key is the French text used in the code. */
 "Pop-ups" = "Pop-ups";
 "Pop-up à l'arrivée d'un événement" = "Pop-up when something arrives";
-"Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout seul, reste ouvert sous la souris, et un clic ouvre l'onglet. Rien en plein écran si la notch y est masquée, ni quand le panneau est ouvert." = "A small pop-up drops from the notch for a message, a mail, Claude or Codex, the end of the timer and a meeting. Only for enabled tabs; it closes by itself, stays open under the mouse, and a click opens the tab. Nothing in full screen if the notch is hidden there, nor while the panel is open.";
+"Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout seul, reste ouvert sous la souris, et un clic ouvre l'onglet. En plein écran, ils attendent et un seul résumé apparaît à la sortie ; rien quand le panneau est ouvert." = "A small pop-up drops from the notch for a message, a mail, Claude or Codex, the end of the timer and a meeting. Only for enabled tabs; it closes by itself, stays open under the mouse, and a click opens the tab. In full screen they wait and a single summary appears on exit; nothing while the panel is open.";
 "Nouveau message" = "New message";
 "Nouveau mail" = "New mail";
 "%d nouveau mail" = "%d new mail";

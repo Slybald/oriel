@@ -281,8 +281,8 @@ private struct GeneralSettings: View {
                 Toggle(L("Pop-up à l'arrivée d'un événement", table: "Popup"), isOn: $prefs.popupsEnabled)
                 SettingsNote(L("Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin "
                                + "du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout "
-                               + "seul, reste ouvert sous la souris, et un clic ouvre l'onglet. Rien en plein écran si la "
-                               + "notch y est masquée, ni quand le panneau est ouvert.", table: "Popup"))
+                               + "seul, reste ouvert sous la souris, et un clic ouvre l'onglet. En plein écran, ils attendent "
+                               + "et un seul résumé apparaît à la sortie ; rien quand le panneau est ouvert.", table: "Popup"))
                 SettingsNote(L("Pendant une réunion avec lien, une recopie d'écran ou quand un micro est utilisé, le pop-up "
                                + "n'affiche ni l'expéditeur ni le texte. Ce n'est pas une garantie : un partage d'écran "
                                + "sans micro ouvert n'est pas détecté.", table: "Popup"))
