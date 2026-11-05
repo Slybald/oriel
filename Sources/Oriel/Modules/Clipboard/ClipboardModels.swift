@@ -158,6 +158,9 @@ struct ClipboardItem: Identifiable {
     var rich: ClipboardRichText?
     /// Le texte a été coupé à `maxTextCharacters` : le recopier redonne la version coupée.
     let truncated: Bool
+    /// Secret probable (voir `SecretDetector`) : masqué dans la liste, jamais écrit sur disque tant qu'il n'est pas
+    /// épinglé, effacé de l'historique au bout d'un délai. Jamais restauré depuis le disque.
+    var secret: SecretKind?
     let key: String
     /// Contenu et app source, en minuscules sans accents : la recherche est une simple inclusion.
     let searchText: String
@@ -233,6 +236,7 @@ struct ClipboardHistory {
             var existing = items.remove(at: index)
             existing.date = item.date
             existing.rich = item.rich
+            existing.secret = item.secret
             if item.source != nil { existing.source = item.source }
             items.insert(existing, at: 0)
         } else {
@@ -266,6 +270,10 @@ struct ClipboardHistory {
     }
 
     mutating func remove(_ id: UUID) { items.removeAll { $0.id == id } }
+
+    mutating func setSecret(_ id: UUID, _ kind: SecretKind?) {
+        if let index = items.firstIndex(where: { $0.id == id }) { items[index].secret = kind }
+    }
 
     mutating func clear() { items = [] }
 

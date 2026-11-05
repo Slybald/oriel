@@ -18,7 +18,8 @@ extension ClipboardModule {
             if item.pinned { detail = L("Épinglée", table: "Command") + " · " + detail }
             let id = item.id
             commands.append(NotchCommand(id: "clipboard.copy.\(id.uuidString)", symbol: Self.symbol(of: item.content),
-                                         title: Self.title(of: item.content), detail: detail, score: score,
+                                         title: item.secret == nil ? Self.title(of: item.content) : L("Secret probable", table: "Clipboard"),
+                                         detail: detail, score: score,
                                          run: { [weak self] in
                                              self?.copy(id)
                                              return nil
