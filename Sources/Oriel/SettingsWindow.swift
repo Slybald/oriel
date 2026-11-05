@@ -280,6 +280,9 @@ private struct GeneralSettings: View {
                                + "du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout "
                                + "seul, reste ouvert sous la souris, et un clic ouvre l'onglet. Rien en plein écran si la "
                                + "notch y est masquée, ni quand le panneau est ouvert.", table: "Popup"))
+                SettingsNote(L("Pendant une réunion avec lien, une recopie d'écran ou quand un micro est utilisé, le pop-up "
+                               + "n'affiche ni l'expéditeur ni le texte. Ce n'est pas une garantie : un partage d'écran "
+                               + "sans micro ouvert n'est pas détecté.", table: "Popup"))
             }
             Section("Écran") {
                 Picker("Écran de la notch", selection: $prefs.screenChoice) {

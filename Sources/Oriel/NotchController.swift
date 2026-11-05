@@ -617,6 +617,13 @@ final class NotchController {
             guard let self else { return true }
             return model.isExpanded || model.bubble != .attached || hiddenForFullScreen || hiddenByUser
         }
+        popups.sourceTitle = { [weak self] id in self?.registry.modules.first { $0.id == id }?.title ?? id }
+        // Lu à l'arrivée d'un pop-up seulement : aucune surveillance.
+        popups.situation = { [weak self] in
+            let agenda = self?.registry.module("agenda") as? AgendaModule
+            return PopupSituation(meeting: agenda?.isInMeeting(at: Date()) ?? false, mirrored: PopupProbes.mirrored(),
+                                  microphoneBusy: PopupProbes.microphoneBusy(), focus: PopupProbes.focus())
+        }
         popups.$current
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in

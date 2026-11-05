@@ -284,7 +284,7 @@ final class MailModule: NotchModule {
         for message in reading.messages.filter(\.isUnread).prefix(delta).reversed() {
             popups.post(PopupEvent(source: id, symbol: "envelope.fill", title: message.sender,
                                    text: message.subject.isEmpty ? L("Nouveau mail", table: "Popup") : message.subject,
-                                   key: message.id))
+                                   key: message.id, redactedText: L("Nouveau mail", table: "Popup")))
         }
     }
 

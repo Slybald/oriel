@@ -11,3 +11,4 @@
 "Attend votre accord" = "Waiting for your approval";
 "Plan à valider" = "Plan to review";
 "Attend votre réponse" = "Waiting for your answer";
+"Pendant une réunion avec lien, une recopie d'écran ou quand un micro est utilisé, le pop-up n'affiche ni l'expéditeur ni le texte. Ce n'est pas une garantie : un partage d'écran sans micro ouvert n'est pas détecté." = "During a meeting with a link, a mirrored screen or while a microphone is in use, the pop-up shows neither the sender nor the text. This is not a guarantee: a screen share with no microphone in use is not detected.";
