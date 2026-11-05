@@ -1,0 +1,10 @@
+/* Oriel: English texts of the Capture module. The key is the French text used in the code. */
+"Micro et caméra" = "Microphone & Camera";
+"Micro" = "Microphone";
+"Caméra" = "Camera";
+"Micro + cam" = "Mic + cam";
+"Inactif" = "Idle";
+"Oriel lit seulement l'état des appareils. Il n'ouvre jamais le micro ni la caméra." = "Oriel only reads the state of the devices. It never opens the microphone or the camera.";
+"Intercalaire quand le micro ou la caméra tourne" = "Index tab when the microphone or camera is in use";
+"Notch repliée" = "Collapsed notch";
+"Orange pour un micro, vert pour une caméra. Oriel ne demande aucune autorisation et n'ouvre jamais le micro ni la caméra : il lit seulement l'état « en marche » des appareils, sans dire quelle app s'en sert. Les casques et interfaces audio qui jouent aussi du son ne sont pas détectés." = "Orange for a microphone, green for a camera. Oriel asks for no permission and never opens the microphone or the camera: it only reads the \"running\" state of the devices, without saying which app uses it. Headsets and audio interfaces that also play sound are not detected.";
