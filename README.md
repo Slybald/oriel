@@ -26,6 +26,8 @@ Interface available in English and French (follows the system language). Screens
 - **Session states at a glance**: ready, thinking, running a tool (with the command or the file),
   waiting for your permission, waiting for your answer, plan to review, done, error, compacting the context.
   Sessions that need you are listed first, with an amber outline.
+- **Pop-ups**: a small pop-up comes down from the collapsed notch for a message, an email, Claude or Codex, the end of
+  a timer or an upcoming event, for the tabs you turned on. Hover keeps it open, a click opens the tab (Settings › General).
 - **Collapsed notch with index tabs**: every activity (Claude, now playing, timer, Codex, unread messages…) gets
   its own small tab against the notch, on the left and the right, the most important one closest to it (up to three
   per side, then a "+N"). Claude's tab shows its state (a raised hand when a session needs you, a spinner while Claude
@@ -627,6 +629,8 @@ français (suit la langue du système). Les captures ci-dessus utilisent des don
 - **États des sessions** : prête, réfléchit, outil en cours (avec la commande ou le fichier), attend ta
   permission, attend ta réponse, plan à valider, terminé, erreur, compacte le contexte. Les sessions qui
   t'attendent passent en tête, avec un contour ambre.
+- **Pop-ups** : un petit pop-up descend de la notch repliée pour un message, un mail, Claude ou Codex, la fin d'un
+  minuteur ou un rendez-vous proche, pour les onglets activés. Le survol le garde ouvert, un clic ouvre l'onglet (Réglages › Général).
 - **Notch repliée avec des intercalaires** : chaque activité (Claude, lecture en cours, minuteur, Codex, messages non
   lus…) a son petit onglet contre la notch, à gauche et à droite, le plus important au plus près d'elle (trois par
   côté au plus, puis un « +N »). Celui de Claude montre son état (main levée quand une session t'attend, un spinner

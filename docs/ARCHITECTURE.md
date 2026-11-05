@@ -497,6 +497,10 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
   - Background `appearance.background` (`PanelBackground`): an old stored `glass` value reads as black (the Glass
     background was removed: it slowed the notch animation, 88 against 111 fps). The release runs on `macos-26` and checks
     `minos 13.0`.
+  - Pop-ups `popup.enabled` (on by default): `NotchPopups` is the queue (one on screen, 5 s, same source grouped as "+N",
+    at most 4 sources waiting), `PopupLayout` and `PopupMoment` the pure rules, `NotchPopupViews` the view. Each module posts
+    what it already detects; a pop-up counts as activity for `NotchVisibilityRule`. Messages and Mail keep running collapsed
+    while pop-ups are on. Mail is polled every 2 min, so it can announce up to 2 min late.
   - Screen `display.screen`: built-in (with the notch), main, under the mouse (follows it while collapsed, on
     mouse events only) or a screen by name (identical models are numbered). Without a notch, a 200 pt virtual
     notch is drawn at the top center, as high as that screen's menu bar. Its style is `appearance.virtualNotch`
