@@ -239,7 +239,7 @@ final class NotchController {
         drop.dropped = { [weak self] in self?.tabBeforeDrag = nil }
         panel.contentView = drop
 
-        model.reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        model.reduceMotion = Self.wantsReducedMotion
         model.isShown = isShown
         updateGeometry()
         startBubble(actions: actions)
@@ -258,6 +258,11 @@ final class NotchController {
         collapse()
         bubble.close()
         settings.show()
+    }
+
+    /// Réglage d'accessibilité ou mode sobre.
+    private static var wantsReducedMotion: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion || SoberMode.current
     }
 
     var debugInfo: [String: Any] {
@@ -292,6 +297,7 @@ final class NotchController {
             "panelWidth": prefs.expandedWidth(compact: false),
             "background": prefs.panelBackground.rawValue,
             "reduceMotion": model.reduceMotion,
+            "sober": SoberMode.current,
             "sharingType": panel.sharingType == .none ? "none" : "readOnly",
             "bubble": bubble.debugInfo,
         ]
@@ -1073,8 +1079,15 @@ final class NotchController {
         observers.append((workspace, workspace.addObserver(
             forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            self?.model.reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+            self?.model.reduceMotion = Self.wantsReducedMotion
         }))
+        // Mode sobre : économie d'énergie ou chaleur forte figent les animations (notifications du système, rien à scruter).
+        for name in [Notification.Name.NSProcessInfoPowerStateDidChange, ProcessInfo.thermalStateDidChangeNotification] {
+            observers.append((NotificationCenter.default, NotificationCenter.default.addObserver(
+                forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.model.reduceMotion = Self.wantsReducedMotion
+            }))
+        }
         // Un minuteur ne compte pas le temps de veille : au réveil, l'échéance est relue.
         observers.append((workspace, workspace.addObserver(forName: NSWorkspace.didWakeNotification,
                                                            object: nil, queue: .main) { [weak self] _ in
