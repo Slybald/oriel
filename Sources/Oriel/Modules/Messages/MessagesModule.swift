@@ -213,7 +213,8 @@ final class MessagesModule: NotchModule {
             let text = showText ? snippet(of: row) : ""
             popups.post(PopupEvent(source: id, symbol: "message.fill", title: title(of: row),
                                    text: text.isEmpty ? L("Nouveau message", table: "Popup") : text,
-                                   key: "\(row.guid)|\(row.date.timeIntervalSince1970)"))
+                                   key: "\(row.guid)|\(row.date.timeIntervalSince1970)",
+                                   redactedText: L("Nouveau message", table: "Popup")))
         }
     }
 

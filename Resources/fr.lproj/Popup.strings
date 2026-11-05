@@ -1,13 +1,26 @@
 /* Textes français des pop-ups de la notch (Réglages › Général, lignes des pop-ups) (la clé est le texte). */
 "Pop-ups" = "Pop-ups";
 "Pop-up à l'arrivée d'un événement" = "Pop-up à l'arrivée d'un événement";
-"Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout seul, reste ouvert sous la souris, et un clic ouvre l'onglet. Rien en plein écran si la notch y est masquée, ni quand le panneau est ouvert." = "Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout seul, reste ouvert sous la souris, et un clic ouvre l'onglet. Rien en plein écran si la notch y est masquée, ni quand le panneau est ouvert.";
+"Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout seul, reste ouvert sous la souris, et un clic ouvre l'onglet. En plein écran, ils attendent et un seul résumé apparaît à la sortie ; rien quand le panneau est ouvert." = "Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout seul, reste ouvert sous la souris, et un clic ouvre l'onglet. En plein écran, ils attendent et un seul résumé apparaît à la sortie ; rien quand le panneau est ouvert.";
 "Nouveau message" = "Nouveau message";
 "Nouveau mail" = "Nouveau mail";
 "%d nouveau mail" = "%d nouveau mail";
 "%d nouveaux mails" = "%d nouveaux mails";
 "Dans %d min" = "Dans %d min";
+"Pendant le plein écran" = "Pendant le plein écran";
+"%d message" = "%d message";
+"%d messages" = "%d messages";
+"%d mail" = "%d mail";
+"%d mails" = "%d mails";
+"%d pour Claude" = "%d pour Claude";
+"%d pour Codex" = "%d pour Codex";
+"%d minuteur" = "%d minuteur";
+"%d minuteurs" = "%d minuteurs";
+"%d rendez-vous" = "%d rendez-vous";
+"%d autre" = "%d autre";
+"%d autres" = "%d autres";
 "Terminé" = "Terminé";
 "Attend votre accord" = "Attend votre accord";
 "Plan à valider" = "Plan à valider";
 "Attend votre réponse" = "Attend votre réponse";
+"Pendant une réunion avec lien, une recopie d'écran ou quand un micro est utilisé, le pop-up n'affiche ni l'expéditeur ni le texte. Ce n'est pas une garantie : un partage d'écran sans micro ouvert n'est pas détecté." = "Pendant une réunion avec lien, une recopie d'écran ou quand un micro est utilisé, le pop-up n'affiche ni l'expéditeur ni le texte. Ce n'est pas une garantie : un partage d'écran sans micro ouvert n'est pas détecté.";

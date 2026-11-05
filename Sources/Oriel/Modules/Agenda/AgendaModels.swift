@@ -142,6 +142,11 @@ enum AgendaMath {
             .map { AgendaFocus(event: $0.0, phase: $0.1, minutes: minutes(until: $0.0.start, from: now)) }
     }
 
+    /// Une réunion avec lien de visio est en cours (un événement sans lien ne compte pas : un « Cours » de 2 h n'est pas une visio).
+    static func isInMeeting(_ events: [MediaEvent], at now: Date) -> Bool {
+        events.contains { $0.meeting != nil && phase(of: $0, at: now) == .running }
+    }
+
     /// La seule échéance à planifier : le prochain seuil (début − 15 min, − 5 min, début, fin) d'un événement et, tant
     /// qu'un compte à rebours s'affiche, le changement de minute. nil : rien à attendre.
     static func nextWake(_ events: [MediaEvent], after now: Date) -> Date? {

@@ -17,6 +17,7 @@ extension ModuleRegistry {
             NotesModule(),
             MessagesModule(),
             MailModule(),
+            CaptureModule(),
         ]
     }
 }

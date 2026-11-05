@@ -1,13 +1,26 @@
 /* English texts of the notch pop-ups (Settings › General, pop-up lines). The key is the French text used in the code. */
 "Pop-ups" = "Pop-ups";
 "Pop-up à l'arrivée d'un événement" = "Pop-up when something arrives";
-"Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout seul, reste ouvert sous la souris, et un clic ouvre l'onglet. Rien en plein écran si la notch y est masquée, ni quand le panneau est ouvert." = "A small pop-up drops from the notch for a message, a mail, Claude or Codex, the end of the timer and a meeting. Only for enabled tabs; it closes by itself, stays open under the mouse, and a click opens the tab. Nothing in full screen if the notch is hidden there, nor while the panel is open.";
+"Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout seul, reste ouvert sous la souris, et un clic ouvre l'onglet. En plein écran, ils attendent et un seul résumé apparaît à la sortie ; rien quand le panneau est ouvert." = "A small pop-up drops from the notch for a message, a mail, Claude or Codex, the end of the timer and a meeting. Only for enabled tabs; it closes by itself, stays open under the mouse, and a click opens the tab. In full screen they wait and a single summary appears on exit; nothing while the panel is open.";
 "Nouveau message" = "New message";
 "Nouveau mail" = "New mail";
 "%d nouveau mail" = "%d new mail";
 "%d nouveaux mails" = "%d new mails";
 "Dans %d min" = "In %d min";
+"Pendant le plein écran" = "While in full screen";
+"%d message" = "%d message";
+"%d messages" = "%d messages";
+"%d mail" = "%d mail";
+"%d mails" = "%d mails";
+"%d pour Claude" = "%d for Claude";
+"%d pour Codex" = "%d for Codex";
+"%d minuteur" = "%d timer";
+"%d minuteurs" = "%d timers";
+"%d rendez-vous" = "%d meetings";
+"%d autre" = "%d other";
+"%d autres" = "%d others";
 "Terminé" = "Done";
 "Attend votre accord" = "Waiting for your approval";
 "Plan à valider" = "Plan to review";
 "Attend votre réponse" = "Waiting for your answer";
+"Pendant une réunion avec lien, une recopie d'écran ou quand un micro est utilisé, le pop-up n'affiche ni l'expéditeur ni le texte. Ce n'est pas une garantie : un partage d'écran sans micro ouvert n'est pas détecté." = "During a meeting with a link, a mirrored screen or while a microphone is in use, the pop-up shows neither the sender nor the text. This is not a guarantee: a screen share with no microphone in use is not detected.";
