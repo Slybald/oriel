@@ -48,7 +48,7 @@ final class PopupSilenceFullScreenTests: XCTestCase {
         XCTAssertNil(queue.current)
         queue.setFullScreen(false)
         let shown = queue.current
-        XCTAssertEqual(shown?.text, "2 messages")
+        XCTAssertEqual(shown?.text, "Pendant le plein écran", "même les compteurs restent cachés")
         for text in [shown?.title, shown?.text, shown?.redactedText].compactMap({ $0 }) {
             XCTAssertFalse(text.contains("Camille") || text.contains("secret"), text)
         }
@@ -71,5 +71,25 @@ final class PopupSilenceFullScreenTests: XCTestCase {
         queue.setFullScreen(false)
         XCTAssertEqual(queue.current?.text, "1 message")
         XCTAssertEqual(queue.current?.title, "Pendant le plein écran")
+    }
+
+    func testPendingEventIsDecidedAgainWhenItsTurnComes() {
+        let scheduler = ManualScheduler()
+        let queue = NotificationPopups(scheduler: scheduler.scheduler)
+        queue.situation = { [unowned self] in situation }
+        queue.sourceTitle = { "Onglet \($0)" }
+        queue.post(event("mail", key: "a"))
+        queue.post(event(key: "b"))
+        queue.post(event("claude", key: "c"))
+        XCTAssertEqual(queue.pending.count, 2)
+        situation.microphoneBusy = true
+        scheduler.fire(delay: NotificationPopups.displayDuration)
+        scheduler.fire(delay: NotificationPopups.gap)
+        XCTAssertEqual(queue.current?.title, "Onglet messages", "une visio démarrée pendant l'attente masque le pop-up en file")
+        XCTAssertEqual(queue.current?.text, "Nouveau message")
+        situation.focus = true
+        scheduler.fire(delay: NotificationPopups.displayDuration)
+        scheduler.fire(delay: NotificationPopups.gap)
+        XCTAssertNil(queue.current, "Concentration activé pendant l'attente : le pop-up en file est supprimé")
     }
 }

@@ -59,6 +59,8 @@ final class CaptureModule: NotchModule {
                           accentHex: microphone ? Self.microphoneHex : Self.cameraHex)
     }
 
+    deinit { source.stop() }
+
     func start() {
         guard !isRunning else { return }
         isRunning = true
@@ -130,7 +132,7 @@ struct CapturePanel: View {
                 ModuleSummaryIcon(symbol: symbol, tint: devices.isEmpty ? Palette.secondary : tint)
                 Text(verbatim: label).font(.system(size: 12, weight: .semibold)).foregroundColor(Palette.primary)
                 Spacer(minLength: 4)
-                Text(verbatim: devices.isEmpty ? L("Inactif", table: "Capture") : devices.map { $0.name }.joined(separator: ", "))
+                Text(verbatim: devices.isEmpty ? L("Inactif", table: "Capture") : devices.map { $0.name.isEmpty ? label : $0.name }.joined(separator: ", "))
                     .font(.system(size: 11))
                     .foregroundColor(devices.isEmpty ? Palette.secondary : tint)
                     .lineLimit(1)

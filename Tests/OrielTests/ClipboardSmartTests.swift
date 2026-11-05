@@ -325,4 +325,45 @@ final class ClipboardSmartTests: XCTestCase {
         rig.module.copyColor(rig.items[0].id, as: .hex)
         XCTAssertEqual(rig.pasteboard.written.count, 2, "un texte qui n'est pas une couleur ne s'écrit pas")
     }
+
+    // MARK: Module : cas relevés à la relecture d'intégration
+
+    func testOverdueSecretIsErasedAtTheNextTickEvenIfTheTimerSleptWithTheMac() throws {
+        let rig = try makeClipboardRig()
+        rig.copy(github)
+        rig.clock.advance(61)
+        rig.module.poll()
+        XCTAssertTrue(rig.items.isEmpty, "la veille arrête le minuteur, pas la date d'échéance")
+        XCTAssertEqual(rig.module.pendingSecretCount, 0)
+    }
+
+    func testRecopyingAPinnedSecretDoesNotMarkItAgain() throws {
+        let rig = try makeClipboardRig()
+        rig.copy(github)
+        rig.module.togglePin(rig.items[0].id)
+        rig.copy(github)
+        XCTAssertEqual(rig.items.count, 1)
+        XCTAssertNil(rig.items[0].secret, "épinglé : plus de marque « sera effacé »")
+        XCTAssertEqual(rig.module.pendingSecretCount, 0)
+    }
+
+    func testRemovingTheImageDuringAReadDiscardsTheResult() throws {
+        let rig = try makeClipboardRig()
+        rig.copy(.image(ClipboardImage.make(data: makeQRPNG("a"), type: "public.png")!))
+        let id = rig.items[0].id
+        rig.module.readImage(id, .qr)
+        rig.module.remove(id)
+        XCTAssertNil(rig.module.reading)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+        XCTAssertTrue(rig.pasteboard.written.isEmpty, "l'image supprimée ne réécrit rien dans le presse-papiers")
+    }
+
+    func testACopyMadeDuringAReadIsNotOverwritten() throws {
+        let rig = try makeClipboardRig()
+        rig.copy(.image(ClipboardImage.make(data: makeQRPNG("a"), type: "public.png")!))
+        rig.module.readImage(rig.items[0].id, .qr)
+        rig.pasteboard.copy("copie faite pendant la lecture")
+        wait(until: { rig.module.reading == nil })
+        XCTAssertTrue(rig.pasteboard.written.isEmpty)
+    }
 }

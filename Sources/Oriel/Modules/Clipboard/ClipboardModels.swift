@@ -236,7 +236,7 @@ struct ClipboardHistory {
             var existing = items.remove(at: index)
             existing.date = item.date
             existing.rich = item.rich
-            existing.secret = item.secret
+            if !existing.pinned { existing.secret = item.secret }
             if item.source != nil { existing.source = item.source }
             items.insert(existing, at: 0)
         } else {

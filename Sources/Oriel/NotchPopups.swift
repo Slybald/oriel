@@ -143,8 +143,13 @@ final class NotificationPopups: ObservableObject {
         cancelGap = scheduler.after(Self.gap) { [weak self] in
             guard let self else { return }
             cancelGap = nil
-            guard !pending.isEmpty else { return }
-            show(pending.removeFirst())
+            // La situation a pu changer pendant l'attente (visio, Concentration) : la porte décide à nouveau.
+            while !pending.isEmpty {
+                let next = pending.removeFirst()
+                guard let decision = decision(for: next.source) else { continue }
+                show(decision == .redact ? next.redacted(title: sourceTitle(next.source)) : next)
+                return
+            }
         }
     }
 }
@@ -197,7 +202,9 @@ extension NotificationPopups {
         return PopupEvent(source: top, symbol: "tray.full.fill",
                           title: L("Pendant le plein écran", table: "Popup"),
                           text: ranked.map { Self.phrase($0.key, $0.value) }.joined(separator: ", "),
-                          key: "fullscreen-summary|\(summaries)")
+                          key: "fullscreen-summary|\(summaries)",
+                          // Écran partagé : même les compteurs restent cachés (voir `PopupSilence`).
+                          redactedText: L("Pendant le plein écran", table: "Popup"))
     }
 
     private static func phrase(_ source: String, _ count: Int) -> String {

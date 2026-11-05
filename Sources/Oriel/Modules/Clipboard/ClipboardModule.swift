@@ -127,6 +127,8 @@ final class ClipboardModule: NotchModule {
     private var saveWork: DispatchWorkItem?
     private var copiedWork: DispatchWorkItem?
     private var secretWork: [UUID: DispatchWorkItem] = [:]
+    /// Échéance de chaque secret : le minuteur `DispatchQueue` s'arrête pendant la veille, la date, non (voir `poll`).
+    private var secretDue: [UUID: Date] = [:]
     private var terminationObserver: NSObjectProtocol?
 
     /// Le défaut ne touche ni au disque ni au presse-papiers : tout n'arrive qu'au `start()`.
@@ -224,6 +226,7 @@ final class ClipboardModule: NotchModule {
         guard isRunning, !suspended else { return }
         let count = pasteboard.changeCount
         let apps = frontApps.drain()
+        purgeOverdueSecrets()
         guard count != lastChangeCount else { return }
         lastChangeCount = count
         // Notre propre écriture (recopie d'un élément) : déjà dans l'historique.
@@ -257,7 +260,8 @@ final class ClipboardModule: NotchModule {
         dismissNotice()
         history.add(item, limit: limit)
         // Un même secret recopié repart pour un délai complet (l'id est celui de la ligne déjà présente).
-        if item.secret != nil, let id = history.items.first(where: { $0.key == item.key })?.id { armSecret(id) }
+        // Un secret épinglé recopié reste ordinaire (sa ligne n'est plus marquée) : rien à armer.
+        if item.secret != nil, let row = history.items.first(where: { $0.key == item.key }), row.secret != nil { armSecret(row.id) }
         historyChanged()
     }
 
@@ -267,6 +271,7 @@ final class ClipboardModule: NotchModule {
         secretWork[id]?.cancel()
         let work = DispatchWorkItem { [weak self] in self?.eraseSecret(id) }
         secretWork[id] = work
+        secretDue[id] = clock().addingTimeInterval(secretDelay)
         DispatchQueue.main.asyncAfter(deadline: .now() + secretDelay, execute: work)
     }
 
@@ -274,10 +279,17 @@ final class ClipboardModule: NotchModule {
     func eraseSecret(_ id: UUID) {
         secretWork[id]?.cancel()
         secretWork[id] = nil
+        secretDue[id] = nil
         guard let item = history.items.first(where: { $0.id == id }), let kind = item.secret, !item.pinned else { return }
         history.remove(id)
         notice = .secretErased(kind)
         historyChanged()
+    }
+
+    /// Après une veille du Mac, les minuteurs ont du retard : les secrets dont la date est passée partent au tic suivant.
+    private func purgeOverdueSecrets() {
+        let now = clock()
+        for (id, due) in secretDue where due <= now { eraseSecret(id) }
     }
 
     /// Secrets en attente d'effacement (pour les tests).
@@ -289,6 +301,7 @@ final class ClipboardModule: NotchModule {
         let ids = Array(secretWork.keys)
         secretWork.values.forEach { $0.cancel() }
         secretWork = [:]
+        secretDue = [:]
         for id in ids {
             guard let item = history.items.first(where: { $0.id == id }), item.secret != nil else { continue }
             if erase, !item.pinned { history.remove(id) } else { history.setSecret(id, nil) }
@@ -337,16 +350,19 @@ final class ClipboardModule: NotchModule {
         reading = id
         notice = .reading(kind)
         let data = image.data
+        let startCount = pasteboard.changeCount
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let lines = ClipboardImageReader.read(data, kind)
-            DispatchQueue.main.async { self?.finishReading(id, kind, lines) }
+            DispatchQueue.main.async { self?.finishReading(id, kind, lines, startCount: startCount) }
         }
     }
 
-    private func finishReading(_ id: UUID, _ kind: ClipboardImageReading, _ lines: [String]) {
+    private func finishReading(_ id: UUID, _ kind: ClipboardImageReading, _ lines: [String], startCount: Int) {
         // Module arrêté ou autre lecture lancée entre-temps : le résultat est jeté.
         guard isRunning, reading == id else { return }
         reading = nil
+        // Une autre copie est arrivée pendant la lecture : elle n'est pas écrasée (le tic suivant la capture).
+        guard pasteboard.changeCount == startCount else { dismissNotice(); return }
         guard !lines.isEmpty else {
             notice = .nothingRead(kind)
             return
@@ -370,6 +386,8 @@ final class ClipboardModule: NotchModule {
     func remove(_ id: UUID) {
         secretWork[id]?.cancel()
         secretWork[id] = nil
+        secretDue[id] = nil
+        if reading == id { reading = nil; dismissNotice() }
         history.remove(id)
         historyChanged()
     }
@@ -378,6 +396,7 @@ final class ClipboardModule: NotchModule {
     /// même si l'écriture sur disque est désactivée aujourd'hui.
     func clearHistory() {
         forgetSecrets(erase: true)
+        reading = nil
         history.clear()
         copiedID = nil
         notice = nil
