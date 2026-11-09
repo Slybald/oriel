@@ -157,6 +157,20 @@ final class StateMachineTests: XCTestCase {
         XCTAssertEqual(session.phase, .done)
     }
 
+    /// Compaction précalculée (Claude Code 2.1.31x) : PreCompact « auto » arrive en arrière-plan après Stop, et
+    /// PostCompact seulement au tour suivant, ou jamais. La session ne doit pas rester « au travail » entre-temps.
+    func testBackgroundPrecomputeAfterStopKeepsSessionIdle() {
+        send("SessionStart", ["source": "startup"])
+        send("UserPromptSubmit", ["prompt": "x"])
+        send("Stop", ["last_assistant_message": "ok"])
+        send("PreCompact", ["trigger": "auto", "custom_instructions": NSNull()])
+        XCTAssertEqual(session.phase, .done)
+        XCTAssertFalse(session.phase.isWorking)
+        send("UserPromptSubmit", ["prompt": "y"])
+        send("PreCompact", ["trigger": "auto", "custom_instructions": NSNull()])
+        XCTAssertEqual(session.phase, .compacting, "compaction automatique pendant un tour : toujours affichée")
+    }
+
     func testSessionEndIgnoresLateEventsUntilRestart() {
         send("SessionStart", ["source": "startup"])
         send("SessionEnd", ["reason": "prompt_input_exit"])
