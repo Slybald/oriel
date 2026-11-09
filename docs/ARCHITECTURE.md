@@ -513,7 +513,9 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     while pop-ups are on. Mail is polled every 2 min, so it can announce up to 2 min late.
     Silence (`PopupSilence.swift`): `PopupSilence` makes a pure decision, `show`, `redact` (hides sender and
     text) or `drop`, when the event arrives, from `PopupSituation` (mirrored screen, microphone in use, Focus).
-    `PopupProbes` reads those three states, without permission or monitoring. `decision(for:)` is the only
+    `PopupProbes` reads those states without monitoring and never asks for a permission: Focus counts only if
+    `INFocusStatusCenter` is already authorized, which Oriel never requests, so in practice it is not seen.
+    `decision(for:)` is the only
     gate, and it runs before the full-screen hold: a refused event is never counted; a hidden one is counted
     as hidden (counters and a key fingerprint, no text or sender). A held pop-up waits in full screen, and
     `flushSummary` shows one summary when the panel closes or the bubble comes back. A queued pop-up is decided
