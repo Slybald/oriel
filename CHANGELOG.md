@@ -11,6 +11,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Pop-ups: a small pop-up comes down from the notch for a message, an email, Claude or Codex, the end of a timer or an
   upcoming event (Settings › General › Pop-ups).
 
+## [3.3.2] - 2026-11-09
+
 ### Removed
 
 - The Glass background, which slowed the notch animation. If you had chosen it, Oriel now uses the black background
