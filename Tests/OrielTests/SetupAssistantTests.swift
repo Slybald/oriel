@@ -98,7 +98,7 @@ final class SetupAssistantTests: XCTestCase {
             prefs.toggleHotKey = .controlCommandN
         }
         XCTAssertEqual(rig.model.tabs.map { $0.id },
-                       ["notes", "claude", "media", "agenda", "quicksettings", "shelf", "clipboard", "timer", "messages", "mail"],
+                       ["notes", "claude", "media", "agenda", "quicksettings", "shelf", "clipboard", "timer", "messages", "mail", "capture"],
                        "les cartes suivent l'ordre des réglages")
         XCTAssertEqual(rig.model.choices.selected, ["notes", "claude", "agenda", "quicksettings", "shelf", "clipboard"])
         XCTAssertEqual(rig.model.choices.openTrigger, .click)
@@ -161,7 +161,7 @@ final class SetupAssistantTests: XCTestCase {
         rig.settle()
         XCTAssertEqual(rig.model.step, .done)
         XCTAssertEqual(rig.prefs.tabEnabled, ["claude": true, "media": false, "agenda": true, "quicksettings": true, "shelf": true,
-                                             "clipboard": true, "timer": true, "notes": false, "messages": false, "mail": false])
+                                             "clipboard": true, "timer": true, "notes": false, "messages": false, "mail": false, "capture": false])
         XCTAssertEqual(rig.registry.enabled.map { $0.id }, ["claude", "agenda", "quicksettings", "shelf", "clipboard", "timer"])
         XCTAssertEqual(rig.prefs.openTrigger, .click)
         XCTAssertEqual(rig.prefs.toggleHotKey, .optionCommandJ)
