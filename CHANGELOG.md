@@ -24,6 +24,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
   This is not full protection: a screen share without an open microphone is not detected.
 - Pop-ups: in full screen they wait, and a single summary appears when you leave full screen.
 
+## [3.3.3] - 2026-11-09
+
+### Fixed
+
+- Claude tab: an idle session is no longer counted as running while Claude Code prepares its context compaction
+  in the background.
+
 ## [3.3.2] - 2026-11-09
 
 ### Removed
