@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [3.3.2] - 2026-11-09
+
 ### Removed
 
 - The Glass background, which slowed the notch animation. If you had chosen it, Oriel now uses the black background
