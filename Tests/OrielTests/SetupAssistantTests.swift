@@ -8,7 +8,7 @@ import XCTest
 final class SetupAssistantTests: XCTestCase {
     /// Les onglets proposés par défaut, puis ceux qui sont désactivés tant que l'utilisateur ne les choisit pas.
     private static let defaultIds = ["claude", "media", "agenda", "quicksettings", "shelf", "clipboard", "timer", "notes"]
-    private static let optionalIds = ["messages", "mail"]
+    private static let optionalIds = ["messages", "mail", "capture"]
     private static let ids = defaultIds + optionalIds
 
     /// Un assistant sur un registre factice, avec ce que ses fermetures ont reçu.

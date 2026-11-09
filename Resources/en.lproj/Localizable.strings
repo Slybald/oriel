@@ -349,6 +349,7 @@
 "Des notes en texte brut, toujours à portée." = "Plain-text notes, always within reach.";
 "Tes conversations récentes et une réponse rapide." = "Your recent conversations and a quick reply.";
 "Tes messages non lus d'Apple Mail." = "Your unread Apple Mail messages.";
+"Un voyant quand un micro ou une caméra est utilisé ; Oriel ne les ouvre jamais." = "An indicator when a microphone or camera is in use; Oriel never opens them.";
 "Sans eux, l'onglet Claude ne voit pas tes sessions. Rien n'est modifié avant « Appliquer »." = "Without them, the Claude tab can’t see your sessions. Nothing changes until you click “Apply”.";
 "Au moins un onglet reste activé." = "At least one tab stays on.";
 "macOS ne te demande une autorisation (calendrier, Bluetooth…) que lorsque tu utilises l'onglet concerné." = "macOS only asks for a permission (calendar, Bluetooth…) when you use the tab that needs it.";
