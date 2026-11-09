@@ -10,6 +10,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 - Pop-ups: a small pop-up comes down from the notch for a message, an email, Claude or Codex, the end of a timer or an
   upcoming event (Settings › General › Pop-ups).
+- Settings › Health: what is running, memory, CPU, permissions, and a report you can copy. The notch calms its
+  animations on its own in Low Power Mode or when the Mac runs hot.
+- Clipboard: copy the text of an image or read a QR code (right-click the image), copy a colour as hex or RGB, and
+  remove after 60 s the copied text that looks like a token, a key or a card number (a setting turns this off; the
+  list is short, not a guarantee).
+- New "Microphone & Camera" tab (off by default): an orange or green index tab shows when a microphone or a camera is
+  in use. Oriel never opens the microphone or the camera.
+
+### Changed
+
+- Pop-ups hide the sender and the text during a meeting with a link, a screen mirror, or while a microphone is in use.
+  This is not full protection: a screen share without an open microphone is not detected.
+- Pop-ups: in full screen they wait, and a single summary appears when you leave full screen.
 
 ## [3.3.2] - 2026-11-09
 

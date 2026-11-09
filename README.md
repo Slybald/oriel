@@ -27,7 +27,7 @@ Interface available in English and French (follows the system language). Screens
   waiting for your permission, waiting for your answer, plan to review, done, error, compacting the context.
   Sessions that need you are listed first, with an amber outline.
 - **Pop-ups**: a small pop-up comes down from the collapsed notch for a message, an email, Claude or Codex, the end of
-  a timer or an upcoming event, for the tabs you turned on. Hover keeps it open, a click opens the tab (Settings › General).
+  a timer or an upcoming event, for the tabs you turned on. Hover keeps it open, a click opens the tab (Settings › General). During a meeting with a link, a screen mirror or while a microphone is in use, the pop-up hides the sender and the text. This is not full protection: a screen share without an open microphone is not detected.
 - **Collapsed notch with index tabs**: every activity (Claude, now playing, timer, Codex, unread messages…) gets
   its own small tab against the notch, on the left and the right, the most important one closest to it (up to three
   per side, then a "+N"). Claude's tab shows its state (a raised hand when a session needs you, a spinner while Claude
@@ -57,6 +57,7 @@ Interface available in English and French (follows the system language). Screens
 - **Optional tools section**: files recently written by Claude, Git status of your repositories, today's usage.
   It only appears when its data files exist (see [Tools section](#tools-section)).
 - **Seven more tabs**: Player, Agenda, Quick Settings, Shelf, Clipboard, Timer and Quick notes (see [Tabs](#tabs)).
+- **Health** (Settings › Health): what Oriel runs (memory, CPU, permissions) and a report you can copy. The notch calms its animations on its own in Low Power Mode or when the Mac runs hot.
 - **Your own index tabs** (optional, see [Scripts](#scripts-local-api-and-notch-command)): `notch run -- make` shows an
   hourglass, then ✓ or ✗ with the duration; any script can show a short status through a local API.
 - **Command bar**: one field, one-key prefixes (see [Command bar](#command-bar)): `t 25` starts a timer, `n idea`
@@ -95,7 +96,7 @@ needs you.
 - **Shelf**: files and folders to keep at hand. Drop them on the notch, even when it is collapsed, and drag them
   out to Finder or another app. The shelf keeps a reference to each item: nothing is copied.
 - **Clipboard**: your recent copies (text, links, images, files, colors). Click one to copy it again; nothing is
-  pasted for you. Copies made in password managers are not recorded.
+  pasted for you. Copies made in password managers are not recorded. Right-click an image to copy its text or read a QR code, and copy a colour as hex or RGB. Text that looks like a token, a key or a card number is removed from the history after 60 s (a setting turns this off; the list is short, not a guarantee).
 - **Timer**: a countdown, or a Pomodoro cycle with the focus and break lengths you set. It keeps counting through
   sleep and restarts.
 - **Quick notes**: plain-text notes. Pin the ones you use, delete with undo, and search once you have more than
@@ -110,6 +111,7 @@ needs you.
   in Mail** opens Mail's own reply window with your text already typed. If Mail does not confirm within 60 s, the
   notch says so and asks you to check before trying again. Oriel never launches Mail: it only reads it while it is
   open.
+- **Microphone & Camera** (off by default): an index tab on the collapsed notch, orange when a microphone is in use and green for a camera. Oriel never opens the microphone or the camera, and does not show which app uses them.
 
 ## Command bar
 
@@ -366,10 +368,10 @@ Oriel updates itself from the [Releases](https://github.com/Slybald/oriel/releas
   password manager are never recorded, nor are copies made from Keychain Access, Passwords, 1Password, Bitwarden,
   Dashlane or KeePassXC (the list can be edited). By default the history stays in memory and is cleared when you
   quit the app or turn the tab off. If you keep it across restarts, only text and links are written, never images
-  or files. Pausing the capture stops the checks until the next launch.
+  or files. Pausing the capture stops the checks until the next launch. Text that looks like a token, a key or a card number is removed from the history after 60 s (a setting turns this off); the list is short and is not a guarantee.
 - What the app reads: the hook events (Claude Code and Codex), the end of the transcript of a running session (to detect Esc),
   Claude Code's task files, the process list (to find the host app), the track playing and its artwork (Player),
-  the events of the calendars you chose to show, the state of Wi-Fi and Bluetooth, and the battery level. With the quota on:
+  the events of the calendars you chose to show, the state of Wi-Fi and Bluetooth, and the battery level, and whether a microphone or a camera is in use (the state only, never their stream). With the quota on:
   the percentages and reset times that Claude Code gives to its status line (relayed, kept in memory) and that Codex
   returns when asked.
 - What the app writes: the logs and token files in `~/Library/Application Support/Oriel/` (see
@@ -532,7 +534,7 @@ hooks it already receives:
   run, the tab shows "Now playing unavailable" and a **Try Again** button.
 - Low Power Mode asks for your administrator password or Touch ID once, on the first change (or at each change
   if you removed the authorization in Settings). The tile is hidden on Macs that do not offer this mode.
-- Focus: macOS offers no API to read or set Focus. The tile runs a shortcut that you create in the Shortcuts app
+- Focus: macOS gives an app no way to set Focus, and reading it needs an authorization that Oriel never asks for. The tile runs a shortcut that you create in the Shortcuts app
   (the tile explains how). The state it shows is the one set by your last click.
 - Bluetooth uses a private API of `IOBluetooth`, loaded at runtime. Apple may change it without notice.
 - Wi-Fi: the name of the network is not shown.
@@ -630,7 +632,7 @@ français (suit la langue du système). Les captures ci-dessus utilisent des don
   permission, attend ta réponse, plan à valider, terminé, erreur, compacte le contexte. Les sessions qui
   t'attendent passent en tête, avec un contour ambre.
 - **Pop-ups** : un petit pop-up descend de la notch repliée pour un message, un mail, Claude ou Codex, la fin d'un
-  minuteur ou un rendez-vous proche, pour les onglets activés. Le survol le garde ouvert, un clic ouvre l'onglet (Réglages › Général).
+  minuteur ou un rendez-vous proche, pour les onglets activés. Le survol le garde ouvert, un clic ouvre l'onglet (Réglages › Général). Pendant une réunion avec un lien, une recopie d'écran ou quand un micro est utilisé, le pop-up cache l'expéditeur et le texte. Ce n'est pas une protection totale : un partage d'écran sans micro ouvert n'est pas détecté.
 - **Notch repliée avec des intercalaires** : chaque activité (Claude, lecture en cours, minuteur, Codex, messages non
   lus…) a son petit onglet contre la notch, à gauche et à droite, le plus important au plus près d'elle (trois par
   côté au plus, puis un « +N »). Celui de Claude montre son état (main levée quand une session t'attend, un spinner
@@ -663,6 +665,7 @@ français (suit la langue du système). Les captures ci-dessus utilisent des don
 - **Section outils (optionnelle)** : fichiers récemment écrits par Claude, état Git de tes dépôts, usage du
   jour. Elle n'apparaît que si ses fichiers de données existent (voir [Section outils](#section-outils)).
 - **Sept autres onglets** : Lecteur, Agenda, Réglages rapides, Étagère, Presse-papiers, Minuteur et Notes rapides (voir [Onglets](#onglets)).
+- **Santé** (Réglages › Santé) : ce qui tourne (mémoire, processeur, autorisations) et un rapport à copier. La notch allège ses animations toute seule en économie d'énergie ou quand le Mac chauffe.
 - **Tes propres intercalaires** (en option, voir [Scripts](#scripts--api-locale-et-commande-notch)) : `notch run -- make`
   affiche un sablier, puis ✓ ou ✗ avec la durée ; n'importe quel script peut afficher un état court par une API locale.
 - **Barre de commande** : un champ, des préfixes d'une touche (voir [Barre de commande](#barre-de-commande)) : `t 25`
@@ -699,7 +702,7 @@ barre). Le panneau se rouvre sur le dernier onglet utilisé, ou sur Claude (ou C
 - **Étagère** : des fichiers et des dossiers à garder sous la main. Dépose-les sur la notch, même repliée, et
   glisse-les vers le Finder ou une autre app. L'étagère garde un lien vers chaque élément : rien n'est copié.
 - **Presse-papiers** : tes copies récentes (texte, liens, images, fichiers, couleurs). Un clic les recopie ; rien
-  n'est collé à ta place. Les copies faites dans les gestionnaires de mots de passe ne sont pas enregistrées.
+  n'est collé à ta place. Les copies faites dans les gestionnaires de mots de passe ne sont pas enregistrées. Un clic droit sur une image copie son texte ou lit un QR code ; une couleur se copie en hexadécimal ou en RGB. Un texte qui ressemble à un jeton, une clé ou un numéro de carte disparaît de l'historique au bout de 60 s (un réglage le désactive ; liste courte, pas une garantie).
 - **Minuteur** : un compte à rebours, ou un cycle Pomodoro avec les durées de concentration et de pause que tu
   règles. Il continue de compter après une mise en veille ou un redémarrage.
 - **Notes rapides** : des notes en texte brut. Épingle celles que tu utilises, supprime avec annulation, et cherche
@@ -714,6 +717,7 @@ barre). Le panneau se rouvre sur le dernier onglet utilisé, ou sur Claude (ou C
   Entrée) ; **Continuer dans Mail** ouvre la fenêtre de réponse de Mail avec ton texte déjà tapé. Si Mail ne
   confirme pas en 60 s, la notch le dit et te demande de vérifier avant de réessayer. Oriel ne lance jamais Mail : il
   ne le lit que pendant qu'il est ouvert.
+- **Micro et caméra** (désactivé par défaut) : un intercalaire sur la notch repliée, orange quand un micro sert, vert pour une caméra. Oriel n'ouvre jamais le micro ni la caméra et n'affiche pas l'app qui les utilise.
 
 ### Barre de commande
 
@@ -981,11 +985,11 @@ Oriel se met à jour seule depuis la page [Releases](https://github.com/Slybald/
   celles faites depuis Trousseaux d'accès, Mots de passe, 1Password, Bitwarden, Dashlane ou KeePassXC (la liste
   peut être modifiée). Par défaut, l'historique reste en mémoire et disparaît à la fermeture de l'app ou à la
   désactivation de l'onglet. Si tu le gardes d'un lancement à l'autre, seuls les textes et les liens sont écrits,
-  jamais les images ni les fichiers. Suspendre la capture arrête les contrôles jusqu'au prochain lancement.
+  jamais les images ni les fichiers. Suspendre la capture arrête les contrôles jusqu'au prochain lancement. Un texte qui ressemble à un jeton, une clé ou un numéro de carte disparaît de l'historique au bout de 60 s (un réglage le désactive) ; cette liste est courte, ce n'est pas une garantie.
 - Ce que l'app lit : les événements de hook, la fin du transcript d'une session en cours (pour détecter
   Esc), les fichiers de tâches de Claude Code, la liste des processus (pour trouver l'app hôte), le morceau en cours
   et sa pochette (Lecteur), les événements des calendriers que tu as choisi d'afficher, l'état du Wi-Fi et du
-  Bluetooth, et le niveau de la batterie. Avec le quota activé : les pourcentages et heures de remise à zéro que Claude Code
+  Bluetooth, et le niveau de la batterie, et si un micro ou une caméra est utilisé (l'état seulement, jamais leur flux). Avec le quota activé : les pourcentages et heures de remise à zéro que Claude Code
   donne à sa ligne d'état (relayés, gardés en mémoire) et que Codex renvoie quand on le lui demande.
 - Ce que l'app écrit : les journaux et les fichiers du jeton dans `~/Library/Application Support/Oriel/`
   (voir [Registres partagés](#registres-partagés)), et les données des onglets dans le même dossier :
@@ -1157,7 +1161,7 @@ partir de hooks qu'elle reçoit déjà :
 - Économie d'énergie : demande le mot de passe administrateur ou Touch ID une seule fois, au premier changement (ou à
   chaque changement si tu as retiré l'autorisation dans les réglages). La tuile est masquée sur les Mac qui n'ont
   pas ce mode.
-- Concentration : macOS n'offre aucun moyen de lire ni de régler la Concentration depuis une app. La tuile lance un
+- Concentration : macOS ne permet à aucune app de régler la Concentration ; la lire demande une autorisation qu'Oriel ne demande jamais. La tuile lance un
   raccourci que tu crées dans l'app Raccourcis (la tuile explique comment). L'état affiché est celui de ton dernier
   clic.
 - Bluetooth utilise une API privée d'`IOBluetooth`, chargée à l'exécution. Apple peut la modifier sans prévenir.

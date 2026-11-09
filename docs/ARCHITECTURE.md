@@ -93,7 +93,13 @@ reinstall for people on 2.1 or earlier (see "Rename migration" below).
     Quick Look, `ShelfDropView`, the AppKit view under the notch's SwiftUI content), `ShelfViews`.
   - `Clipboard/` (`clipboard`): `ClipboardModule` (capture by change count, limits, suspension), `ClipboardSystem`
     (pasteboard reads and access), `ClipboardModels` (history and `ClipboardPrivacy` rules), `ClipboardStorage`
-    (opt-in history file), `ClipboardViews`.
+    (opt-in history file), `ClipboardViews`. `ClipboardSecrets` (pure detector, a short list of token, key and card
+    shapes; 60 s expiry by a `DispatchWorkItem`, doubled by a date purged on the next tick; never written to disk unless
+    pinned), `ClipboardRecognition` (colour parsing, Vision text and QR reading on click, off the main
+    thread; the result is dropped if the pasteboard changed).
+  - `Modules/Capture/` (`Microphone & Camera` tab, off by default): `CaptureModels` (pure: `CaptureRules`,
+    `CaptureState`, which devices count as a microphone), `CaptureSystem` (`SystemCaptureSource`, the real
+    listeners; no stream is ever opened), `CaptureModule`.
   - `Timer/` (`timer`): `TimerModule`, `TimerEngine` (pure state machine, keeps an end date), `TimerSystem`
     (sounds and notifications), `ModuleStorage` (`ModuleScheduler` and `SecureJSONFile`, shared with Notes),
     `TimerViews`.
@@ -107,6 +113,10 @@ reinstall for people on 2.1 or earlier (see "Rename migration" below).
     without a prompt, `osascript` runner with a time limit, System Settings privacy links.
 - `Preferences`: every setting (UserDefaults, observable, values clamped). `SettingsWindow`: the settings
   window (SwiftUI in an `NSWindow`, sidebar) and the main menu (⌘, ⌘W, editing).
+- `Health.swift`: the Health page (Settings › Health), a pure model tested without a window. Its measures
+  are read once when the page opens or on **Refresh**, so nothing runs with the page closed. `SoberMode`
+  (Low Power Mode, or a serious or critical thermal state) reduces animations; `NotchController.wantsReducedMotion`
+  also reads the system's reduce-motion setting.
 - `NotchShell`: notch rules that do not need a window: visibility (`NotchVisibilityRule`), screen choice and
   virtual notch geometry (`NotchScreenPicker`). `HotKeys`: global shortcuts (`HotKeyCenter`) through Carbon
   `RegisterEventHotKey`, which needs no Accessibility permission.
@@ -501,6 +511,14 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     at most 4 sources waiting), `PopupLayout` and `PopupMoment` the pure rules, `NotchPopupViews` the view. Each module posts
     what it already detects; a pop-up counts as activity for `NotchVisibilityRule`. Messages and Mail keep running collapsed
     while pop-ups are on. Mail is polled every 2 min, so it can announce up to 2 min late.
+    Silence (`PopupSilence.swift`): `PopupSilence` makes a pure decision, `show`, `redact` (hides sender and
+    text) or `drop`, when the event arrives, from `PopupSituation` (mirrored screen, microphone in use, Focus).
+    `PopupProbes` reads those three states, without permission or monitoring. `decision(for:)` is the only
+    gate, and it runs before the full-screen hold: a refused event is never counted; a hidden one is counted
+    as hidden (counters and a key fingerprint, no text or sender). A held pop-up waits in full screen, and
+    `flushSummary` shows one summary when the panel closes or the bubble comes back. A queued pop-up is decided
+    again when its turn comes. `NotificationPopups` runs on the main thread only: calls from elsewhere go
+    through `DispatchQueue.main.async` (order kept, no lock), and `accepts` through `main.sync`.
   - Screen `display.screen`: built-in (with the notch), main, under the mouse (follows it while collapsed, on
     mouse events only) or a screen by name (identical models are numbered). Without a notch, a 200 pt virtual
     notch is drawn at the top center, as high as that screen's menu bar. Its style is `appearance.virtualNotch`
@@ -727,6 +745,7 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
   (0.5 s tolerance), and reads the content only after the privacy checks (concealed, transient or auto-generated
   types, excluded apps). The history stays in memory unless the user opts in; then only text and links go to
   `clipboard-history.json` (0600). A history that stopped with the panel would have holes.
+  A discarded content is never analysed (no text recognition, no colour parsing).
 - **The shelf keeps bookmarks, not copies**: `URL.bookmarkData` in `shelf.json` (0600) finds a moved file again and
   marks a missing one. Dragging items out offers copy or alias, never a move; the optional "remove after drag"
   only drops the reference from the shelf.
