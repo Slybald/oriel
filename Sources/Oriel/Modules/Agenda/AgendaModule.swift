@@ -266,6 +266,9 @@ final class AgendaModule: NotchModule {
     /// Un événement récurrent garde son identifiant : l'occurrence se distingue par son début.
     private static func occurrence(_ event: MediaEvent) -> String { "\(event.id)|\(event.start.timeIntervalSince1970)" }
 
+    /// Réunion en cours (silence des pop-ups) ; faux tant que le module n'a rien lu.
+    func isInMeeting(at date: Date) -> Bool { AgendaMath.isInMeeting(events, at: date) }
+
     // MARK: Actions
 
     /// « Rejoindre » : le seul chemin qui ouvre un lien d'événement.

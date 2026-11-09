@@ -99,6 +99,7 @@ enum SettingsSection: Hashable {
     case privacy
     case module(String)
     case scripts
+    case health
     case updates
     case about
 }
@@ -146,6 +147,7 @@ struct SettingsView: View {
                 Label(section.title, systemImage: section.symbol).tag(SettingsSection.module(section.id))
             }
             Label { Text("Scripts", tableName: "API") } icon: { Image(systemName: "terminal") }.tag(SettingsSection.scripts)
+            Label { Text("Santé", tableName: "Health") } icon: { Image(systemName: "heart.text.square") }.tag(SettingsSection.health)
             Label("Mises à jour", systemImage: "arrow.down.circle").tag(SettingsSection.updates)
             Label("À propos", systemImage: "info.circle").tag(SettingsSection.about)
         }
@@ -165,6 +167,7 @@ struct SettingsView: View {
         case .privacy: PrivacySettings(prefs: prefs)
         case .module(let id): registry.module(id)?.makeSettingsView()
         case .scripts: LocalAPISettings(api: registry.external)
+        case .health: HealthSettings(registry: registry, version: updater.currentVersion)
         case .updates: UpdateSettings(updater: updater, prefs: prefs)
         case .about: AboutSettings(registry: registry, updater: updater)
         }
@@ -278,8 +281,11 @@ private struct GeneralSettings: View {
                 Toggle(L("Pop-up à l'arrivée d'un événement", table: "Popup"), isOn: $prefs.popupsEnabled)
                 SettingsNote(L("Un petit pop-up descend de la notch pour un message, un mail, Claude ou Codex, la fin "
                                + "du minuteur et un rendez-vous. Seulement pour les onglets activés ; il se referme tout "
-                               + "seul, reste ouvert sous la souris, et un clic ouvre l'onglet. Rien en plein écran si la "
-                               + "notch y est masquée, ni quand le panneau est ouvert.", table: "Popup"))
+                               + "seul, reste ouvert sous la souris, et un clic ouvre l'onglet. En plein écran, ils attendent "
+                               + "et un seul résumé apparaît à la sortie ; rien quand le panneau est ouvert.", table: "Popup"))
+                SettingsNote(L("Pendant une réunion avec lien, une recopie d'écran ou quand un micro est utilisé, le pop-up "
+                               + "n'affiche ni l'expéditeur ni le texte. Ce n'est pas une garantie : un partage d'écran "
+                               + "sans micro ouvert n'est pas détecté.", table: "Popup"))
             }
             Section("Écran") {
                 Picker("Écran de la notch", selection: $prefs.screenChoice) {
@@ -585,6 +591,8 @@ private struct AppearanceSettings: View {
                 .pickerStyle(.segmented)
                 SettingsNote(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
                     ? L("« Réduire les animations » est activé dans macOS : simple fondu.")
+                    : SoberMode.current
+                    ? L("Mode sobre actif (économie d'énergie ou Mac très chaud) : simple fondu.", table: "Health")
                     : L("Ouverture, fermeture et changement d'onglet."))
             }
             Section("Notch repliée") {
@@ -852,5 +860,54 @@ private struct AboutSettings: View {
                 }
             }
         }
+    }
+}
+
+
+// MARK: - Santé
+
+/// Lit l'état réel à l'ouverture de la page (ou à « Actualiser ») : aucune minuterie, aucun abonnement.
+private struct HealthSettings: View {
+    let registry: ModuleRegistry
+    let version: String
+    @State private var report: HealthReport?
+
+    var body: some View {
+        let report = report ?? registry.healthReport(version: version)
+        SettingsPane {
+            Section {
+                row(L("Version", table: "Health"), version)
+                if let process = report.process {
+                    row(L("Mémoire de l'app", table: "Health"), String(format: L("%.0f Mo", table: "Health"), Double(process.memoryBytes) / 1_048_576))
+                    row(L("CPU depuis le lancement", table: "Health"),
+                        String(format: L("%.1f s sur %@", table: "Health"), process.cpuSeconds, HealthReport.duration(process.uptimeSeconds)))
+                }
+                row(L("Mode sobre", table: "Health"),
+                    report.soberReason.map { String(format: L("actif (%@)", table: "Health"), $0) } ?? L("inactif", table: "Health"))
+                SettingsNote(L("Le mode sobre fige les animations quand le Mac est en économie d'énergie ou très chaud. Mesures lues à l'ouverture de cette page, rien ne tourne en arrière-plan pour elle.", table: "Health"))
+            }
+            Section(L("Onglets", table: "Health")) {
+                ForEach(report.modules, id: \.title) { row($0.title, HealthReport.moduleStatus($0)) }
+                SettingsNote(L("« Au repos » : activé, mais il ne travaille que panneau ouvert.", table: "Health"))
+            }
+            if !report.permissions.isEmpty {
+                Section(L("Autorisations", table: "Health")) {
+                    ForEach(report.permissions, id: \.title) { row($0.title, HealthReport.permissionStatus($0.state)) }
+                }
+            }
+            Section {
+                Button(L("Actualiser", table: "Health")) { self.report = registry.healthReport(version: version) }
+                Button(L("Copier le rapport", table: "Health")) {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(report.text, forType: .string)
+                }
+                SettingsNote(L("Le rapport ne contient ni chemin ni nom de session : tu peux le coller dans un ticket.", table: "Health"))
+            }
+        }
+        .onAppear { self.report = registry.healthReport(version: version) }
+    }
+
+    private func row(_ title: String, _ value: String) -> some View {
+        LabeledContent(title) { Text(value).foregroundColor(.secondary) }
     }
 }

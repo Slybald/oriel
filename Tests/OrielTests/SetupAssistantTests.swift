@@ -8,7 +8,7 @@ import XCTest
 final class SetupAssistantTests: XCTestCase {
     /// Les onglets proposés par défaut, puis ceux qui sont désactivés tant que l'utilisateur ne les choisit pas.
     private static let defaultIds = ["claude", "media", "agenda", "quicksettings", "shelf", "clipboard", "timer", "notes"]
-    private static let optionalIds = ["messages", "mail"]
+    private static let optionalIds = ["messages", "mail", "capture"]
     private static let ids = defaultIds + optionalIds
 
     /// Un assistant sur un registre factice, avec ce que ses fermetures ont reçu.
@@ -98,7 +98,7 @@ final class SetupAssistantTests: XCTestCase {
             prefs.toggleHotKey = .controlCommandN
         }
         XCTAssertEqual(rig.model.tabs.map { $0.id },
-                       ["notes", "claude", "media", "agenda", "quicksettings", "shelf", "clipboard", "timer", "messages", "mail"],
+                       ["notes", "claude", "media", "agenda", "quicksettings", "shelf", "clipboard", "timer", "messages", "mail", "capture"],
                        "les cartes suivent l'ordre des réglages")
         XCTAssertEqual(rig.model.choices.selected, ["notes", "claude", "agenda", "quicksettings", "shelf", "clipboard"])
         XCTAssertEqual(rig.model.choices.openTrigger, .click)
@@ -161,7 +161,7 @@ final class SetupAssistantTests: XCTestCase {
         rig.settle()
         XCTAssertEqual(rig.model.step, .done)
         XCTAssertEqual(rig.prefs.tabEnabled, ["claude": true, "media": false, "agenda": true, "quicksettings": true, "shelf": true,
-                                             "clipboard": true, "timer": true, "notes": false, "messages": false, "mail": false])
+                                             "clipboard": true, "timer": true, "notes": false, "messages": false, "mail": false, "capture": false])
         XCTAssertEqual(rig.registry.enabled.map { $0.id }, ["claude", "agenda", "quicksettings", "shelf", "clipboard", "timer"])
         XCTAssertEqual(rig.prefs.openTrigger, .click)
         XCTAssertEqual(rig.prefs.toggleHotKey, .optionCommandJ)

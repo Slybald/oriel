@@ -126,7 +126,7 @@ struct ClipboardRig {
 
 extension XCTestCase {
     func makeClipboardRig(keepsHistory: Bool = false, directory: URL? = nil, defaults: UserDefaults? = nil,
-                          start: Bool = true) throws -> ClipboardRig {
+                          start: Bool = true, secretDelay: TimeInterval = 60) throws -> ClipboardRig {
         let directory = try directory ?? makeTemporaryDirectory(self)
         let defaults = defaults ?? makeEphemeralDefaults(self)
         if keepsHistory { defaults.set(true, forKey: "clipboard.keepsHistory") }
@@ -135,7 +135,7 @@ extension XCTestCase {
         let storage = ClipboardStorage(directory: directory)
         let clock = ClipboardClock()
         let module = ClipboardModule(defaults: defaults, pasteboard: pasteboard, frontApps: apps, storage: storage,
-                                     clock: { clock.now }, saveDelay: 0.05)
+                                     clock: { clock.now }, saveDelay: 0.05, secretDelay: secretDelay)
         if start { module.start() }
         addTeardownBlock { module.stop() }
         return ClipboardRig(module: module, pasteboard: pasteboard, apps: apps, storage: storage, directory: directory,

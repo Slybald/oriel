@@ -110,8 +110,9 @@ final class ClipboardStorage {
 }
 
 extension ClipboardItem {
-    /// nil : seuls les textes et les liens se gardent sur disque.
+    /// nil : seuls les textes et les liens se gardent sur disque, et jamais un secret probable non épinglé.
     var record: ClipboardStorage.Record? {
+        if secret != nil, !pinned { return nil }
         let kind: String
         let value: String
         switch content {

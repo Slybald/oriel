@@ -107,7 +107,7 @@ struct ClipboardPanel: View {
                         ForEach(Array(results.enumerated()), id: \.element.id) { index, item in
                             ClipboardRow(item: item, now: context.date, selected: selection == item.id,
                                          copied: module.copiedID == item.id, simulatedHover: previewHover == item.id,
-                                         actions: actions(for: item))
+                                         actions: actions(for: item), canRead: module.reading == nil)
                                 .id(item.id)
                             if index == lastPinned, index < results.count - 1 {
                                 Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1).padding(.vertical, 2)
@@ -133,7 +133,9 @@ struct ClipboardPanel: View {
             copy: { copy(item.id, plainText: false) },
             copyPlain: { copy(item.id, plainText: true) },
             pin: { withAnimation(notchSpring) { module.togglePin(item.id) } },
-            remove: { withAnimation(notchSpring) { module.remove(item.id) } })
+            remove: { withAnimation(notchSpring) { module.remove(item.id) } },
+            readImage: { module.readImage(item.id, $0) },
+            copyColor: { module.copyColor(item.id, as: $0) })
     }
 
     // MARK: Clavier
@@ -176,6 +178,8 @@ struct ClipboardRow: View {
         var copyPlain: () -> Void
         var pin: () -> Void
         var remove: () -> Void
+        var readImage: (ClipboardImageReading) -> Void = { _ in }
+        var copyColor: (ClipboardColorFormat) -> Void = { _ in }
     }
 
     let item: ClipboardItem
@@ -184,6 +188,8 @@ struct ClipboardRow: View {
     let copied: Bool
     var simulatedHover = false
     let actions: Actions
+    /// Lecture d'image impossible tant qu'une autre est en cours.
+    var canRead = true
 
     @State private var hovering = false
 
@@ -212,6 +218,20 @@ struct ClipboardRow: View {
             Button(action: actions.copy) { Text("Copier", tableName: "Clipboard") }
             if item.offersPlainCopy {
                 Button(action: actions.copyPlain) { Text("Copier en texte brut", tableName: "Clipboard") }
+            }
+            if case .image = item.content {
+                Button { actions.readImage(.text) } label: { Text("Copier le texte de l'image", tableName: "Clipboard") }
+                    .disabled(!canRead)
+                Button { actions.readImage(.qr) } label: { Text("Lire le QR code", tableName: "Clipboard") }
+                    .disabled(!canRead)
+            }
+            if let color = item.recognizedColor {
+                Button { actions.copyColor(.hex) } label: {
+                    Text(verbatim: String(format: L("Copier la couleur en %@", table: "Clipboard"), color.hex))
+                }
+                Button { actions.copyColor(.rgb) } label: {
+                    Text(verbatim: String(format: L("Copier la couleur en %@", table: "Clipboard"), color.css))
+                }
             }
             Divider()
             Button(action: actions.pin) {
@@ -303,11 +323,27 @@ struct ClipboardPreview: View {
     var body: some View {
         switch item.content {
         case .text(let text):
-            Text(verbatim: Self.preview(text))
-                .font(.system(size: 11.5))
-                .foregroundColor(Palette.primary)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
+            if let kind = item.secret {
+                secret(kind)
+            } else if let color = item.recognizedColor {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(Color(red: Double(color.red) / 255, green: Double(color.green) / 255,
+                                    blue: Double(color.blue) / 255))
+                        .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
+                        .frame(width: 16, height: 16)
+                    Text(verbatim: Self.preview(text))
+                        .font(.system(size: 11.5, design: .monospaced))
+                        .foregroundColor(Palette.primary)
+                        .lineLimit(1)
+                }
+            } else {
+                Text(verbatim: Self.preview(text))
+                    .font(.system(size: 11.5))
+                    .foregroundColor(Palette.primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+            }
         case .url(let url):
             link(url)
         case .image(let image):
@@ -356,6 +392,18 @@ struct ClipboardPreview: View {
                     .font(.system(size: 11.5, weight: .medium, design: .monospaced))
                     .foregroundColor(Palette.primary)
             }
+        }
+    }
+
+    /// Secret probable : le contenu n'est pas affiché (écran partagé, regard par-dessus l'épaule).
+    private func secret(_ kind: SecretKind) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(verbatim: String(format: L("Secret probable : %@", table: "Clipboard"), kind.label))
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundColor(Palette.primary)
+            Text("Effacé de l'historique au bout de 60 s", tableName: "Clipboard")
+                .font(.system(size: 10))
+                .foregroundColor(Palette.secondary)
         }
     }
 
@@ -470,11 +518,35 @@ struct ClipboardNoticeStrip: View {
     private var text: String {
         switch notice {
         case .imageTooLarge: return L("Image de plus de 5 Mo : non gardée.", table: "Clipboard")
+        case .secretErased(let kind):
+            return String(format: L("Effacé de l'historique : %@ (pas du presse-papiers macOS).", table: "Clipboard"),
+                          kind.label)
+        case .reading(.text): return L("Lecture du texte de l'image…", table: "Clipboard")
+        case .reading(.qr): return L("Recherche d'un QR code…", table: "Clipboard")
+        case .readCopied(.text, let count):
+            return String(format: L(count, one: "Texte copié (%d ligne). L'OCR peut se tromper : relis-le.",
+                                    other: "Texte copié (%d lignes). L'OCR peut se tromper : relis-le.",
+                                    table: "Clipboard"), count)
+        case .readCopied(.qr, let count):
+            return String(format: L(count, one: "QR code copié (%d). Vérifie-le avant de l'ouvrir.",
+                                    other: "QR codes copiés (%d). Vérifie-les avant de les ouvrir.",
+                                    table: "Clipboard"), count)
+        case .nothingRead(.text): return L("Aucun texte reconnu dans cette image.", table: "Clipboard")
+        case .nothingRead(.qr): return L("Aucun QR code lu dans cette image.", table: "Clipboard")
+        }
+    }
+
+    private var symbol: String {
+        switch notice {
+        case .imageTooLarge: return "photo.badge.exclamationmark"
+        case .secretErased: return "lock.slash"
+        case .reading, .nothingRead: return "text.viewfinder"
+        case .readCopied: return "checkmark.circle"
         }
     }
 
     var body: some View {
-        ModuleBanner(symbol: "photo.badge.exclamationmark", text: text,
+        ModuleBanner(symbol: symbol, tone: notice == .imageTooLarge ? .warning : .neutral, text: text,
                      dismiss: (L("Fermer", table: "Clipboard"), dismiss))
     }
 }
@@ -683,6 +755,16 @@ struct ClipboardSettingsView: View {
                 Text("Capture", tableName: "Clipboard")
             } footer: {
                 SettingsNote(L("Les épinglés s'ajoutent à ce nombre. Images de plus de 5 Mo ignorées.",
+                               table: "Clipboard"))
+            }
+            Section {
+                Toggle(isOn: $module.erasesSecrets) {
+                    Text("Effacer les secrets probables de l'historique", tableName: "Clipboard")
+                }
+            } header: {
+                Text("Secrets", tableName: "Clipboard")
+            } footer: {
+                SettingsNote(L("Au bout de 60 s, un texte qui ressemble à un jeton ou une clé (GitHub, AWS, Slack, Stripe, Google, sk-…, JWT, clé privée) ou à un numéro de carte (Visa, Mastercard, Amex, Discover) quitte l'historique. Le presse-papiers de macOS n'est pas vidé. Mots de passe, codes, IBAN et autres formats ne sont pas reconnus : ce n'est pas une protection.",
                                table: "Clipboard"))
             }
             Section {

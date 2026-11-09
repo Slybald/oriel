@@ -239,7 +239,7 @@ final class NotchController {
         drop.dropped = { [weak self] in self?.tabBeforeDrag = nil }
         panel.contentView = drop
 
-        model.reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        model.reduceMotion = Self.wantsReducedMotion
         model.isShown = isShown
         updateGeometry()
         startBubble(actions: actions)
@@ -258,6 +258,11 @@ final class NotchController {
         collapse()
         bubble.close()
         settings.show()
+    }
+
+    /// Réglage d'accessibilité ou mode sobre.
+    private static var wantsReducedMotion: Bool {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion || SoberMode.current
     }
 
     var debugInfo: [String: Any] {
@@ -292,6 +297,7 @@ final class NotchController {
             "panelWidth": prefs.expandedWidth(compact: false),
             "background": prefs.panelBackground.rawValue,
             "reduceMotion": model.reduceMotion,
+            "sober": SoberMode.current,
             "sharingType": panel.sharingType == .none ? "none" : "readOnly",
             "bubble": bubble.debugInfo,
         ]
@@ -612,10 +618,18 @@ final class NotchController {
 
     private func observePopups() {
         popups.isSourceEnabled = { [weak self] id in self?.registry.isEnabled(id) ?? false }
-        // Pas de pop-up là où la notch n'en montre pas : panneau ou bulle ouverts, plein écran « masquée », masquage demandé.
+        // Pas de pop-up là où la notch n'en montre pas : panneau ou bulle ouverts, masquage demandé. Le plein écran, lui,
+        // garde les événements pour un résumé à la sortie (`setFullScreen`).
         popups.isBlocked = { [weak self] in
             guard let self else { return true }
-            return model.isExpanded || model.bubble != .attached || hiddenForFullScreen || hiddenByUser
+            return model.isExpanded || model.bubble != .attached || hiddenByUser
+        }
+        popups.sourceTitle = { [weak self] id in self?.registry.modules.first { $0.id == id }?.title ?? id }
+        // Lu à l'arrivée d'un pop-up seulement : aucune surveillance.
+        popups.situation = { [weak self] in
+            let agenda = self?.registry.module("agenda") as? AgendaModule
+            return PopupSituation(meeting: agenda?.isInMeeting(at: Date()) ?? false, mirrored: PopupProbes.mirrored(),
+                                  microphoneBusy: PopupProbes.microphoneBusy(), focus: PopupProbes.focus())
         }
         popups.$current
             .receive(on: DispatchQueue.main)
@@ -629,7 +643,17 @@ final class NotchController {
             .store(in: &cancellables)
         model.$bubble
             .removeDuplicates()
-            .sink { [weak self] phase in if phase != .attached { self?.popups.clear() } }
+            .sink { [weak self] phase in
+                guard let self else { return }
+                if phase != .attached { popups.clear() } else { popups.flushSummary() }
+            }
+            .store(in: &cancellables)
+        // Le résumé d'un plein écran qui attendait un panneau ouvert descend dès que le panneau est refermé.
+        model.$isExpanded
+            .removeDuplicates()
+            .filter { !$0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.popups.flushSummary() }
             .store(in: &cancellables)
     }
 
@@ -971,6 +995,7 @@ final class NotchController {
         let fullScreen = displayID.map { FullScreenDetector.frontmostAppIsFullScreen(onDisplay: $0) } ?? false
         guard fullScreen != model.isFullScreen else { return }
         model.isFullScreen = fullScreen
+        popups.setFullScreen(fullScreen)
         updateVisibility()
     }
 
@@ -1073,8 +1098,15 @@ final class NotchController {
         observers.append((workspace, workspace.addObserver(
             forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            self?.model.reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+            self?.model.reduceMotion = Self.wantsReducedMotion
         }))
+        // Mode sobre : économie d'énergie ou chaleur forte figent les animations (notifications du système, rien à scruter).
+        for name in [Notification.Name.NSProcessInfoPowerStateDidChange, ProcessInfo.thermalStateDidChangeNotification] {
+            observers.append((NotificationCenter.default, NotificationCenter.default.addObserver(
+                forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.model.reduceMotion = Self.wantsReducedMotion
+            }))
+        }
         // Un minuteur ne compte pas le temps de veille : au réveil, l'échéance est relue.
         observers.append((workspace, workspace.addObserver(forName: NSWorkspace.didWakeNotification,
                                                            object: nil, queue: .main) { [weak self] _ in

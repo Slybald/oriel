@@ -35,6 +35,7 @@ struct SetupTab: Identifiable, Equatable {
         case "notes": return L("Des notes en texte brut, toujours à portée.")
         case "messages": return L("Tes conversations récentes et une réponse rapide.")
         case "mail": return L("Tes messages non lus d'Apple Mail.")
+        case "capture": return L("Un voyant quand un micro ou une caméra est utilisé ; Oriel ne les ouvre jamais.")
         default: return ""
         }
     }
