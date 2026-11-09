@@ -1,6 +1,6 @@
 # Architecture and design decisions
 
-For contributors. The [README](../README.md) describes the product; this page explains how the code is
+For contributors. The [README](../README.md) and the [guide](GUIDE.md) describe the product; this page explains how the code is
 organised and why some choices were made, so they are not undone by accident.
 
 The product is called Oriel (formerly Claude Notch). Since 2.2 every internal name follows: the Swift module and
@@ -391,7 +391,7 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     (`waiting`, `queued`, `headless`, `none`).
 - **CLI, same version** (interactive `claude` in a pty): `PermissionRequest` is called for Bash and AskUserQuestion,
   the terminal dialog stays up ("Allowed by PermissionRequest hook" when the hook answers first).
-- **Quota gauges** (`Modules/Quota/`, `ClaudeUsage`, `StatusLineRelay`, `CodexUsage`; docs in README › Quota gauges). One ring per window (5 h, 7 d), amber from 80 %, red from 95 %, under the session list of the Claude and
+- **Quota gauges** (`Modules/Quota/`, `ClaudeUsage`, `StatusLineRelay`, `CodexUsage`; docs in GUIDE › Quota gauges). One ring per window (5 h, 7 d), amber from 80 %, red from 95 %, under the session list of the Claude and
   Codex tabs and in their compact summary (so also in the unfolded index tab and the full screen summary, where the strip drops
   the reset times when too narrow and carries the agent's name). Nothing when the tab is off or there is no figure; no ear.
   - **Claude**: the only source is the `statusLine` JSON (`rate_limits.five_hour` / `seven_day`: `used_percentage`,
@@ -656,9 +656,7 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     `codesign` never prompts), builds, runs `codesign --verify --deep --strict` and requires a `certificate leaf
     = H"…"` requirement without `cdhash`, then deletes the keychain (`if: always()`). Missing secrets fail the
     job before the tests.
-  - Backup: the maintainer's login keychain, generic passwords of service
-    `io.github.slybald.claudenotch.code-signing`, accounts `p12-base64` and `p12-password` (the README shows how
-    to put the secrets back). The certificate is made with `openssl req -x509` (RSA 2048, `-days 3650`) and
+  - The maintainer keeps a private backup of the `.p12` and its password. The certificate is made with `openssl req -x509` (RSA 2048, `-days 3650`) and
     exported with `openssl pkcs12 -export -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1`, the
     format `security import` reads on every macOS version.
   - Never replace the certificate lightly: another one has another `H"…"`, so every user is asked for the
@@ -677,7 +675,7 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
 - **Signed updates**: a DMG is installed only if its Ed25519 signature (`Oriel-<v>.dmg.sig`, base64 of
   the signature of every byte of the DMG) matches the public key in `Updater.swift`. The CI signs with the
   `UPDATE_SIGNING_KEY` secret and checks the result against that public key, so a wrong secret fails the release
-  instead of shipping an update nobody can install. The private key also lives in the maintainer's keychain;
+  instead of shipping an update nobody can install. The maintainer keeps a private backup of the key;
   losing it breaks automatic updates for every existing installation. Each release carries one signed image, `Oriel-<v>.dmg`
   (volume "Oriel", with `Oriel.app`, the Applications link and a bilingual first-launch text file).
   `ClaudeNotch-<v>.dmg`, which the Updater of 1.1.0 to 1.9.0 looked for, is no longer published: those versions
