@@ -425,6 +425,8 @@ final class SessionStore: ObservableObject {
             reloadTasks = true
 
         case "PreCompact":
+            // Compaction précalculée en arrière-plan après Stop : PostCompact peut ne jamais venir, la session reste au repos.
+            if event.trigger == "auto", !session.inTurn { break }
             if session.phase != .compacting { session.phaseBeforeCompact = session.phase }
             session.phase = .compacting
 
