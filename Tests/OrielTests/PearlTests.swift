@@ -218,6 +218,16 @@ final class PearlControllerTests: XCTestCase {
         XCTAssertTrue(notch.model.pearlAwake, "ouverte sans attendre le délai : éveillée d'emblée")
     }
 
+    /// Écran externe rangé au-dessus du MacBook : un point au-dessus de cet écran n'est pas sur l'encoche (il l'ouvrait,
+    /// puis la refermait, à l'infini). Le bord haut de l'écran, lui, la touche toujours.
+    func testPointAboveTheScreenHitsNothingButTheTopEdgeStillHitsTheNotch() {
+        let notch = controller(prefs { $0.virtualNotchStyle = .chameleon }, store: .working(1))
+        XCTAssertEqual(notch.collapsedHit(CGPoint(x: midX, y: top + 400)), .none, "écran au-dessus")
+        XCTAssertEqual(notch.collapsedHit(CGPoint(x: midX, y: top + 1)), .none, "juste au-dessus")
+        XCTAssertEqual(notch.collapsedHit(CGPoint(x: midX, y: top)), .notch, "pile sur le bord haut de l'écran")
+        XCTAssertEqual(notch.collapsedHit(CGPoint(x: midX, y: top - 4)), .notch, "sur l'encoche")
+    }
+
     /// Les autres styles et une vraie encoche ne connaissent pas la perle.
     func testOtherStylesNeverWake() {
         let notch = controller(prefs { $0.virtualNotchStyle = .chameleon }, store: .working(1))
