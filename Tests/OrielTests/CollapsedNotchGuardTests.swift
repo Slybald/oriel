@@ -7,13 +7,14 @@ import XCTest
 /// Elle est toujours à l'écran, donc un flou, une animation sans fin ou un redessin continu y coûtent en permanence.
 /// Tourne en CI comme en local ; la fenêtre n'est jamais montrée. Deux contrôles, qui ne couvrent pas la même chose :
 /// - l'arbre de vues et de calques (`testCollapsedNotchAtRestHasNoCostlyEffect`) : un `NSVisualEffectView`, une
-///   `CAAnimation` à répétition infinie (poser par AppKit/Core Animation), et un `TimelineView` écrit directement dans
+///   `CAAnimation` à répétition infinie (posée par AppKit/Core Animation), et un `TimelineView` écrit directement dans
 ///   le corps de `NotchRootView`. Il NE voit PAS les animations SwiftUI (`.repeatForever`, qui ne posent aucune
 ///   `CAAnimation` dans une fenêtre jamais montrée) ni un `TimelineView` dans une vue fille ;
 /// - les sources (`testNoEndlessAnimationOutsideAllowedFiles`) : toute occurrence de `repeatForever` ou de
 ///   `TimelineView` dans `Sources/Oriel`, hors fichiers autorisés. Il couvre ces deux cas partout, mais il juge un
-///   fichier entier, pas l'état affiché : d'où la liste d'autorisations, qui dit pourquoi chaque fichier est hors notch
-///   repliée. Un redessin continu obtenu autrement (`CADisplayLink`, minuteur) n'est couvert par aucun des deux.
+///   fichier entier, pas l'état affiché : d'où la liste d'autorisations, qui dit le rythme et la raison de chaque fichier.
+///   Limite : la liste porte sur le fichier ENTIER, donc un second `TimelineView` ajouté dans un fichier déjà
+///   autorisé n'est pas vu. Un redessin continu obtenu autrement (`CADisplayLink`, minuteur) n'est couvert par aucun des deux.
 final class CollapsedNotchGuardTests: XCTestCase {
     /// Exceptions légitimes, une ligne par cas avec sa raison. Clé : nom de la violation (voir `violations`).
     /// Vide : au repos sur une vraie encoche, aucune exception n'existe à ce jour.
@@ -76,17 +77,17 @@ final class CollapsedNotchGuardTests: XCTestCase {
         XCTAssertTrue(unexpected.isEmpty, "notch repliée au repos : effet coûteux interdit : \(unexpected)")
     }
 
-    /// Fichiers qui contiennent légitimement `TimelineView` : une ligne par fichier, avec sa raison. Aucun n'est dans la
-    /// notch repliée (intercalaires, perle, pop-up) ; ils sont tous dans le panneau déplié ou dans la bulle détachée.
+    /// Fichiers qui contiennent légitimement `TimelineView` : une ligne par fichier, avec son rythme et sa raison.
+    /// Aucun ne redessine en continu ; seul Agenda est visible notch repliée (carte d'intercalaire au survol), à la minute.
     static let allowedSourceFiles: [String: String] = [
-        "BubbleViews.swift": "bulle détachée (autre fenêtre), absente de la notch repliée",
-        "Modules/Agenda/AgendaViews.swift": "panneau déplié, onglet Agenda (horloge à la minute)",
-        "Modules/Mail/MailViews.swift": "panneau déplié, onglet Mail (dates relatives à la minute)",
-        "Modules/Messages/MessagesViews.swift": "panneau déplié, onglet Messages (dates relatives à la minute)",
-        "Modules/Clipboard/ClipboardViews.swift": "panneau déplié, onglet Presse-papiers (âge à la minute)",
-        "Modules/Media/MediaViews.swift": "panneau déplié, onglet Média (progression, seulement en lecture)",
-        "Modules/Claude/ClaudeModule.swift": "panneau déplié, liste des sessions (durées à la seconde)",
-        "Modules/Codex/CodexViews.swift": "panneau déplié, liste des sessions Codex (durées à la seconde)",
+        "BubbleViews.swift": "`.animation`, mais bulle détachée (autre fenêtre), absente de la notch repliée",
+        "Modules/Agenda/AgendaViews.swift": "`.everyMinute` : AgendaCardView (carte d'intercalaire, visible au survol de la notch repliée) et vues dépliées ; une fois par minute, pas un redessin continu",
+        "Modules/Mail/MailViews.swift": "`.everyMinute`, MailPanel (panneau déplié) ; la carte d'intercalaire (MailCompactView) n'en contient pas",
+        "Modules/Messages/MessagesViews.swift": "`.everyMinute`, MessagesPanel (panneau déplié) ; la carte d'intercalaire (MessagesCompactView) n'en contient pas",
+        "Modules/Clipboard/ClipboardViews.swift": "`.everyMinute`, ClipboardPanel (panneau déplié) ; pas de carte d'intercalaire",
+        "Modules/Media/MediaViews.swift": "`.periodic` 1 s dans PlaybackProgress (panneau déplié, lecture seule) ; `.everyMinute` dans MediaCompactView ; la carte d'intercalaire (MediaTabDetailView) n'en contient pas",
+        "Modules/Claude/ClaudeModule.swift": "`.periodic` 1 s, liste des sessions du panneau déplié seulement",
+        "Modules/Codex/CodexViews.swift": "`.periodic` 1 s, liste des sessions Codex du panneau déplié seulement",
     ]
 
     func testNoEndlessAnimationOutsideAllowedFiles() throws {
