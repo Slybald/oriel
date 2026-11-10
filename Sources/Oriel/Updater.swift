@@ -399,29 +399,36 @@ extension Updater {
     }
 
     /// Télécharge le DMG et sa signature dans le cache, vérifie la signature, puis installe.
-    static func downloadAndInstall(_ release: Release, over app: URL, userAgentVersion: String) async throws {
+    /// Les paramètres après `userAgentVersion` ne servent qu'aux tests (réseau, clé, installation) ; leurs valeurs
+    /// par défaut sont le comportement réel.
+    static func downloadAndInstall(
+        _ release: Release, over app: URL, userAgentVersion: String, publicKey: String = publicKey,
+        cache folder: URL = cacheDirectory,
+        download: (URLRequest) async throws -> (URL, URLResponse) = { try await session.download(for: $0) },
+        fetch: (URLRequest) async throws -> (Data, URLResponse) = { try await session.data(for: $0) },
+        install: (URL, String, URL) throws -> Void = { try installUpdate(dmg: $0, version: $1, over: $2) }
+    ) async throws {
         let assets = try updateAssets(in: release)
         let manager = FileManager.default
-        let folder = cacheDirectory
         try? manager.removeItem(at: folder)
         try manager.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? manager.removeItem(at: folder) }
 
         let dmg = folder.appendingPathComponent("\(AppIdentity.name)-\(release.version).dmg")
         let accept = "application/octet-stream"
-        let (downloaded, response) = try await session.download(
-            for: request(assets.dmg, accept: accept, userAgentVersion: userAgentVersion))
+        let (downloaded, response) = try await download(
+            request(assets.dmg, accept: accept, userAgentVersion: userAgentVersion))
         try checkHTTP(response)
         try manager.moveItem(at: downloaded, to: dmg)
-        let (signature, signatureResponse) = try await session.data(
-            for: request(assets.signature, accept: accept, userAgentVersion: userAgentVersion))
+        let (signature, signatureResponse) = try await fetch(
+            request(assets.signature, accept: accept, userAgentVersion: userAgentVersion))
         try checkHTTP(signatureResponse)
 
         let data = try Data(contentsOf: dmg, options: .mappedIfSafe)
-        guard isValidSignature(String(decoding: signature, as: UTF8.self), for: data) else {
+        guard isValidSignature(String(decoding: signature, as: UTF8.self), for: data, publicKey: publicKey) else {
             throw UpdateError.invalidSignature
         }
-        try installUpdate(dmg: dmg, version: release.version, over: app)
+        try install(dmg, release.version, app)
     }
 
     /// Monte le DMG, copie l'app à côté de l'app installée (même volume), démonte, puis échange les deux apps.
