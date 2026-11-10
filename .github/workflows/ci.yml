@@ -47,3 +47,24 @@ jobs:
           name: popup-renders
           path: ${{ runner.temp }}/popup-renders
           retention-days: 14
+
+  # Rendus PNG de toute la suite (ORIEL_SNAPSHOT_DIR lève les sauts), en parallèle : `test` ne dépend pas d'eux et
+  # reste le contrôle obligatoire, de même durée qu'avant. Rien ne se lance sur le Mac.
+  renders:
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Renders
+        env:
+          ORIEL_SNAPSHOT_DIR: ${{ runner.temp }}/renders
+        run: swift test
+
+      - name: Upload renders
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renders
+          path: ${{ runner.temp }}/renders
+          retention-days: 14
