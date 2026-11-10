@@ -48,8 +48,9 @@ enum NotchKeyboard {
     }
 
     /// `force` : même si un champ est en cours de saisie (Échap, envoi, panneau replié).
-    static func release(force: Bool = false) {
-        guard let panel, panel.isKeyWindow else { return }
+    /// `window` : la fenêtre qui a le clavier, quand l'appelant la connaît (la bulle, déjà affichée, masquerait la notch).
+    static func release(force: Bool = false, in window: NSWindow? = nil) {
+        guard let panel = window ?? panel, panel.isKeyWindow else { return }
         if !force, panel.firstResponder is NSText { return }
         panel.makeFirstResponder(nil)
         // Sortir puis remettre le panneau (non activant) : le statut de fenêtre clé revient à l'app de devant.

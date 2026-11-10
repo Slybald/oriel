@@ -152,6 +152,26 @@ final class ShellControllerTests: XCTestCase {
         }
     }
 
+    /// Panneau ouvert au raccourci (il a le clavier), puis détaché : la bulle, déjà affichée (transparente), est la
+    /// fenêtre que `NotchKeyboard` choisit d'ordinaire ; la notch repliée doit pourtant rendre le clavier.
+    func testNotchGivesKeyboardBackWhenDetachingWhileBubbleIsShown() {
+        let prefs = Preferences(defaults: makeEphemeralDefaults(self))
+        prefs.hapticFeedback = false
+        let notch = controller(prefs)
+        notch.screens = { [ScreenCandidate(name: "Écran", frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+                                           visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1056))] }
+        defer { notch.panel.orderOut(nil); notch.bubble.window.orderOut(nil) }
+        notch.togglePanelFromKeyboard()
+        XCTAssertTrue(notch.model.isExpanded, "ouvert")
+        XCTAssertTrue(notch.panel.isKeyWindow, "le raccourci donne le clavier au panneau")
+        // Comme `prepareBubble` : fenêtre de la bulle affichée, transparente, avant le repli de la notch.
+        notch.bubble.window.alphaValue = 0
+        notch.bubble.window.orderFrontRegardless()
+        notch.togglePanelFromKeyboard() // replie la notch (ici, `collapse()` est le chemin du détachement)
+        XCTAssertFalse(notch.model.isExpanded)
+        XCTAssertFalse(notch.panel.isKeyWindow, "clavier rendu par la notch repliée")
+    }
+
     /// La fenêtre (fixe) contient la largeur libre maximale, ses rayons et son ombre.
     func testPanelWindowFitsWidestCustomPanel() {
         let widest = CGFloat(Preferences.customWidthRange.upperBound) + 2 * 12 + 2 * 20

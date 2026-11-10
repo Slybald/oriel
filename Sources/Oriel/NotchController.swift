@@ -441,7 +441,8 @@ final class NotchController {
     func collapsedHit(_ point: CGPoint) -> EarTabsLayout.Hit {
         // Hors de la fenêtre : rien à calculer (cette fonction tourne à chaque mouvement de souris).
         guard abs(point.x - notchRect.midX) <= Self.panelSize.width / 2,
-              point.y >= screenFrame.maxY - Self.panelSize.height else { return .none }
+              point.y >= screenFrame.maxY - Self.panelSize.height,
+              point.y <= screenFrame.maxY else { return .none } // au-dessus : un écran rangé plus haut
         // Perle endormie : seule sa zone étroite compte (réveil, ou clic en mode « au clic »), le reste de la barre
         // des menus n'est pas à nous.
         if usesPearl, !model.pearlAwake { return Pearl.contains(pearlZone, point) ? .notch : .none }
@@ -763,7 +764,7 @@ final class NotchController {
         model.tabCardHeight = 0
         stopPolling()
         // Le clavier revient à l'app de devant (panneau ouvert au raccourci, ou champ resté actif).
-        if panel.isKeyWindow { NotchKeyboard.release(force: true) }
+        if panel.isKeyWindow { NotchKeyboard.release(force: true, in: panel) }
         openedByKeyboard = false
         panel.ignoresMouseEvents = true
         if model.isExpanded {
