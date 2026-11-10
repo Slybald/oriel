@@ -222,6 +222,25 @@ final class ClaudeReplyTests: XCTestCase {
         XCTAssertEqual(replies.notices["s1"]?.tone, .info)
     }
 
+    /// Deux demandes d'une même session : A réglée ailleurs, un clic tardif sur A ne doit pas décider B.
+    func testClickOnSettledRequestLeavesNextOneOfSameSessionHeld() throws {
+        let (a, boxA) = hold(permission(input: ["command": "ls"]))
+        let (b, boxB) = hold(permission(input: ["command": "rm -rf build"]))
+        XCTAssertEqual(replies.requests.map(\.id), [a.id, b.id])
+
+        replies.connectionClosed(a.id)
+        XCTAssertEqual(replies.requests.map(\.id), [b.id])
+
+        XCTAssertFalse(replies.decide(a, .allow), "A n'est plus tenue")
+        XCTAssertEqual(replies.requests.map(\.id), [b.id], "B reste tenue")
+        XCTAssertTrue(boxB.replies.isEmpty, "B n'a reçu aucune décision")
+        XCTAssertTrue(boxA.replies.isEmpty)
+        XCTAssertEqual(replies.notices["s1"]?.tone, .warning)
+
+        XCTAssertTrue(replies.decide(b, .allow), "contrôle : un clic sur B décide bien B")
+        XCTAssertEqual(boxB.replies.count, 1)
+    }
+
     // MARK: - Messages
 
     func testOneWaiterPerSessionAndFIFOQueue() {

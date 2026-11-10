@@ -169,6 +169,46 @@ final class UpdaterTests: XCTestCase {
         XCTAssertNoThrow(try Curve25519.Signing.PublicKey(rawRepresentation: embedded))
     }
 
+    // MARK: - Téléchargement et installation
+
+    /// `downloadAndInstall` de bout en bout, sans réseau ni hdiutil : transferts et installation simulés,
+    /// clés créées dans le test, cache dans un dossier temporaire.
+    private func runDownloadAndInstall(signingWith signer: Curve25519.Signing.PrivateKey, publicKeyOf trusted:
+        Curve25519.Signing.PrivateKey) async throws -> [String] {
+        let root = try makeTemporaryDirectory(self)
+        let dmgData = Data((0..<4_096).map { UInt8(truncatingIfNeeded: $0 &* 7) })
+        let signature = try signer.signature(for: dmgData).base64EncodedString()
+        let ok = HTTPURLResponse(url: root, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        var installed: [String] = []
+        let cache = root.appendingPathComponent("cache")
+        let incoming = root.appendingPathComponent("incoming.dmg")
+        try dmgData.write(to: incoming)
+        defer { XCTAssertFalse(FileManager.default.fileExists(atPath: cache.path), "cache nettoyé") }
+
+        try await Updater.downloadAndInstall(
+            try release(), over: root.appendingPathComponent("Oriel.app"), userAgentVersion: "1.0.0",
+            publicKey: trusted.publicKey.rawRepresentation.base64EncodedString(), cache: cache,
+            download: { _ in (incoming, ok) }, fetch: { _ in (Data(signature.utf8), ok) },
+            install: { dmg, version, _ in installed.append("\(dmg.lastPathComponent) \(version)") })
+        return installed
+    }
+
+    func testForgedSignatureInstallsNothing() async throws {
+        let trusted = Curve25519.Signing.PrivateKey()
+        do {
+            _ = try await runDownloadAndInstall(signingWith: Curve25519.Signing.PrivateKey(), publicKeyOf: trusted)
+            XCTFail("une signature d'une autre clé doit être refusée")
+        } catch {
+            XCTAssertEqual(error as? UpdateError, .invalidSignature)
+        }
+    }
+
+    func testValidSignatureInstalls() async throws {
+        let key = Curve25519.Signing.PrivateKey()
+        let installed = try await runDownloadAndInstall(signingWith: key, publicKeyOf: key)
+        XCTAssertEqual(installed, ["Oriel-1.2.0.dmg 1.2.0"])
+    }
+
     // MARK: - Décision
 
     func testDecision() throws {
