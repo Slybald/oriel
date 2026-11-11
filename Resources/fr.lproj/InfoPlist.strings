@@ -1,9 +1,9 @@
 /* Oriel : textes français de l'Info.plist (demandes d'autorisation). */
-"NSDesktopFolderUsageDescription" = "Oriel lance des outils compagnons optionnels qui lisent des fichiers sur ton Bureau.";
-"NSDocumentsFolderUsageDescription" = "Oriel lance des outils compagnons optionnels qui lisent des fichiers dans ton dossier Documents.";
-"NSDownloadsFolderUsageDescription" = "Oriel lance des outils compagnons optionnels qui rangent des fichiers de ton dossier Téléchargements.";
 "NSAppleEventsUsageDescription" = "Oriel envoie des commandes à d'autres apps, par exemple pour piloter la lecture de musique, seulement quand tu utilises une fonction qui en a besoin.";
 "NSBluetoothAlwaysUsageDescription" = "Oriel utilise le Bluetooth pour afficher l'état de tes appareils connectés, seulement si tu actives cette fonction.";
+"NSDesktopFolderUsageDescription" = "Oriel vérifie qu'un fichier posé sur l'Étagère ou ouvert depuis les fichiers récents est toujours dans ton Bureau.";
+"NSDocumentsFolderUsageDescription" = "Oriel vérifie qu'un fichier posé sur l'Étagère ou ouvert depuis les fichiers récents est toujours dans ton dossier Documents.";
+"NSDownloadsFolderUsageDescription" = "Oriel vérifie qu'un fichier posé sur l'Étagère ou ouvert depuis les fichiers récents est toujours dans ton dossier Téléchargements.";
 "NSCalendarsFullAccessUsageDescription" = "Oriel lit tes calendriers pour afficher tes prochains événements dans la notch, seulement si tu actives cette fonction.";
 "NSCalendarsUsageDescription" = "Oriel lit tes calendriers pour afficher tes prochains événements dans la notch, seulement si tu actives cette fonction.";
 "NSContactsUsageDescription" = "Oriel lit tes contacts pour afficher leurs noms dans l'onglet Messages, seulement si tu actives cette fonction.";

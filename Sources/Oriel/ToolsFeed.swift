@@ -94,14 +94,14 @@ final class ToolsFeed: ObservableObject {
     private var loading = false
     private var filesCache: FilesCache?
 
-    /// Dans Documents, Bureau ou Téléchargements sans outil compagnon, le fichier est supposé présent :
+    /// Dans Documents, Bureau ou Téléchargements, le fichier est supposé présent sans Accès complet au disque :
     /// le vérifier ferait surgir une fenêtre d'autorisation de macOS.
     init(paths: Paths = .standard,
-         fileExists: @escaping (String) -> Bool = { path in
-             ProtectedFolders.mayAccess(path) ? FileManager.default.fileExists(atPath: path) : true
-         }) {
+         home: URL = FileManager.default.homeDirectoryForCurrentUser,
+         hasFullDiskAccess: @escaping () -> Bool = ProtectedFolders.fullDiskAccessGranted,
+         disk: @escaping (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) {
         self.paths = paths
-        self.fileExists = fileExists
+        self.fileExists = { ProtectedFolders.exists($0, home: home, hasFullDiskAccess: hasFullDiskAccess, disk: disk) }
     }
 
     /// Panneau ouvert : lecture immédiate puis toutes les 15 s. Fermé : plus rien.

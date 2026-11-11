@@ -103,37 +103,54 @@ final class IdentityTests: XCTestCase {
         XCTAssertFalse(ProtectedFolders.contains("/tmp/Documents/a", home: home))
     }
 
-    func testProtectedFoldersNeedACompanionTool() throws {
-        let home = try makeTemporaryDirectory(self)
-        let inside = home.appendingPathComponent("Documents/projet/a.swift").path
-        XCTAssertFalse(ProtectedFolders.mayAccess(inside, home: home))
-        XCTAssertTrue(ProtectedFolders.mayAccess(home.appendingPathComponent("Projets/a.swift").path, home: home))
+    /// Sans Accès complet au disque, jamais de sonde dans Documents, Bureau, Téléchargements  ;
+    /// avec l'accès, le disque est regardé comme avant.
+    func testProtectedFoldersProbedOnlyWithFullDiskAccess() throws {
+        do {
+            // Home fictif hors des dossiers temporaires (le fil de ToolsFeed les écarte). Plus aucun outil à installer :
+            // la règle ne dépend plus de ~/.local/share.
+            let home = URL(fileURLWithPath: "/Users/x")
+            let inside = ["Documents", "Desktop", "Downloads"].map { home.appendingPathComponent("\($0)/projet/a.swift").path }
+            var probed: [String] = []
+            let spy: (String) -> Bool = { probed.append($0); return false }
 
-        let tool = home.appendingPathComponent(".local/share/git-radar/git_radar.py")
-        try FileManager.default.createDirectory(at: tool.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data().write(to: tool)
-        XCTAssertTrue(ProtectedFolders.mayAccess(inside, home: home))
+            // ProtectedFolders, ActivityLog et ToolsFeed (via un registre qui cite ces chemins).
+            for path in inside { XCTAssertTrue(ProtectedFolders.exists(path, home: home, hasFullDiskAccess: { false }, disk: spy)) }
+            for path in inside {
+                _ = ActivityLog.projectName(forFile: path, cwd: "/elsewhere", home: home, hasFullDiskAccess: { false }, disk: spy)
+            }
+            let fixtures = try ToolsFixtures()
+            try fixtures.writeLines(inside.map { ToolsFixtures.fileLine($0, ago: 5, now: Date(), project: "p") },
+                                    to: fixtures.paths.files)
+            let feed = ToolsFeed(paths: fixtures.paths, home: home, hasFullDiskAccess: { false }, disk: spy)
+            feed.refreshNow()
+            XCTAssertEqual(feed.recentFiles.count, 3)
+            XCTAssertTrue(feed.recentFiles.allSatisfy(\.exists))
+            XCTAssertEqual(probed, [])
+
+            // Accès complet accordé : le disque est consulté.
+            XCTAssertFalse(ProtectedFolders.exists(inside[0], home: home, hasFullDiskAccess: { true }, disk: spy))
+            XCTAssertEqual(probed, [inside[0]])
+            let granted = ToolsFeed(paths: fixtures.paths, home: home, hasFullDiskAccess: { true }, disk: spy)
+            granted.refreshNow()
+            XCTAssertTrue(granted.recentFiles.allSatisfy { !$0.exists })
+            XCTAssertFalse(ProtectedFolders.exists(home.appendingPathComponent("Projets/a").path, home: home,
+                                                   hasFullDiskAccess: { false }, disk: spy), "hors dossiers protégés")
+        }
     }
 
-    /// Sans course-sorter, Téléchargements n'est jamais ouvert ; avec, il est surveillé.
-    func testDownloadsWatchedOnlyWithCourseSorter() throws {
-        let home = try makeTemporaryDirectory(self)
-        try FileManager.default.createDirectory(at: home.appendingPathComponent("Downloads"),
-                                                withIntermediateDirectories: true)
-        let without = JobRunner(home: home)
-        without.start()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
-        XCTAssertEqual(without.debugSummary["watchingDownloads"] as? Bool, false)
-
-        let script = home.appendingPathComponent(".local/share/course-sorter/course_sorter.py")
-        try FileManager.default.createDirectory(at: script.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data().write(to: script)
-        let with = JobRunner(home: home)
-        with.start()
-        let deadline = Date().addingTimeInterval(3)
-        while with.debugSummary["watchingDownloads"] as? Bool != true, Date() < deadline {
-            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+    /// La sonde d'accès est faite une fois, et jamais si aucun chemin n'est dans un dossier protégé.
+    func testAccessProbeRunsOnceAndOnlyWhenNeeded() {
+        let home = URL(fileURLWithPath: "/Users/x")
+        var count = 0
+        let access = AccessProbe { count += 1; return false }
+        for _ in 0..<100 { _ = ProtectedFolders.exists("/Users/x/Projets/a", home: home, hasFullDiskAccess: { access.granted }, disk: { _ in true }) }
+        XCTAssertEqual(count, 0)
+        for i in 0..<100 {
+            let path = i % 2 == 0 ? "/Users/x/Downloads/a\(i)" : "/Users/x/Projets/a\(i)"
+            _ = ProtectedFolders.exists(path, home: home, hasFullDiskAccess: { access.granted }, disk: { _ in true })
+            _ = ActivityLog.projectName(forFile: path, cwd: "/elsewhere", home: home, hasFullDiskAccess: { access.granted }, disk: { _ in false })
         }
-        XCTAssertEqual(with.debugSummary["watchingDownloads"] as? Bool, true)
+        XCTAssertEqual(count, 1)
     }
 }
