@@ -94,16 +94,15 @@ final class ToolsFeed: ObservableObject {
     private var loading = false
     private var filesCache: FilesCache?
 
-    /// Dans Documents, Bureau ou Téléchargements, le fichier est supposé présent :
-    /// le vérifier ferait surgir une fenêtre d'autorisation de macOS. `disk` ne voit jamais ces chemins.
+    /// Dans Documents, Bureau ou Téléchargements, le fichier est supposé présent sans Accès complet au disque :
+    /// le vérifier ferait surgir une fenêtre d'autorisation de macOS.
     init(paths: Paths = .standard,
          home: URL = FileManager.default.homeDirectoryForCurrentUser,
+         hasFullDiskAccess: @escaping () -> Bool = ProtectedFolders.fullDiskAccessGranted,
          disk: @escaping (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) {
         self.paths = paths
-        self.fileExists = { ProtectedFolders.exists($0, home: home, disk: disk) }
+        self.fileExists = { ProtectedFolders.exists($0, home: home, hasFullDiskAccess: hasFullDiskAccess, disk: disk) }
     }
-
-    func fileExistsForTesting(_ path: String) -> Bool { fileExists(path) }
 
     /// Panneau ouvert : lecture immédiate puis toutes les 15 s. Fermé : plus rien.
     func setActive(_ active: Bool) {

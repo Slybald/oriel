@@ -145,10 +145,11 @@ final class ActivityLog {
     /// après un `cd`) : le dépôt git qui contient le fichier, sinon son dossier parent.
     static func projectName(forFile path: String, cwd: String,
                             home: URL = FileManager.default.homeDirectoryForCurrentUser,
+                            hasFullDiskAccess: () -> Bool = ProtectedFolders.fullDiskAccessGranted,
                             disk: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) -> String {
         if !cwd.isEmpty, path.hasPrefix(cwd.hasSuffix("/") ? cwd : cwd + "/") { return projectName(cwd) }
-        // Documents, Bureau, Téléchargements : pas de recherche (fenêtre d'autorisation).
-        if !ProtectedFolders.contains(path, home: home.path) {
+        // Documents, Bureau, Téléchargements sans Accès complet au disque : pas de recherche (fenêtre d'autorisation).
+        if !ProtectedFolders.contains(path, home: home.path) || hasFullDiskAccess() {
             var dir = (path as NSString).deletingLastPathComponent
             for _ in 0..<12 where dir.count > 1 {
                 if disk((dir as NSString).appendingPathComponent(".git")) {

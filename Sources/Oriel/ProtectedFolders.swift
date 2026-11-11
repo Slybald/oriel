@@ -1,7 +1,7 @@
 import Foundation
 
 /// Documents, Bureau et Téléchargements : macOS demande une autorisation au premier accès, même pour un
-/// simple test d'existence. L'app n'y regarde jamais d'elle-même : un chemin dedans est supposé présent.
+/// simple test d'existence. Sans l'Accès complet au disque, l'app n'y regarde pas d'elle-même : un chemin dedans est supposé présent.
 enum ProtectedFolders {
     static let names = ["Documents", "Desktop", "Downloads"]
 
@@ -11,8 +11,16 @@ enum ProtectedFolders {
         return names.contains { path.hasPrefix((home as NSString).appendingPathComponent($0).lowercased() + "/") }
     }
 
-    /// Existence d'un fichier : vraie ailleurs, supposée dans les dossiers protégés (`disk` n'est pas appelé).
-    static func exists(_ path: String, home: URL, disk: (String) -> Bool) -> Bool {
-        contains(path, home: home.path) || disk(path)
+    /// Avec l'Accès complet au disque déjà accordé, macOS n'affiche aucune fenêtre : on regarde le disque.
+    /// Même sonde que l'onglet Messages (`open` sur chat.db) ; sans Messages, l'accès est tenu pour absent.
+    static func fullDiskAccessGranted() -> Bool {
+        SQLiteMessagesDatabase.probe(SQLiteMessagesDatabase.defaultPath) == nil
+    }
+
+    /// Existence d'un fichier : vraie ailleurs ; dans un dossier protégé, supposée présente tant que l'accès
+    /// complet manque (`disk` n'est alors pas appelé).
+    static func exists(_ path: String, home: URL, hasFullDiskAccess: () -> Bool = fullDiskAccessGranted,
+                       disk: (String) -> Bool) -> Bool {
+        !contains(path, home: home.path) || hasFullDiskAccess() ? disk(path) : true
     }
 }

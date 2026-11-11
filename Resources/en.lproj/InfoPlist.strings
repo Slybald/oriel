@@ -1,6 +1,9 @@
 /* Oriel: English texts of Info.plist (privacy prompts). */
 "NSAppleEventsUsageDescription" = "Oriel sends commands to other apps, for example to control music playback, only when you use a feature that needs it.";
 "NSBluetoothAlwaysUsageDescription" = "Oriel uses Bluetooth to show the status of your connected devices, only if you turn this feature on.";
+"NSDesktopFolderUsageDescription" = "Oriel checks that a file you put on the Shelf or open from recent files is still in your Desktop.";
+"NSDocumentsFolderUsageDescription" = "Oriel checks that a file you put on the Shelf or open from recent files is still in your Documents folder.";
+"NSDownloadsFolderUsageDescription" = "Oriel checks that a file you put on the Shelf or open from recent files is still in your Downloads folder.";
 "NSCalendarsFullAccessUsageDescription" = "Oriel reads your calendars to show your upcoming events in the notch, only if you turn this feature on.";
 "NSCalendarsUsageDescription" = "Oriel reads your calendars to show your upcoming events in the notch, only if you turn this feature on.";
 "NSContactsUsageDescription" = "Oriel reads your contacts to show their names in the Messages tab, only if you turn this feature on.";

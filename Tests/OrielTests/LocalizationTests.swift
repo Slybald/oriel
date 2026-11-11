@@ -9,7 +9,8 @@ import XCTest
 final class LocalizationTests: XCTestCase {
     private static let resources = repositoryRoot.appendingPathComponent("Resources")
     private static let sources = repositoryRoot.appendingPathComponent("Sources/Oriel")
-    private static let usageKeys = ["NSCalendarsFullAccessUsageDescription",
+    private static let usageKeys = ["NSDesktopFolderUsageDescription", "NSDocumentsFolderUsageDescription",
+                                    "NSDownloadsFolderUsageDescription", "NSCalendarsFullAccessUsageDescription",
                                     "NSCalendarsUsageDescription", "NSAppleEventsUsageDescription",
                                     "NSBluetoothAlwaysUsageDescription", "NSContactsUsageDescription"]
 
@@ -234,8 +235,9 @@ final class LocalizationTests: XCTestCase {
         }.filter { $0 != "%" }
     }
 
-    /// L'app ne lance plus d'outil : plus de demande d'accès à Bureau, Documents ni Téléchargements.
-    func testFolderUsageKeysAreGone() throws {
+    /// Les textes d'accès à Bureau, Documents, Téléchargements décrivent l'Étagère et les fichiers récents,
+    /// plus des outils compagnons que l'app ne lance plus.
+    func testFolderUsageTextsDoNotMentionCompanionTools() throws {
         let files = [Self.resources.appendingPathComponent("Info.plist"),
                      Self.resources.appendingPathComponent("en.lproj/InfoPlist.strings"),
                      Self.resources.appendingPathComponent("fr.lproj/InfoPlist.strings")]
@@ -243,8 +245,10 @@ final class LocalizationTests: XCTestCase {
             let text = try String(contentsOf: file, encoding: .utf8)
             for key in ["NSDesktopFolderUsageDescription", "NSDocumentsFolderUsageDescription",
                         "NSDownloadsFolderUsageDescription"] {
-                XCTAssertFalse(text.contains(key), "\(key) dans \(file.lastPathComponent)")
+                XCTAssertTrue(text.contains(key), "\(key) absent de \(file.lastPathComponent)")
             }
+            XCTAssertFalse(text.lowercased().contains("compan"), file.lastPathComponent)
+            XCTAssertFalse(text.lowercased().contains("compagnon"), file.lastPathComponent)
         }
     }
 }

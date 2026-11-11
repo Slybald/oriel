@@ -103,28 +103,39 @@ final class IdentityTests: XCTestCase {
         XCTAssertFalse(ProtectedFolders.contains("/tmp/Documents/a", home: home))
     }
 
-    /// Documents, Bureau, Téléchargements : le disque n'est jamais interrogé, avec ou sans outil dans ~/.local/share.
-    func testProtectedFoldersAreNeverProbed() throws {
-        for withTool in [false, true] {
-            let home = try makeTemporaryDirectory(self)
-            if withTool {
-                let tool = home.appendingPathComponent(".local/share/git-radar/git_radar.py")
-                try FileManager.default.createDirectory(at: tool.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try Data().write(to: tool)
-            }
+    /// Sans Accès complet au disque, jamais de sonde dans Documents, Bureau, Téléchargements  ;
+    /// avec l'accès, le disque est regardé comme avant.
+    func testProtectedFoldersProbedOnlyWithFullDiskAccess() throws {
+        do {
+            // Home fictif hors des dossiers temporaires (le fil de ToolsFeed les écarte). Plus aucun outil à installer :
+            // la règle ne dépend plus de ~/.local/share.
+            let home = URL(fileURLWithPath: "/Users/x")
+            let inside = ["Documents", "Desktop", "Downloads"].map { home.appendingPathComponent("\($0)/projet/a.swift").path }
             var probed: [String] = []
             let spy: (String) -> Bool = { probed.append($0); return false }
-            let inside = ["Documents", "Desktop", "Downloads"].map { home.appendingPathComponent("\($0)/projet/a.swift").path }
 
-            let feed = ToolsFeed(home: home, disk: spy)
-            let existsInside = inside.map { feed.fileExistsForTesting($0) }
-            XCTAssertEqual(existsInside, [true, true, true])
+            // ProtectedFolders, ActivityLog et ToolsFeed (via un registre qui cite ces chemins).
+            for path in inside { XCTAssertTrue(ProtectedFolders.exists(path, home: home, hasFullDiskAccess: { false }, disk: spy)) }
             for path in inside {
-                _ = ActivityLog.projectName(forFile: path, cwd: "/elsewhere", home: home, disk: spy)
+                _ = ActivityLog.projectName(forFile: path, cwd: "/elsewhere", home: home, hasFullDiskAccess: { false }, disk: spy)
             }
-            XCTAssertEqual(probed, [], "outil installé : \(withTool)")
-            XCTAssertFalse(ProtectedFolders.exists(home.appendingPathComponent("Projets/a").path, home: home, disk: spy))
-            XCTAssertEqual(probed.count, 1, "hors dossiers protégés, le disque est interrogé")
+            let fixtures = try ToolsFixtures()
+            try fixtures.writeLines(inside.map { ToolsFixtures.fileLine($0, ago: 5, now: Date(), project: "p") },
+                                    to: fixtures.paths.files)
+            let feed = ToolsFeed(paths: fixtures.paths, home: home, hasFullDiskAccess: { false }, disk: spy)
+            feed.refreshNow()
+            XCTAssertEqual(feed.recentFiles.count, 3)
+            XCTAssertTrue(feed.recentFiles.allSatisfy(\.exists))
+            XCTAssertEqual(probed, [])
+
+            // Accès complet accordé : le disque est consulté.
+            XCTAssertFalse(ProtectedFolders.exists(inside[0], home: home, hasFullDiskAccess: { true }, disk: spy))
+            XCTAssertEqual(probed, [inside[0]])
+            let granted = ToolsFeed(paths: fixtures.paths, home: home, hasFullDiskAccess: { true }, disk: spy)
+            granted.refreshNow()
+            XCTAssertTrue(granted.recentFiles.allSatisfy { !$0.exists })
+            XCTAssertFalse(ProtectedFolders.exists(home.appendingPathComponent("Projets/a").path, home: home,
+                                                   hasFullDiskAccess: { false }, disk: spy), "hors dossiers protégés")
         }
     }
 }
