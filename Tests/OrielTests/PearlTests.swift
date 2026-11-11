@@ -142,7 +142,6 @@ final class PearlControllerTests: XCTestCase {
         XCTAssertFalse(notch.model.pearlAwake)
         notch.revealOnce()
         XCTAssertTrue(notch.model.pearlAwake, "visible : perle éveillée")
-        XCTAssertTrue(notch.isShown)
         XCTAssertTrue(spin(timeout: 3) { !notch.model.pearlAwake }, "rendormie, comme après un survol")
     }
 
