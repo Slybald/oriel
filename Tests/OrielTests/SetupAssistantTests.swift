@@ -21,7 +21,9 @@ final class SetupAssistantTests: XCTestCase {
         var logins: [Bool] = []
         var closes = 0
 
-        init(_ test: XCTestCase, claudeDetected: Bool = true, hookStatus: HookInstaller.Status = .notInstalled,
+        var reveals = 0
+
+        init(_ test: XCTestCase, claudeDetected: Bool = true, hasNotch: Bool = true, hookStatus: HookInstaller.Status = .notInstalled,
              firstRun: Bool = true, inApplications: Bool = true, prepare: (Preferences) -> Void = { _ in }) {
             prefs = Preferences(defaults: makeEphemeralDefaults(test))
             // Comme AppCore.start : l'onglet Claude est décidé par la détection avant l'assistant.
@@ -38,7 +40,8 @@ final class SetupAssistantTests: XCTestCase {
                     return installError
                 },
                 applyLaunchAtLogin: { [unowned self] in logins.append($0) },
-                close: { [unowned self] in closes += 1 })
+                close: { [unowned self] in closes += 1 },
+                hasNotch: hasNotch, revealNotch: { [unowned self] in reveals += 1 })
         }
 
         /// Les réglages sont relus au tour de boucle suivant.
@@ -48,6 +51,38 @@ final class SetupAssistantTests: XCTestCase {
             model.step = .behavior
             model.next()
         }
+    }
+
+    // MARK: - Écran sans encoche (C05)
+
+    func testWithoutNotchTheAssistantSaysWhereToPointAndRevealsTheNotchOnClose() {
+        let rig = Rig(self, hasNotch: false)
+        let hint = try! XCTUnwrap(rig.model.pointerHint)
+        XCTAssertTrue(hint.contains("tout en haut") && hint.contains("au milieu"), hint)
+        rig.model.windowDidClose()
+        XCTAssertEqual(rig.reveals, 1)
+    }
+
+    func testWithNotchNothingChanges() {
+        let rig = Rig(self)
+        XCTAssertNil(rig.model.pointerHint)
+        rig.goToEnd()
+        rig.model.next()
+        rig.model.windowDidClose()
+        XCTAssertEqual(rig.reveals, 0)
+    }
+
+    // MARK: - Port pris (C26)
+
+    func testBusyPortShowsAnAlertThenQuits() {
+        var events: [String] = []
+        AppCore.reportPortFailure(NSError(domain: "t", code: 1),
+                                  show: { title, text in events.append("alert:\(title)|\(text)") },
+                                  terminate: { events.append("quit") })
+        XCTAssertEqual(events.count, 2)
+        XCTAssertTrue(events[0].hasPrefix("alert:"), "l'alerte vient avant la sortie")
+        XCTAssertTrue(events[0].contains("47823"))
+        XCTAssertEqual(events[1], "quit")
     }
 
     // MARK: - Choix par défaut
@@ -317,6 +352,18 @@ final class SetupAssistantSnapshotTests: XCTestCase {
         try TimerNotesSnapshot.render(SetupAssistantView(model: model).padding(.top, 32).background(Color.black), name, dir,
                                       size: CGSize(width: SetupAssistantView.size.width,
                                                    height: SetupAssistantView.size.height + 32))
+    }
+
+    func testRenderDoneWithoutNotch() throws {
+        guard let dir = TimerNotesSnapshot.outputDirectory else { throw XCTSkip("ORIEL_SNAPSHOT_DIR non défini") }
+        let notch = NotchHarness(self)
+        // Avec encoche : identique à l'écran d'avant la correction.
+        for (hasNotch, name) in [(true, "4-done-avant"), (false, "4-done-sans-encoche")] {
+            let m = SetupAssistantModel(registry: notch.registry, prefs: notch.prefs, claudeDetected: false,
+                                        hookStatus: .notInstalled, firstRun: true, inApplications: true, step: .done,
+                                        installHooks: { nil }, applyLaunchAtLogin: { _ in }, close: {}, hasNotch: hasNotch)
+            try render(m, name, dir)
+        }
     }
 
     func testRenderEachStep() throws {

@@ -397,3 +397,6 @@
 "Barre de commande…" = "Barre de commande…";
 "Barre de commande" = "Barre de commande";
 "Barre de commande : t 25 lance un minuteur, n idée crée une note, c lien cherche dans les copies, s présentation applique une scène, > message écrit à Claude. Rien ne part sans ⏎." = "Barre de commande : t 25 lance un minuteur, n idée crée une note, c lien cherche dans les copies, s présentation applique une scène, > message écrit à Claude. Rien ne part sans ⏎.";
+"Pas d'encoche sur cet écran : amène le pointeur tout en haut, au milieu, pour faire apparaître la notch." = "Pas d'encoche sur cet écran : amène le pointeur tout en haut, au milieu, pour faire apparaître la notch.";
+"Oriel ne peut pas démarrer" = "Oriel ne peut pas démarrer";
+"Le port %d est déjà utilisé par un autre programme. Oriel en a besoin pour recevoir les hooks de Claude Code et de Codex. Ferme ce programme, puis relance Oriel." = "Le port %d est déjà utilisé par un autre programme. Oriel en a besoin pour recevoir les hooks de Claude Code et de Codex. Ferme ce programme, puis relance Oriel.";

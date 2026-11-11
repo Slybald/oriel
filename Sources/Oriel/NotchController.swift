@@ -1059,6 +1059,8 @@ final class NotchController {
 
     /// Montre la notch le temps d'un usage explicite (dépôt sur l'Étagère, raccourci), même hors de sa règle de
     /// visibilité ; `collapse()` la rend à sa règle.
+    func revealOnce() { showOnDemand() }
+
     private func showOnDemand() {
         if !shouldShow {
             shownOnDemand = true
