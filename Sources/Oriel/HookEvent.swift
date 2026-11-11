@@ -13,7 +13,7 @@ struct HookHeaders {
 
     /// Même règle que le gestionnaire `claude://code/continue?session=` de Claude Desktop.
     static func isDesktopSessionId(_ id: String) -> Bool {
-        id.range(of: "^local_[A-Za-z0-9-]{1,64}$", options: .regularExpression) != nil
+        id.range(of: "^local_[A-Za-z0-9-]{1,64}\\z", options: .regularExpression) != nil
     }
 
     init(_ headers: [String: String] = [:]) {

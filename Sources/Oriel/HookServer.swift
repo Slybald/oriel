@@ -1,3 +1,4 @@
+import AppKit
 import Darwin
 import Foundation
 import Network
@@ -18,6 +19,13 @@ final class HookServer {
     static let defaultPort: UInt16 = 47823
     static let maxBodySize = 32 * 1024 * 1024
 
+    /// Délai pour recevoir une requête entière, en secondes : passé ce délai, 408 et connexion fermée (un client muet
+    /// ou trop lent ne garde pas sa place). Les requêtes tenues (`/permission`, `/inbox`) n'y sont plus soumises une fois
+    /// lues. À poser avant `start()`.
+    var requestTimeout: TimeInterval = 10
+    /// Connexions ouvertes en même temps, requêtes tenues comprises ; au-delà, 503 sans rien lire. À poser avant `start()`.
+    var maxConnections = 128
+
     var onFailure: ((Error) -> Void)?
     /// Diagnostic en lecture seule pour `GET /state` (appelé sur le main thread).
     var stateProvider: (() -> [String: Any])?
@@ -36,6 +44,9 @@ final class HookServer {
     private var listener: NWListener?
     /// Connexions ouvertes (sur `queue`) : `stop()` les ferme, comme l'arrêt de l'app, pour que les hooks tenus le voient.
     private var connections: [ObjectIdentifier: NWConnection] = [:]
+    /// Connexions dont la requête n'est pas encore lue en entier (sur `queue`) : celles que le délai peut fermer.
+    private var reading: Set<ObjectIdentifier> = []
+    private var terminationObserver: NSObjectProtocol?
     private let paused = OSAllocatedUnfairLock(initialState: false)
     private let codexPaused = OSAllocatedUnfairLock(initialState: true)
 
@@ -92,11 +103,17 @@ final class HookServer {
         }
         listener.start(queue: queue)
         self.listener = listener
+        // App quittée : plus de jeton sur disque, le script n'envoie plus rien (`removeFile` ne retire que le nôtre).
+        terminationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: nil) { _ in access.removeFile() }
     }
 
     func stop() {
         listener?.cancel()
         listener = nil
+        if let terminationObserver { NotificationCenter.default.removeObserver(terminationObserver) }
+        terminationObserver = nil
+        access.removeFile()
         queue.async { [self] in
             let open = connections.values
             connections = [:]
@@ -107,56 +124,84 @@ final class HookServer {
     // MARK: - Connexions
 
     private func accept(_ connection: NWConnection) {
-        connections[ObjectIdentifier(connection)] = connection
-        connection.stateUpdateHandler = { [weak self, weak connection] state in
-            guard let connection else { return }
+        let id = ObjectIdentifier(connection)
+        connection.stateUpdateHandler = { [weak self] state in
             switch state {
-            case .cancelled, .failed: self?.connections[ObjectIdentifier(connection)] = nil
+            case .cancelled, .failed:
+                self?.connections[id] = nil
+                self?.reading.remove(id)
             default: break
             }
         }
         connection.start(queue: queue)
-        receive(on: connection, buffer: Data())
+        guard connections.count < maxConnections else { return reply(503, "Service Unavailable", on: connection) }
+        connections[id] = connection
+        reading.insert(id)
+        queue.asyncAfter(deadline: .now() + requestTimeout) { [weak self, weak connection] in
+            guard let self, let connection, self.reading.remove(id) != nil else { return }
+            self.reply(408, "Request Timeout", on: connection)
+        }
+        receive(on: connection, buffer: Data(), admitted: false)
     }
 
-    private func receive(on connection: NWConnection, buffer: Data) {
+    /// `admitted` : en-têtes déjà lus et acceptés. Le corps n'est lu qu'après : sans jeton, rien de plus que les en-têtes.
+    private func receive(on connection: NWConnection, buffer: Data, admitted: Bool) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 1 << 20) { [weak self] data, _, isComplete, error in
             guard let self else {
                 connection.cancel()
                 return
             }
+            let id = ObjectIdentifier(connection)
+            // Délai dépassé : 408 déjà envoyé.
+            guard self.reading.contains(id) else { return }
             var buffer = buffer
             if let data { buffer.append(data) }
+            var admitted = admitted
+            if !admitted, let head = HTTPRequest.head(buffer) {
+                if let early = self.early(head) {
+                    self.reading.remove(id)
+                    return self.reply(early.status, early.reason, body: early.body, on: connection)
+                }
+                admitted = true
+            }
 
             switch HTTPRequest.parse(buffer, maxBody: Self.maxBodySize) {
             case .complete(let request):
+                self.reading.remove(id)
                 self.serve(request, on: connection)
             case .needMore:
                 if error != nil || isComplete {
                     connection.cancel()
                 } else {
-                    self.receive(on: connection, buffer: buffer)
+                    self.receive(on: connection, buffer: buffer, admitted: admitted)
                 }
             case .tooLarge:
+                self.reading.remove(id)
                 self.reply(413, "Payload Too Large", on: connection)
             case .invalid:
+                self.reading.remove(id)
                 self.reply(400, "Bad Request", on: connection)
             }
         }
     }
 
-    private func serve(_ request: HTTPRequest, on connection: NWConnection) {
-        guard request.headers["host"] == "127.0.0.1:\(port)", request.headers["origin"] == nil else {
-            return reply(403, "Forbidden", on: connection)
+    /// Réponse donnée dès les en-têtes, sans lire le corps : refus (Host, Origin, jeton) ou `/health`. nil : la requête
+    /// est admise, son corps peut être lu.
+    private func early(_ head: HTTPRequest) -> LocalAPI.Response? {
+        guard head.headers["host"] == "127.0.0.1:\(port)", head.headers["origin"] == nil else {
+            return LocalAPI.Response(status: 403, body: Data())
         }
-        if request.path == "/health" { return reply(204, "No Content", on: connection) }
+        if head.path == "/health" { return .noContent }
         // API locale : son propre jeton, jamais celui des hooks (voir `LocalAPI`).
+        if head.path.hasPrefix("/api/"), let api { return DispatchQueue.main.sync { api.refusal(head) } }
+        return access.accepts(head.headers[HookAccess.headerKey]) ? nil : LocalAPI.Response(status: 401, body: Data())
+    }
+
+    /// Une requête admise par `early`.
+    private func serve(_ request: HTTPRequest, on connection: NWConnection) {
         if request.path.hasPrefix("/api/"), let api {
             let response = DispatchQueue.main.sync { api.handle(request) }
             return reply(response.status, response.reason, body: response.body, on: connection)
-        }
-        guard access.accepts(request.headers[HookAccess.headerKey]) else {
-            return reply(401, "Unauthorized", on: connection)
         }
         if isPaused, request.method == "POST", ["/hook", "/permission", "/inbox", "/claude/status"].contains(request.path) {
             return reply(204, "No Content", on: connection)
@@ -283,10 +328,12 @@ final class HookServer {
 
     /// Le client n'envoie plus rien après sa requête : une lecture qui aboutit signale sa fermeture (hook tué,
     /// réponse donnée au terminal). Après notre propre réponse, l'annulation de la connexion la termine aussi.
+    /// Fermée par le client, la connexion est annulée : elle libère sa place sous `maxConnections`.
     private func watchClosure(of connection: NWConnection, _ onClose: @escaping () -> Void) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { [weak self] _, _, isComplete, error in
             if isComplete || error != nil || self == nil {
                 onClose()
+                connection.cancel()
             } else {
                 self?.watchClosure(of: connection, onClose)
             }
@@ -352,13 +399,28 @@ struct HookAccess {
         return difference == 0
     }
 
-    /// La preuve, puis le jeton (le script ne parle à l'app qu'une fois le jeton là).
+    /// À côté du jeton : le numéro du processus qui l'a écrit. App tuée (le jeton reste), le script voit ce processus
+    /// parti et n'envoie rien à qui tiendrait le port à sa place.
+    var pidFile: URL? { file?.deletingLastPathComponent().appendingPathComponent("hook-pid") }
+
+    /// La preuve et le processus, puis le jeton (le script ne parle à l'app qu'une fois le jeton là).
     func writeFile() throws {
-        guard let file, let proofFile else { return }
+        guard let file, let proofFile, let pidFile else { return }
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Self.write("\(proof)\n", to: proofFile)
-        try Self.write("\(Self.headerName): \(token)\n", to: file)
+        try Self.write("\(getpid())\n", to: pidFile)
+        try Self.write(tokenLine, to: file)
     }
+
+    /// Le jeton d'abord (le script s'arrête là), puis le reste. Seulement s'il est encore le nôtre : une seconde
+    /// instance qui n'a pas eu le port ne retire pas celui de la première.
+    func removeFile() {
+        guard let file, let proofFile, let pidFile,
+              (try? String(contentsOf: file, encoding: .utf8)) == tokenLine else { return }
+        for url in [file, pidFile, proofFile] { try? FileManager.default.removeItem(at: url) }
+    }
+
+    private var tokenLine: String { "\(Self.headerName): \(token)\n" }
 
     /// Fichier temporaire créé en 0600 (`O_EXCL`) dans le même dossier, puis `rename` : jamais de secret
     /// lisible par un autre compte, ni de fichier à moitié écrit. Sert aussi au jeton de l'API locale.
@@ -400,12 +462,26 @@ struct HTTPRequest {
         guard let end = data.range(of: terminator) else {
             return data.count > maxHeaderSize ? .invalid : .needMore
         }
-        guard let head = String(data: data[data.startIndex..<end.lowerBound], encoding: .utf8) else {
-            return .invalid
-        }
+        guard let head = head(data) else { return .invalid }
+
+        let length = Int(head.headers["content-length"] ?? "0") ?? -1
+        guard length >= 0 else { return .invalid }
+        guard length <= maxBody else { return .tooLarge }
+
+        let bodyStart = end.upperBound
+        guard data.endIndex - bodyStart >= length else { return .needMore }
+        return .complete(HTTPRequest(method: head.method, path: head.path, headers: head.headers,
+                                     body: data.subdata(in: bodyStart..<(bodyStart + length))))
+    }
+
+    /// La requête sans son corps, dès que les en-têtes sont complets : de quoi la refuser avant de lire le corps.
+    /// nil tant qu'ils ne le sont pas, ou s'ils sont invalides.
+    static func head(_ data: Data) -> HTTPRequest? {
+        guard let end = data.range(of: terminator),
+              let head = String(data: data[data.startIndex..<end.lowerBound], encoding: .utf8) else { return nil }
         var lines = head.components(separatedBy: "\r\n")
         let requestLine = lines.removeFirst().split(separator: " ")
-        guard requestLine.count >= 2 else { return .invalid }
+        guard requestLine.count >= 2 else { return nil }
 
         var headers: [String: String] = [:]
         for line in lines {
@@ -415,20 +491,8 @@ struct HTTPRequest {
             headers[key] = value
         }
 
-        let length = Int(headers["content-length"] ?? "0") ?? -1
-        guard length >= 0 else { return .invalid }
-        guard length <= maxBody else { return .tooLarge }
-
-        let bodyStart = end.upperBound
-        guard data.endIndex - bodyStart >= length else { return .needMore }
-
         let rawPath = String(requestLine[1])
         let path = rawPath.split(separator: "?", maxSplits: 1).first.map(String.init) ?? rawPath
-        return .complete(HTTPRequest(
-            method: String(requestLine[0]).uppercased(),
-            path: path,
-            headers: headers,
-            body: data.subdata(in: bodyStart..<(bodyStart + length))
-        ))
+        return HTTPRequest(method: String(requestLine[0]).uppercased(), path: path, headers: headers, body: Data())
     }
 }

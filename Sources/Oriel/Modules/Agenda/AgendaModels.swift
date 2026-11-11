@@ -31,7 +31,7 @@ struct MeetingLink: Equatable {
             case .meet:
                 // Un code de réunion Meet : trois lettres, quatre, trois.
                 return host == "meet.google.com"
-                    && path.range(of: "^/[a-z]{3}-[a-z]{4}-[a-z]{3}$", options: .regularExpression) != nil
+                    && path.range(of: "^/[a-z]{3}-[a-z]{4}-[a-z]{3}\\z", options: .regularExpression) != nil
             case .teams:
                 return (host == "teams.microsoft.com" && (path.hasPrefix("/l/meetup-join/") || path.hasPrefix("/meet/")))
                     || (host == "teams.live.com" && path.hasPrefix("/meet/"))

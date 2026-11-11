@@ -30,7 +30,7 @@ enum CommandDuration {
 
     // 1 : nombre ; 2 : unité d'heures puis 3 : minutes en plus ; 4 : unité de minutes.
     private static let pattern = try! NSRegularExpression(
-        pattern: #"^(\d{1,4})\s*(?:(h|hr|hrs|heure|heures|hour|hours)\s*(?:(\d{1,2})\s*(?:m|min|mn|minute|minutes)?)?|(m|min|mn|minute|minutes))?$"#,
+        pattern: #"^(\d{1,4})\s*(?:(h|hr|hrs|heure|heures|hour|hours)\s*(?:(\d{1,2})\s*(?:m|min|mn|minute|minutes)?)?|(m|min|mn|minute|minutes))?\z"#,
         options: .caseInsensitive)
 }
 

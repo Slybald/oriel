@@ -125,7 +125,8 @@ final class ReplyServerFixture {
         var events: [HookEvent] = []
     }
 
-    init(_ testCase: XCTestCase) throws {
+    /// `configure` : réglages du serveur posés avant `start()` (délai, plafond de connexions).
+    init(_ testCase: XCTestCase, configure: (HookServer) -> Void = { _ in }) throws {
         home = try makeTemporaryDirectory(testCase)
         prefs = Preferences(defaults: makeEphemeralDefaults(testCase))
         prefs.replyFromNotch = true
@@ -141,6 +142,7 @@ final class ReplyServerFixture {
             let candidate = HookServer(port: port, access: access, replies: replies) { event, _ in
                 DispatchQueue.main.async { sink.events.append(event) }
             }
+            configure(candidate)
             try candidate.start()
             if spin(until: { FileManager.default.fileExists(atPath: file.path) }) {
                 server = candidate

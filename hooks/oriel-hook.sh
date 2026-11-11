@@ -12,15 +12,25 @@
 #                    revient (ORIEL_RETRY secondes au plus, 30 par défaut) : sans cela la session resterait
 #                    sans attente jusqu'à son prochain Stop.
 # Une décision ou un message n'est appliqué que s'il porte la preuve de l'app (second fichier 0600, jamais
-# envoyé) : un autre programme qui occuperait le port, app fermée, ne décide rien.
+# envoyé) : un autre programme qui occuperait le port, app fermée, ne décide rien. Et rien ne part sans l'app : elle
+# retire son jeton en quittant, et un jeton resté (app tuée) ne compte plus une fois son processus parti.
 
 URL="http://127.0.0.1:${ORIEL_PORT:-47823}"
 TOKEN="$HOME/Library/Application Support/Oriel/hook-token"
 PROOF="$HOME/Library/Application Support/Oriel/hook-proof"
+APP_PID="$HOME/Library/Application Support/Oriel/hook-pid"
+
+# L'app est là : jeton lisible, et le processus qui l'a écrit vit encore (commandes internes, aucun processus lancé).
+# Un autre compte qui tiendrait le port ne reçoit donc rien, pas même le corps de l'événement.
+app_running() {
+    [ -r "$TOKEN" ] && [ -r "$APP_PID" ] || return 1
+    IFS= read -r PID < "$APP_PID" || return 1
+    [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null
+}
 
 case "${1:-}" in
 permission | inbox)
-    [ -r "$TOKEN" ] && [ -r "$PROOF" ] || exit 0
+    app_running && [ -r "$PROOF" ] || exit 0
     WORK=$(mktemp -d "${TMPDIR:-/tmp}/oriel.XXXXXX") || exit 0
     trap 'rm -rf "$WORK"' EXIT
     # Hook arrêté (« No » au terminal, fin de session, timeout) : curl part avec lui, l'app voit la connexion se
@@ -31,18 +41,23 @@ permission | inbox)
     if [ "$1" = permission ]; then MAX=598; else MAX=86000; fi
     UNTIL=
     while :; do
-        curl -q -sf --noproxy "*" -D "$WORK/head" -o "$WORK/out" --connect-timeout 0.5 --max-time "$MAX" \
-            -H @"$TOKEN" \
-            -H 'Content-Type: application/json' \
-            -H 'Expect:' \
-            -H "X-Claude-PPID: $PPID" \
-            -H "X-Host-Session-Id: ${CLAUDE_CODE_HOST_SESSION_ID:-}" \
-            --data-binary @"$WORK/in" \
-            "$URL/$1" &
-        CURL=$!
-        wait "$CURL"
-        STATUS=$?
-        CURL=
+        if app_running; then
+            curl -q -sf --noproxy "*" -D "$WORK/head" -o "$WORK/out" --connect-timeout 0.5 --max-time "$MAX" \
+                -H @"$TOKEN" \
+                -H 'Content-Type: application/json' \
+                -H 'Expect:' \
+                -H "X-Claude-PPID: $PPID" \
+                -H "X-Host-Session-Id: ${CLAUDE_CODE_HOST_SESSION_ID:-}" \
+                --data-binary @"$WORK/in" \
+                "$URL/$1" &
+            CURL=$!
+            wait "$CURL"
+            STATUS=$?
+            CURL=
+        else
+            # Jeton retiré (l'app s'arrête) ou processus parti : comme une app pas encore revenue.
+            STATUS=7
+        fi
         [ "$STATUS" -eq 0 ] && break
         # Hors `inbox`, ou pour toute autre cause : le terminal garde la main (jamais de décision par défaut).
         [ "$1" = inbox ] || exit 0
@@ -85,6 +100,7 @@ trap 'exit 0' HUP INT TERM
 cat > "$TMP"
 
 send() {
+    app_running || return 1
     curl -q -s --noproxy "*" -o /dev/null --connect-timeout 0.5 --max-time 2 \
         -H @"$TOKEN" \
         -H 'Content-Type: application/json' \
