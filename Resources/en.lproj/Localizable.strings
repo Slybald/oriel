@@ -397,3 +397,6 @@
 "Barre de commande…" = "Command Bar…";
 "Barre de commande" = "Command Bar";
 "Barre de commande : t 25 lance un minuteur, n idée crée une note, c lien cherche dans les copies, s présentation applique une scène, > message écrit à Claude. Rien ne part sans ⏎." = "Command bar: t 25 starts a timer, n idea creates a note, c link searches your clipboard history, s presentation applies a scene, > message writes to Claude. Nothing runs without ⏎.";
+"Pas d'encoche sur cet écran : amène le pointeur tout en haut, au milieu, pour faire apparaître la notch." = "No notch on this display: move the pointer to the very top, in the middle, to bring up the notch.";
+"Oriel ne peut pas démarrer" = "Oriel Can't Start";
+"Le port %d est déjà utilisé par un autre programme. Oriel en a besoin pour recevoir les hooks de Claude Code et de Codex. Ferme ce programme, puis relance Oriel." = "Port %d is already in use by another program. Oriel needs it to receive hooks from Claude Code and Codex. Quit that program, then reopen Oriel.";

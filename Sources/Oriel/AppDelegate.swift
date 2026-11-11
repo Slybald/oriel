@@ -13,6 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         replaceLegacyInstance()
         AppIdentity.migrateLegacyInstall()
         core.start()
+        HookSetup.shared.screenHasNotch = { [weak self] in self?.core.notch?.model.hasNotch ?? true }
+        HookSetup.shared.revealNotch = { [weak self] in self?.core.notch?.revealOnce() }
         HookSetup.shared.showOnboardingIfNeeded(claudeEnabled: core.isClaudeEnabled, prefs: core.prefs,
                                                 registry: core.registry)
     }
@@ -62,7 +64,7 @@ final class AppCore {
     let jobs = JobRunner()
     let updater = Updater.shared
     private var server: HookServer?
-    private var notch: NotchController?
+    private(set) var notch: NotchController?
     private var cancellables = Set<AnyCancellable>()
 
     init(tools: ToolsFeed = ToolsFeed(), activityLog: ActivityLog = ActivityLog()) {
@@ -95,8 +97,7 @@ final class AppCore {
         server.stateProvider = { [weak self] in self?.debugState() ?? [:] }
         server.onFailure = { error in
             // Port déjà pris : une autre instance tourne, inutile de rester.
-            NSLog("Oriel : serveur de hooks indisponible (%@), arrêt.", String(describing: error))
-            DispatchQueue.main.async { NSApp.terminate(nil) }
+            DispatchQueue.main.async { AppCore.reportPortFailure(error) }
         }
         server.codex = notch.codex
         server.api = notch.registry.external
@@ -117,8 +118,7 @@ final class AppCore {
         do {
             try server.start()
         } catch {
-            NSLog("Oriel : impossible d'ouvrir le port %d (%@).", Int(HookServer.defaultPort), String(describing: error))
-            NSApp.terminate(nil)
+            AppCore.reportPortFailure(error)
             return
         }
 
@@ -128,6 +128,31 @@ final class AppCore {
 
         notch.start()
         MainMenu.install(openSettings: { [weak notch] in notch?.openSettings() })
+    }
+
+    /// Texte de l'alerte quand le port des hooks est pris.
+    static func portBusyMessage(port: UInt16 = HookServer.defaultPort) -> (title: String, text: String) {
+        (L("Oriel ne peut pas démarrer"),
+         String(format: L("Le port %d est déjà utilisé par un autre programme. Oriel en a besoin pour recevoir les "
+                          + "hooks de Claude Code et de Codex. Ferme ce programme, puis relance Oriel."), Int(port)))
+    }
+
+    /// Port pris : on le dit dans une alerte, puis on quitte (sans alerte, l'app disparaîtrait sans explication).
+    static func reportPortFailure(_ error: Error, show: (String, String) -> Void = AppCore.showAlert,
+                                  terminate: () -> Void = { NSApp.terminate(nil) }) {
+        NSLog("Oriel : port %d indisponible (%@).", Int(HookServer.defaultPort), String(describing: error))
+        let message = portBusyMessage()
+        show(message.title, message.text)
+        terminate()
+    }
+
+    private static func showAlert(_ title: String, _ text: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = text
+        alert.alertStyle = .warning
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
     }
 
     /// Onglet Claude activé : hooks écoutés, sessions et processus `claude` suivis. Désactivé : plus rien de tout

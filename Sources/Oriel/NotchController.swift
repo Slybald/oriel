@@ -1059,6 +1059,16 @@ final class NotchController {
 
     /// Montre la notch le temps d'un usage explicite (dépôt sur l'Étagère, raccourci), même hors de sa règle de
     /// visibilité ; `collapse()` la rend à sa règle.
+    /// Fin de l'assistant : la notch se montre une fois. En perle (sans encoche) elle est invisible au repos : on la
+    /// réveille comme un survol, puis `refreshPearl` la rendort souris loin.
+    func revealOnce() {
+        showOnDemand()
+        guard usesPearl else { return }
+        pearl.wake()
+        model.pearlAwake = true
+        refreshPearl()
+    }
+
     private func showOnDemand() {
         if !shouldShow {
             shownOnDemand = true

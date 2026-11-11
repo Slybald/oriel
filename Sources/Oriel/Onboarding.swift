@@ -4,6 +4,9 @@ import SwiftUI
 /// État des hooks Claude Code, partagé par le menu « … », Réglages › Claude et la fenêtre de bienvenue.
 final class HookSetup: ObservableObject {
     static let shared = HookSetup()
+    /// Branchés par l'app : l'écran de la notch a-t-il une encoche, et montrer la notch une fois.
+    var screenHasNotch: () -> Bool = { true }
+    var revealNotch: () -> Void = {}
 
     /// Fenêtre ouverte au lancement.
     enum LaunchWindow: Equatable {
@@ -105,9 +108,13 @@ final class HookSetup: ObservableObject {
                 hookStatus: claudeOffered ? status : .notInstalled, firstRun: firstRun, inApplications: isInApplications,
                 installHooks: { [weak self] in self?.installHooks() },
                 applyLaunchAtLogin: { [weak self] in self?.applyLaunchAtLogin($0) },
-                close: { [weak self] in self?.assistant?.close() })
+                close: { [weak self] in self?.assistant?.close() },
+                hasNotch: screenHasNotch(), revealNotch: { [weak self] in self?.revealNotch() })
             let controller = OnboardingWindowController(rootView: SetupAssistantView(model: model))
-            controller.onClose = { [weak self] in self?.assistant = nil }
+            controller.onClose = { [weak self] in
+                self?.assistant = nil
+                model.windowDidClose()
+            }
             assistant = controller
             controller.window?.center()
             controller.showWindow(nil)

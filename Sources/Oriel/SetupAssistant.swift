@@ -169,12 +169,18 @@ final class SetupAssistantModel: ObservableObject {
     private let installHooks: () -> String?
     private let applyLaunchAtLogin: (Bool) -> Void
     private let close: () -> Void
+    private let revealNotch: () -> Void
+    /// Écran sans encoche : la notch est une perle invisible au repos, l'assistant dit où la trouver.
+    let hasNotch: Bool
 
     /// `firstRun` : « Lancer à l'ouverture de session » est coché d'office (hors Applications, il ne l'est pas) ;
     /// relancé, l'assistant part des réglages actuels. `installHooks` rend le message d'erreur, nil si tout va bien.
     init(registry: ModuleRegistry, prefs: Preferences, claudeDetected: Bool, codexDetected: Bool = false,
          hookStatus: HookInstaller.Status, firstRun: Bool, inApplications: Bool, step: Step = .welcome, installHooks: @escaping () -> String?,
-         applyLaunchAtLogin: @escaping (Bool) -> Void, close: @escaping () -> Void) {
+         applyLaunchAtLogin: @escaping (Bool) -> Void, close: @escaping () -> Void,
+         hasNotch: Bool = true, revealNotch: @escaping () -> Void = {}) {
+        self.hasNotch = hasNotch
+        self.revealNotch = revealNotch
         self.registry = registry
         self.prefs = prefs
         self.inApplications = inApplications
@@ -219,6 +225,16 @@ final class SetupAssistantModel: ObservableObject {
     func back() {
         guard canGoBack, let previous = Step(rawValue: step.rawValue - 1) else { return }
         step = previous
+    }
+
+    /// Dernière phrase de l'étape finale, seulement sans encoche : où amener le pointeur.
+    var pointerHint: String? {
+        hasNotch ? nil : L("Pas d'encoche sur cet écran : amène le pointeur tout en haut, au milieu, pour faire apparaître la notch.")
+    }
+
+    /// La fenêtre est fermée (bouton, « Terminé », « Passer ») : sans encoche, la notch se montre une fois.
+    func windowDidClose() {
+        if !hasNotch { revealNotch() }
     }
 
     /// « Passer » : on ferme, les réglages restent comme ils sont.
@@ -454,6 +470,9 @@ struct SetupAssistantView: View {
         VStack(alignment: .leading, spacing: 18) {
             header(L("C'est prêt"), L("Voici ta notch avec les onglets choisis."))
             SetupNotchPreview(tabs: model.selectedTabs)
+            if let hint = model.pointerHint {
+                message(hint, icon: "cursorarrow.rays", color: Palette.accent)
+            }
             hooksMessage
             VStack(alignment: .leading, spacing: 14) {
                 InfoRow(icon: "ellipsis.circle", title: L("Menu « … »"),
