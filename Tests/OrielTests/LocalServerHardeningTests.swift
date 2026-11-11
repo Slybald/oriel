@@ -82,12 +82,12 @@ final class LocalServerHardeningTests: XCTestCase {
         fixture.replies.engage(request.id)
         XCTAssertTrue(fixture.replies.decide(request, .deny("Non")))
         XCTAssertEqual(response(held)?.status, 200)
-        let wait = RawHTTP.open(port: fixture.port, fixture.post("/inbox", stop, headers: [
+        let inbox = RawHTTP.open(port: fixture.port, fixture.post("/inbox", stop, headers: [
             fixture.host, fixture.token, ("Content-Type", "application/json"), ("X-Claude-PPID", "\(getpid())"),
         ]))
         XCTAssertTrue(spin { fixture.replies.waiting == ["s1"] })
         XCTAssertEqual(fixture.replies.send("Bonjour", to: "s1"), .delivered)
-        XCTAssertEqual(response(wait)?.text, "Bonjour")
+        XCTAssertEqual(response(inbox)?.text, "Bonjour")
     }
 
     /// API locale : son jeton aussi est contrôlé avant le corps ; les routes de la commande `notch` passent.
@@ -232,10 +232,10 @@ final class LocalServerHardeningTests: XCTestCase {
             }
             guard fd >= 0, bound else { throw POSIXError(.EADDRINUSE) }
             port = UInt16(bigEndian: address.sin_port)
-            let fd = self.fd
+            let listening = fd
             Thread.detachNewThread { [weak self] in
                 while true {
-                    let client = accept(fd, nil, nil)
+                    let client = accept(listening, nil, nil)
                     guard client >= 0 else { return }
                     self?.lock.lock()
                     self?.count += 1
