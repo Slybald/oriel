@@ -60,13 +60,13 @@ final class LocalServerHardeningTests: XCTestCase {
         let fixture = try ReplyServerFixture(self)
         let event = try JSONSerialization.data(withJSONObject: stop)
         let split = RawHTTP.open(port: fixture.port, headOnly("/hook", [fixture.host, fixture.token], length: event.count))
-        _ = event.withUnsafeBytes { write(split, $0.baseAddress, $0.count) }
+        _ = event.withUnsafeBytes { Darwin.write(split, $0.baseAddress, $0.count) }
         XCTAssertEqual(response(split)?.status, 204, "en-têtes acceptés, puis corps lu")
 
         // Un Write de 8 Mo (contenu du fichier dans l'événement) : sous la limite de 32 Mo, relayé.
-        let write: [String: Any] = ["hook_event_name": "PostToolUse", "session_id": "s1", "tool_name": "Write",
+        let bigWrite: [String: Any] = ["hook_event_name": "PostToolUse", "session_id": "s1", "tool_name": "Write",
                                     "tool_input": ["file_path": "/tmp/gros", "content": String(repeating: "a", count: 8 << 20)]]
-        XCTAssertEqual(RawHTTP.send(port: fixture.port, fixture.post("/hook", write))?.status, 204)
+        XCTAssertEqual(RawHTTP.send(port: fixture.port, fixture.post("/hook", bigWrite))?.status, 204)
         XCTAssertTrue(spin { fixture.receivedEvents.contains { $0.name == "PostToolUse" } }, "gros corps relayé")
 
         XCTAssertEqual(RawHTTP.send(port: fixture.port, fixture.post("/claude/status", ["model": "x"]))?.status, 204)
