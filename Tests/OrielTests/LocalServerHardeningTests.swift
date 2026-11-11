@@ -297,9 +297,10 @@ final class LocalServerHardeningTests: XCTestCase {
             XCTAssertEqual(fixture.send("POST", body: ["title": "T", field: value])?.status, 400,
                            "\(field) = \(value.debugDescription)")
         }
-        // `icon` et `color` passent ensuite par leur liste : 400 dans tous les cas, mais refusés dès le motif.
+        // `icon` et `color` passent ensuite par leur liste : 400 dans tous les cas, mais refusés dès le motif. Plus de
+        // 7 caractères : une chaîne plus courte, rangée autrement, échappait déjà au piège de `$`.
         for (field, value, rule) in [("icon", "hourglass\n", "icon: a symbol from the list"),
-                                     ("color", "red\n", "color: a color name from the list")] {
+                                     ("color", "abcdefghi\n", "color: a color name from the list")] {
             let refused = fixture.send("POST", body: ["title": "T", field: value])
             XCTAssertEqual(refused?.status, 400, field)
             XCTAssertEqual(refused?.text.contains(rule), true, "\(field) refusé par le motif : \(refused?.text ?? "")")
