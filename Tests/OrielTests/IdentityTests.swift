@@ -138,4 +138,19 @@ final class IdentityTests: XCTestCase {
                                                    hasFullDiskAccess: { false }, disk: spy), "hors dossiers protégés")
         }
     }
+
+    /// La sonde d'accès est faite une fois, et jamais si aucun chemin n'est dans un dossier protégé.
+    func testAccessProbeRunsOnceAndOnlyWhenNeeded() {
+        let home = URL(fileURLWithPath: "/Users/x")
+        var count = 0
+        let access = AccessProbe { count += 1; return false }
+        for _ in 0..<100 { _ = ProtectedFolders.exists("/Users/x/Projets/a", home: home, hasFullDiskAccess: { access.granted }, disk: { _ in true }) }
+        XCTAssertEqual(count, 0)
+        for i in 0..<100 {
+            let path = i % 2 == 0 ? "/Users/x/Downloads/a\(i)" : "/Users/x/Projets/a\(i)"
+            _ = ProtectedFolders.exists(path, home: home, hasFullDiskAccess: { access.granted }, disk: { _ in true })
+            _ = ActivityLog.projectName(forFile: path, cwd: "/elsewhere", home: home, hasFullDiskAccess: { access.granted }, disk: { _ in false })
+        }
+        XCTAssertEqual(count, 1)
+    }
 }
