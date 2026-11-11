@@ -110,11 +110,12 @@ final class PearlControllerTests: XCTestCase {
         return prefs
     }
 
-    private func controller(_ prefs: Preferences, store: SessionStore = SessionStore()) -> NotchController {
+    private func controller(_ prefs: Preferences, store: SessionStore = SessionStore(),
+                            screen: ScreenCandidate = PearlControllerTests.screen) -> NotchController {
         _ = NSApplication.shared
         let notch = NotchController(store: store, monitor: ClaudeMonitor(), prefs: prefs,
                                     tools: ToolsFeed(paths: LayoutTests.absentPaths))
-        notch.screens = { [Self.screen] }
+        notch.screens = { [screen] }
         addTeardownBlock { notch.panel.orderOut(nil) }
         notch.panel.alphaValue = 0
         notch.togglePanelFromKeyboard()
@@ -133,6 +134,30 @@ final class PearlControllerTests: XCTestCase {
 
     private var top: CGFloat { Self.screen.frame.maxY }
     private var midX: CGFloat { Self.screen.frame.midX }
+
+    /// Fin de l'assistant (C05) : sans encoche, en perle, la notch se montre (perle éveillée = la condition d'opacité
+    /// de la vue), puis se rendort toute seule souris loin.
+    func testRevealOnceWakesThePearlThenItSleepsAgain() {
+        let notch = controller(prefs())
+        XCTAssertFalse(notch.model.pearlAwake)
+        notch.revealOnce()
+        XCTAssertTrue(notch.model.pearlAwake, "visible : perle éveillée")
+        XCTAssertTrue(notch.isShown)
+        XCTAssertTrue(spin(timeout: 3) { !notch.model.pearlAwake }, "rendormie, comme après un survol")
+    }
+
+    func testRevealOnceChangesNothingForOtherStylesOrWithANotch() {
+        let pill = controller(prefs { $0.virtualNotchStyle = .pill })
+        pill.revealOnce()
+        XCTAssertFalse(pill.model.pearlAwake, "pas de perle : rien à réveiller")
+        let real = ScreenCandidate(name: "Intégré", frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+                                   visibleFrame: CGRect(x: 0, y: 0, width: 1512, height: 945), safeAreaTop: 32,
+                                   auxiliaryLeftWidth: 663.5, auxiliaryRightWidth: 663.5, isBuiltin: true)
+        let withNotch = controller(prefs(), screen: real)
+        XCTAssertTrue(withNotch.model.hasNotch)
+        withNotch.revealOnce()
+        XCTAssertFalse(withNotch.model.pearlAwake, "avec encoche : la perle n'existe pas")
+    }
 
     func testTheFakeScreenHasNoNotch() {
         let notch = controller(prefs())
