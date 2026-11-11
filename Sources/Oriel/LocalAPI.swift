@@ -132,12 +132,7 @@ final class LocalAPI: ObservableObject {
 
     /// Une requête `/api/…` dont `Host` et `Origin` sont déjà vérifiés. Main thread.
     func handle(_ request: HTTPRequest, now: Date = Date()) -> Response {
-        guard isEnabled else {
-            return .error(403, "api_disabled", "The local API is off: turn it on in Oriel, Settings, Scripts.")
-        }
-        guard HookAccess.constantTimeEquals(request.headers[Self.headerName.lowercased()], "Bearer \(token)") else {
-            return .error(401, "unauthorized", "Missing or wrong token (Authorization header, see docs/API.md).")
-        }
+        if let refusal = refusal(request) { return refusal }
         guard limiter.allow(now: now) else { return .error(429, "rate_limited", "Too many requests, slow down.") }
 
         switch (request.method, request.path) {
@@ -166,6 +161,18 @@ final class LocalAPI: ObservableObject {
         default:
             return .error(404, "not_found", "Unknown route (see docs/API.md).")
         }
+    }
+
+    /// Ce que `handle` refuse sur les seuls en-têtes (API coupée, jeton) : `HookServer` répond ainsi avant de lire le
+    /// corps. nil : la requête peut être lue. Main thread.
+    func refusal(_ request: HTTPRequest) -> Response? {
+        guard isEnabled else {
+            return .error(403, "api_disabled", "The local API is off: turn it on in Oriel, Settings, Scripts.")
+        }
+        guard HookAccess.constantTimeEquals(request.headers[Self.headerName.lowercased()], "Bearer \(token)") else {
+            return .error(401, "unauthorized", "Missing or wrong token (Authorization header, see docs/API.md).")
+        }
+        return nil
     }
 
     // MARK: - Intercalaires
@@ -365,13 +372,13 @@ struct ExternalEar: Equatable, Identifiable {
         guard unknown.isEmpty else {
             throw Invalid("Unknown field: \(unknown.sorted()[0].prefix(32)). Allowed: \(Self.fields.sorted().joined(separator: ", ")).")
         }
-        let id = try Self.token(json, "id", pattern: "^[A-Za-z0-9._-]{1,32}$",
+        let id = try Self.token(json, "id", pattern: "^[A-Za-z0-9._-]{1,32}\\z",
                                 rule: "1 to 32 letters, digits, dot, dash or underscore")
-        let icon = try Self.token(json, "icon", pattern: "^[a-z0-9.]{1,40}$", rule: "a symbol from the list")
-        let color = try Self.token(json, "color", pattern: "^[a-z]{1,10}$", rule: "a color name from the list")
-        let client = try Self.token(json, "client", pattern: "^[A-Za-z0-9][A-Za-z0-9 ._-]{0,23}$",
+        let icon = try Self.token(json, "icon", pattern: "^[a-z0-9.]{1,40}\\z", rule: "a symbol from the list")
+        let color = try Self.token(json, "color", pattern: "^[a-z]{1,10}\\z", rule: "a color name from the list")
+        let client = try Self.token(json, "client", pattern: "^[A-Za-z0-9][A-Za-z0-9 ._-]{0,23}\\z",
                                     rule: "1 to 24 letters, digits, space, dot, dash or underscore")
-        let app = try Self.token(json, "app", pattern: "^[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+$",
+        let app = try Self.token(json, "app", pattern: "^[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+\\z",
                                  rule: "a bundle identifier such as com.apple.Terminal", max: 155)
         if let client, Self.reservedClients.contains(where: { client.lowercased().contains($0) }) {
             throw Invalid("client: this name is reserved.")
