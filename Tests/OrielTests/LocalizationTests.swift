@@ -9,8 +9,7 @@ import XCTest
 final class LocalizationTests: XCTestCase {
     private static let resources = repositoryRoot.appendingPathComponent("Resources")
     private static let sources = repositoryRoot.appendingPathComponent("Sources/Oriel")
-    private static let usageKeys = ["NSDesktopFolderUsageDescription", "NSDocumentsFolderUsageDescription",
-                                    "NSDownloadsFolderUsageDescription", "NSCalendarsFullAccessUsageDescription",
+    private static let usageKeys = ["NSCalendarsFullAccessUsageDescription",
                                     "NSCalendarsUsageDescription", "NSAppleEventsUsageDescription",
                                     "NSBluetoothAlwaysUsageDescription", "NSContactsUsageDescription"]
 
@@ -130,10 +129,7 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(french.localizedString(forKey: "Lecteur", value: nil, table: "Media"), "Lecteur")
         XCTAssertEqual(english.localizedString(forKey: "Lecteur", value: nil, table: nil), "Lecteur",
                        "une clé de module n'est pas dans Localizable")
-        let desktop = english.localizedString(forKey: "NSDesktopFolderUsageDescription", value: nil, table: "InfoPlist")
-        XCTAssertTrue(desktop.contains("optional companion tools"), desktop)
-        let bureau = french.localizedString(forKey: "NSDesktopFolderUsageDescription", value: nil, table: "InfoPlist")
-        XCTAssertTrue(bureau.contains("outils compagnons optionnels"), bureau)
+        XCTAssertEqual(english.localizedString(forKey: "NSContactsUsageDescription", value: "", table: "InfoPlist").isEmpty, false)
     }
 
     func testPluralRules() {
@@ -236,5 +232,19 @@ final class LocalizationTests: XCTestCase {
         return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap {
             Range($0.range(at: 1), in: text).map { String(text[$0]) }
         }.filter { $0 != "%" }
+    }
+
+    /// L'app ne lance plus d'outil : plus de demande d'accès à Bureau, Documents ni Téléchargements.
+    func testFolderUsageKeysAreGone() throws {
+        let files = [Self.resources.appendingPathComponent("Info.plist"),
+                     Self.resources.appendingPathComponent("en.lproj/InfoPlist.strings"),
+                     Self.resources.appendingPathComponent("fr.lproj/InfoPlist.strings")]
+        for file in files {
+            let text = try String(contentsOf: file, encoding: .utf8)
+            for key in ["NSDesktopFolderUsageDescription", "NSDocumentsFolderUsageDescription",
+                        "NSDownloadsFolderUsageDescription"] {
+                XCTAssertFalse(text.contains(key), "\(key) dans \(file.lastPathComponent)")
+            }
+        }
     }
 }

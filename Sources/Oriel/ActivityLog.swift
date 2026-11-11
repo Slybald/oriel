@@ -143,13 +143,15 @@ final class ActivityLog {
 
     /// Fichier sous le cwd : le projet du cwd. Ailleurs (Claude a écrit hors de son dossier, ou le cwd a changé
     /// après un `cd`) : le dépôt git qui contient le fichier, sinon son dossier parent.
-    static func projectName(forFile path: String, cwd: String) -> String {
+    static func projectName(forFile path: String, cwd: String,
+                            home: URL = FileManager.default.homeDirectoryForCurrentUser,
+                            disk: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) -> String {
         if !cwd.isEmpty, path.hasPrefix(cwd.hasSuffix("/") ? cwd : cwd + "/") { return projectName(cwd) }
-        // Documents, Bureau, Téléchargements sans outil compagnon : pas de recherche (fenêtre d'autorisation).
-        if ProtectedFolders.mayAccess(path) {
+        // Documents, Bureau, Téléchargements : pas de recherche (fenêtre d'autorisation).
+        if !ProtectedFolders.contains(path, home: home.path) {
             var dir = (path as NSString).deletingLastPathComponent
             for _ in 0..<12 where dir.count > 1 {
-                if FileManager.default.fileExists(atPath: (dir as NSString).appendingPathComponent(".git")) {
+                if disk((dir as NSString).appendingPathComponent(".git")) {
                     return (dir as NSString).lastPathComponent
                 }
                 dir = (dir as NSString).deletingLastPathComponent

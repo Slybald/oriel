@@ -103,37 +103,28 @@ final class IdentityTests: XCTestCase {
         XCTAssertFalse(ProtectedFolders.contains("/tmp/Documents/a", home: home))
     }
 
-    func testProtectedFoldersNeedACompanionTool() throws {
-        let home = try makeTemporaryDirectory(self)
-        let inside = home.appendingPathComponent("Documents/projet/a.swift").path
-        XCTAssertFalse(ProtectedFolders.mayAccess(inside, home: home))
-        XCTAssertTrue(ProtectedFolders.mayAccess(home.appendingPathComponent("Projets/a.swift").path, home: home))
+    /// Documents, Bureau, Téléchargements : le disque n'est jamais interrogé, avec ou sans outil dans ~/.local/share.
+    func testProtectedFoldersAreNeverProbed() throws {
+        for withTool in [false, true] {
+            let home = try makeTemporaryDirectory(self)
+            if withTool {
+                let tool = home.appendingPathComponent(".local/share/git-radar/git_radar.py")
+                try FileManager.default.createDirectory(at: tool.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try Data().write(to: tool)
+            }
+            var probed: [String] = []
+            let spy: (String) -> Bool = { probed.append($0); return false }
+            let inside = ["Documents", "Desktop", "Downloads"].map { home.appendingPathComponent("\($0)/projet/a.swift").path }
 
-        let tool = home.appendingPathComponent(".local/share/git-radar/git_radar.py")
-        try FileManager.default.createDirectory(at: tool.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data().write(to: tool)
-        XCTAssertTrue(ProtectedFolders.mayAccess(inside, home: home))
-    }
-
-    /// Sans course-sorter, Téléchargements n'est jamais ouvert ; avec, il est surveillé.
-    func testDownloadsWatchedOnlyWithCourseSorter() throws {
-        let home = try makeTemporaryDirectory(self)
-        try FileManager.default.createDirectory(at: home.appendingPathComponent("Downloads"),
-                                                withIntermediateDirectories: true)
-        let without = JobRunner(home: home)
-        without.start()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
-        XCTAssertEqual(without.debugSummary["watchingDownloads"] as? Bool, false)
-
-        let script = home.appendingPathComponent(".local/share/course-sorter/course_sorter.py")
-        try FileManager.default.createDirectory(at: script.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data().write(to: script)
-        let with = JobRunner(home: home)
-        with.start()
-        let deadline = Date().addingTimeInterval(3)
-        while with.debugSummary["watchingDownloads"] as? Bool != true, Date() < deadline {
-            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+            let feed = ToolsFeed(home: home, disk: spy)
+            let existsInside = inside.map { feed.fileExistsForTesting($0) }
+            XCTAssertEqual(existsInside, [true, true, true])
+            for path in inside {
+                _ = ActivityLog.projectName(forFile: path, cwd: "/elsewhere", home: home, disk: spy)
+            }
+            XCTAssertEqual(probed, [], "outil installé : \(withTool)")
+            XCTAssertFalse(ProtectedFolders.exists(home.appendingPathComponent("Projets/a").path, home: home, disk: spy))
+            XCTAssertEqual(probed.count, 1, "hors dossiers protégés, le disque est interrogé")
         }
-        XCTAssertEqual(with.debugSummary["watchingDownloads"] as? Bool, true)
     }
 }

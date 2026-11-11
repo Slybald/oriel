@@ -94,15 +94,16 @@ final class ToolsFeed: ObservableObject {
     private var loading = false
     private var filesCache: FilesCache?
 
-    /// Dans Documents, Bureau ou Téléchargements sans outil compagnon, le fichier est supposé présent :
-    /// le vérifier ferait surgir une fenêtre d'autorisation de macOS.
+    /// Dans Documents, Bureau ou Téléchargements, le fichier est supposé présent :
+    /// le vérifier ferait surgir une fenêtre d'autorisation de macOS. `disk` ne voit jamais ces chemins.
     init(paths: Paths = .standard,
-         fileExists: @escaping (String) -> Bool = { path in
-             ProtectedFolders.mayAccess(path) ? FileManager.default.fileExists(atPath: path) : true
-         }) {
+         home: URL = FileManager.default.homeDirectoryForCurrentUser,
+         disk: @escaping (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }) {
         self.paths = paths
-        self.fileExists = fileExists
+        self.fileExists = { ProtectedFolders.exists($0, home: home, disk: disk) }
     }
+
+    func fileExistsForTesting(_ path: String) -> Bool { fileExists(path) }
 
     /// Panneau ouvert : lecture immédiate puis toutes les 15 s. Fermé : plus rien.
     func setActive(_ active: Bool) {

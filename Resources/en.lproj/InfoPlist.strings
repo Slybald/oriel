@@ -1,7 +1,4 @@
 /* Oriel: English texts of Info.plist (privacy prompts). */
-"NSDesktopFolderUsageDescription" = "Oriel runs optional companion tools that read files on your Desktop.";
-"NSDocumentsFolderUsageDescription" = "Oriel runs optional companion tools that read files in your Documents folder.";
-"NSDownloadsFolderUsageDescription" = "Oriel runs optional companion tools that sort files from your Downloads folder.";
 "NSAppleEventsUsageDescription" = "Oriel sends commands to other apps, for example to control music playback, only when you use a feature that needs it.";
 "NSBluetoothAlwaysUsageDescription" = "Oriel uses Bluetooth to show the status of your connected devices, only if you turn this feature on.";
 "NSCalendarsFullAccessUsageDescription" = "Oriel reads your calendars to show your upcoming events in the notch, only if you turn this feature on.";

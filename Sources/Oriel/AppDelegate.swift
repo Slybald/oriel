@@ -61,7 +61,6 @@ final class AppCore {
     let prefs = Preferences.shared
     let tools: ToolsFeed
     let activityLog: ActivityLog
-    let jobs = JobRunner()
     let updater = Updater.shared
     private var server: HookServer?
     private(set) var notch: NotchController?
@@ -122,7 +121,6 @@ final class AppCore {
             return
         }
 
-        jobs.start()
         updater.isBusy = { [store] in store.hasBusySessions }
         updater.start()
 
@@ -228,7 +226,6 @@ final class AppCore {
         tools["failedWrites"] = activityLog.failedWrites
         tools["logDirectory"] = activityLog.directory.path
         state["tools"] = tools
-        state["jobs"] = jobs.debugSummary
         state["version"] = updater.currentVersion
         state["updater"] = updater.debugSummary
         return state
