@@ -144,6 +144,23 @@ final class LocalServerHardeningTests: XCTestCase {
         held.dropFirst().forEach { close($0) }
     }
 
+    /// Requête tenue fermée par le client (hook tué, réponse donnée au terminal) : sa place est rendue aussitôt, sans
+    /// attendre la fin de la requête côté app. Chaque essai est bref, pour que la fenêtre de 3 s soit vraiment tenue.
+    func testClosedHeldRequestFreesItsPlace() throws {
+        let fixture = try ReplyServerFixture(self) { $0.maxConnections = 1 }
+        for (path, payload) in [("/permission", permission), ("/inbox", stop)] {
+            let held = RawHTTP.open(port: fixture.port, fixture.post(path, payload, headers: [
+                fixture.host, fixture.token, ("Content-Type", "application/json"), ("X-Claude-PPID", "\(getpid())"),
+            ]))
+            XCTAssertTrue(spin { fixture.replies.requests.count == 1 || fixture.replies.waiting == ["s1"] }, path)
+            close(held)
+            XCTAssertTrue(spin { fixture.replies.requests.isEmpty && fixture.replies.waiting.isEmpty }, path)
+            XCTAssertTrue(spin(timeout: 3) {
+                RawHTTP.send(port: fixture.port, fixture.post("/hook", self.toolUse), timeout: 0.5)?.status == 204
+            }, "\(path) : place rendue")
+        }
+    }
+
     // MARK: - C13 : pas de jeton sans l'app
 
     private static func oriel(_ home: URL) -> URL { home.appendingPathComponent("Library/Application Support/Oriel") }
@@ -210,6 +227,12 @@ final class LocalServerHardeningTests: XCTestCase {
         try FileManager.default.removeItem(at: Self.oriel(home).appendingPathComponent("hook-token"))
         try run(nil, toolUse)
         XCTAssertEqual(squatter.connections, 1, "app quittée : rien n'est parti")
+
+        // Jeton vide (écriture interrompue), processus vivant : rien ne part non plus.
+        try "\(getpid())\n".write(to: Self.oriel(home).appendingPathComponent("hook-pid"), atomically: true, encoding: .utf8)
+        FileManager.default.createFile(atPath: Self.oriel(home).appendingPathComponent("hook-token").path, contents: Data())
+        try run(nil, toolUse)
+        XCTAssertEqual(squatter.connections, 1, "jeton vide : rien n'est parti")
     }
 
     /// Programme qui tient le port à la place de l'app : compte les connexions, les ferme sans répondre.
@@ -273,6 +296,13 @@ final class LocalServerHardeningTests: XCTestCase {
         for (field, value) in values {
             XCTAssertEqual(fixture.send("POST", body: ["title": "T", field: value])?.status, 400,
                            "\(field) = \(value.debugDescription)")
+        }
+        // `icon` et `color` passent ensuite par leur liste : 400 dans tous les cas, mais refusés dès le motif.
+        for (field, value, rule) in [("icon", "hourglass\n", "icon: a symbol from the list"),
+                                     ("color", "red\n", "color: a color name from the list")] {
+            let refused = fixture.send("POST", body: ["title": "T", field: value])
+            XCTAssertEqual(refused?.status, 400, field)
+            XCTAssertEqual(refused?.text.contains(rule), true, "\(field) refusé par le motif : \(refused?.text ?? "")")
         }
         XCTAssertEqual(fixture.send("POST", body: ["title": "T", "client": "make.sh", "id": "abcdefgh",
                                                    "app": "com.apple.Terminal"])?.status, 200, "sans saut de ligne")

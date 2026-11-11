@@ -20,10 +20,10 @@ TOKEN="$HOME/Library/Application Support/Oriel/hook-token"
 PROOF="$HOME/Library/Application Support/Oriel/hook-proof"
 APP_PID="$HOME/Library/Application Support/Oriel/hook-pid"
 
-# L'app est là : jeton lisible, et le processus qui l'a écrit vit encore (commandes internes, aucun processus lancé).
+# L'app est là : jeton non vide, et le processus qui l'a écrit vit encore (commandes internes, aucun processus lancé).
 # Un autre compte qui tiendrait le port ne reçoit donc rien, pas même le corps de l'événement.
 app_running() {
-    [ -r "$TOKEN" ] && [ -r "$APP_PID" ] || return 1
+    [ -s "$TOKEN" ] && [ -r "$APP_PID" ] || return 1
     IFS= read -r PID < "$APP_PID" || return 1
     [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null
 }
