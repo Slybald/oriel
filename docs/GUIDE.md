@@ -263,11 +263,37 @@ needs one. It is shown once, and not after an update from a version that was alr
 **Settings › General › Run the Setup Assistant Again**. The hooks can also be installed later from
 **Settings › Claude**; sessions that were already open show up at their next message.
 
+## Updates
+
+Oriel updates itself from the [Releases](https://github.com/Slybald/oriel/releases) page.
+
+- 60 seconds after launch, then every 6 hours, the app asks GitHub for the latest release
+  (`api.github.com`; only the app version is sent, in the User-Agent). Drafts and pre-releases are ignored.
+- A newer version is downloaded with its signature (`Oriel-<version>.dmg.sig`) and installed only if
+  its Ed25519 signature matches the public key built into the app. A DMG without a signature, or with an
+  invalid one, is refused and nothing is installed.
+- At launch, a new version is installed right away; later on, only when no session is running or waiting
+  for you (otherwise the app tries again every 10 minutes). The app then restarts by itself and the **…** menu
+  shows "Updated to X".
+- Automatic installation needs the app in `/Applications` or `~/Applications`, in a folder you can write to.
+  Otherwise the **…** menu offers to open the release page.
+- To turn it off: **…** menu › uncheck **Automatic Updates**. New versions are then only announced in the
+  menu, with an **Install** button. **Check for Updates** checks right away.
+- Apps built from source (`scripts/build.sh`, `scripts/install.sh`) never update themselves: the menu shows
+  "Development build: updates disabled".
+- **Updating from 2.1 or earlier** (when the app was still called Claude Notch): the automatic update cannot
+  cross the rename. Download `Oriel-<version>.dmg` once by hand and drag **Oriel** onto Applications (it replaces
+  the old app), then grant again the macOS accesses it asks for. Your settings, notes and hooks are picked up
+  at the first launch (the data folder, the open-at-login option and the Claude Code hooks are
+  moved to the new names; the Codex hooks keep their approval). From then on, updates are automatic again. If you had turned on the fan or low-power
+  authorization, do it again in Settings; the old rules can be removed with
+  `sudo rm /etc/sudoers.d/claude-notch-*` and `sudo rm /Library/PrivilegedHelperTools/io.github.slybald.claudenotch.fanctl`.
+
 ## Privacy
 
 - Everything stays on your Mac. Oriel sends no data about you or your sessions: no analytics. Its only
   outgoing requests are the update check to `api.github.com` and the download of new versions from GitHub
-  (see [Updates](../README.md#updates)).
+  (see [Updates](#updates)).
 - The app listens on `127.0.0.1:47823` only, on the loopback interface: it cannot be reached from the network.
 - The hook script only talks to that local address, with `curl`. Every request carries a token that the app
   generates at each launch and writes to `~/Library/Application Support/Oriel/hook-token` (readable by
@@ -324,8 +350,8 @@ Oriel asks for a permission only when you use the feature that needs it. Nothing
 - **Automation: Messages** (Apple Events): to send a quick reply. macOS asks the first time you send.
 - **Automation: Mail** (Apple Events): to read the latest emails and to send the reply you write. Asked when you click
   **Allow** in the Mail tab.
-- **Desktop, Documents, Downloads**: only for optional command-line companion tools that Oriel can run in the
-  background (not part of this repository).
+- **Desktop, Documents, Downloads**: only to check that a file you put on the Shelf or open from recent files
+  is still there. macOS asks the first time; with Full Disk Access it does not ask.
 - Wi-Fi: the network name is not read, so Location is not requested. If macOS refuses to change the Wi-Fi state,
   the tile says so.
 - Low Power Mode needs administrator rights (`pmset`). The first change asks for your password or Touch ID once
@@ -374,6 +400,13 @@ Oriel asks for a permission only when you use the feature that needs it. Nothing
 - Diagnostics: `GET http://127.0.0.1:47823/state` returns the state of the sessions and of the notch as JSON
   (read only, local only, with the token:
   `curl -H @"$HOME/Library/Application Support/Oriel/hook-token" http://127.0.0.1:47823/state`).
+
+## Recent files
+
+In the Claude tab, a folded card lists the last 5 distinct files that Claude Code touched (from `files.jsonl`),
+excluding temporary folders (`/tmp`, `/var/folders`, scratch spaces). A deleted file is greyed out. Click: Finder
+selects the file (or its parent folder if it is gone). The file is only read while the panel is open (every 15 s, on a
+background queue); nothing runs while it is folded.
 
 ## Shared logs
 

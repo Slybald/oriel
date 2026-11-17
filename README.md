@@ -6,7 +6,7 @@ if you want them, your messages and emails. If you use Claude Code or Codex, two
 and let you answer them from the notch. Neither is needed to use the app.
 
 > **First time opening it?** macOS blocks the first launch: see [First launch](#first-launch) (30 seconds).
-> **Formerly Claude Notch.** Updating from 2.1 or earlier: see [the note below](#updates).
+> **Formerly Claude Notch.** Updating from 2.1 or earlier: see [the update note](docs/GUIDE.md#updates).
 
 <p align="center">
   <img src="docs/collapsed.png" width="380" alt="Collapsed notch: a raised hand on the left ear, 2·2 on the right ear">
@@ -91,29 +91,9 @@ and changes nothing. Details: [Setup assistant](docs/GUIDE.md#setup-assistant).
 
 ## Updates
 
-Oriel updates itself from the [Releases](https://github.com/Slybald/oriel/releases) page.
-
-- 60 seconds after launch, then every 6 hours, the app asks GitHub for the latest release
-  (`api.github.com`; only the app version is sent, in the User-Agent). Drafts and pre-releases are ignored.
-- A newer version is downloaded with its signature (`Oriel-<version>.dmg.sig`) and installed only if
-  its Ed25519 signature matches the public key built into the app. A DMG without a signature, or with an
-  invalid one, is refused and nothing is installed.
-- At launch, a new version is installed right away; later on, only when no session is running or waiting
-  for you (otherwise the app tries again every 10 minutes). The app then restarts by itself and the **…** menu
-  shows "Updated to X".
-- Automatic installation needs the app in `/Applications` or `~/Applications`, in a folder you can write to.
-  Otherwise the **…** menu offers to open the release page.
-- To turn it off: **…** menu › uncheck **Automatic Updates**. New versions are then only announced in the
-  menu, with an **Install** button. **Check for Updates** checks right away.
-- Apps built from source (`scripts/build.sh`, `scripts/install.sh`) never update themselves: the menu shows
-  "Development build: updates disabled".
-- **Updating from 2.1 or earlier** (when the app was still called Claude Notch): the automatic update cannot
-  cross the rename. Download `Oriel-<version>.dmg` once by hand and drag **Oriel** onto Applications (it replaces
-  the old app), then grant again the macOS accesses it asks for. Your settings, notes and hooks are picked up
-  at the first launch (the data folder, the open-at-login option and the Claude Code hooks are
-  moved to the new names; the Codex hooks keep their approval). From then on, updates are automatic again. If you had turned on the fan or low-power
-  authorization, do it again in Settings; the old rules can be removed with
-  `sudo rm /etc/sudoers.d/claude-notch-*` and `sudo rm /Library/PrivilegedHelperTools/io.github.slybald.claudenotch.fanctl`.
+Oriel checks GitHub for new releases and installs them itself, only if their Ed25519 signature matches the key
+built into the app. Turn it off from the **…** menu. Full rules, and
+**updating from 2.1 or earlier** (when the app was called Claude Notch): [Updates](docs/GUIDE.md#updates).
 
 ## Privacy
 

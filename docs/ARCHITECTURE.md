@@ -33,7 +33,7 @@ reinstall for people on 2.1 or earlier (see "Rename migration" below).
   keychain, builds the app with `RELEASE_CHANNEL=1`, checks its code signature, makes the DMG, signs it with the
   `UPDATE_SIGNING_KEY` secret and creates the release (DMG, `.sha256`, `.sig`).
 - Live diagnostics of the running app: `GET http://127.0.0.1:47823/state` with the hook token
-  (`curl -H @"$HOME/Library/Application Support/Oriel/hook-token" …`): sessions, notch, tools, jobs,
+  (`curl -H @"$HOME/Library/Application Support/Oriel/hook-token" …`): sessions, notch, tools,
   version, updater, replies (counts only), local API (on, tab count, client names); `notch` gives the window level seen by the window server, the Space,
   occlusion, screen, front app, full-screen state, tab, tab edit mode (`editingTabs`) and running modules.
 
@@ -123,7 +123,7 @@ reinstall for people on 2.1 or earlier (see "Rename migration" below).
 - `HookInstaller` + `OrderedJSON`: add and remove the hooks in `~/.claude/settings.json`. `Onboarding`:
   hook window (install, update) and hook menu items. `SetupAssistant`: the first-launch setup assistant.
   `AppIdentity`: bundle identifier and migration from early builds.
-- `ActivityLog`: `files.jsonl` / `permissions.jsonl`. `JobRunner`: optional companion tool jobs.
+- `ActivityLog`: `files.jsonl` / `permissions.jsonl`.
 - `Localization`: the `L()` helper, with an optional table. `LaunchAgent`: open at login.
 - `Updater`: automatic updates from GitHub releases (check, signature, install, relaunch) and its menu items.
 - `LocalAPI`: the local API of the user's scripts (`/api/v1/ears`, see [API.md](API.md)): token, strict schema
@@ -631,9 +631,7 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
   bar items on both sides while the panel is open. The collapsed ears also live in that band, next to the
   notch, and are drawn above the menu bar.
 - **Protected folders** (Documents, Desktop, Downloads): never touched on the main thread (a macOS permission
-  prompt would freeze the notch), and not at all when no companion tool is installed.
-- **Companion tools** run from `JobRunner`, not launchd: macOS denies protected folders to launchd jobs, while
-  processes started by the app inherit the access granted to it.
+  prompt would freeze the notch), and, without Full Disk Access, a path inside them is assumed present (`ProtectedFolders`).
 - **Installer**: byte-for-byte identical to `scripts/hooks_config.py` (tested), key order preserved,
   timestamped backup, nothing written when the JSON is invalid or nothing changes.
 - **Opening a Desktop session**: `claude://code/continue?session=<local_…>`, a format read from Claude Desktop's

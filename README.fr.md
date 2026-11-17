@@ -7,7 +7,7 @@ Code ou Codex, deux onglets optionnels suivent leurs sessions et te laissent leu
 l'autre n'est nécessaire pour utiliser l'app.
 
 > **Première ouverture ?** macOS bloque le premier lancement : voir [Premier lancement](#premier-lancement) (30 secondes).
-> **Anciennement Claude Notch.** Mise à jour depuis la 2.1 ou avant : voir [la note plus bas](#mises-à-jour).
+> **Anciennement Claude Notch.** Mise à jour depuis la 2.1 ou avant : voir [la note de mise à jour](docs/GUIDE.fr.md#mises-à-jour).
 
 <p align="center">
   <img src="docs/collapsed.png" width="380" alt="Notch repliée : une main levée sur l'oreille gauche, 2·2 sur l'oreille droite">
@@ -93,32 +93,9 @@ est toujours là et ne change rien. Détails : [Assistant de configuration](docs
 
 ## Mises à jour
 
-Oriel se met à jour seule depuis la page [Releases](https://github.com/Slybald/oriel/releases).
-
-- 60 secondes après le lancement, puis toutes les 6 heures, l'app demande à GitHub la dernière release
-  (`api.github.com` ; seule la version de l'app part, dans le User-Agent). Brouillons et préversions sont
-  ignorés.
-- Une version plus récente est téléchargée avec sa signature (`Oriel-<version>.dmg.sig`) et n'est
-  installée que si sa signature Ed25519 correspond à la clé publique intégrée à l'app. Un DMG sans signature,
-  ou à la signature invalide, est refusé et rien n'est installé.
-- Au lancement, la nouvelle version s'installe tout de suite ; ensuite, seulement quand aucune session n'est
-  en cours ni ne t'attend (sinon l'app réessaie toutes les 10 minutes). L'app redémarre alors seule et le
-  menu **…** affiche « Mis à jour en X ».
-- L'installation automatique demande que l'app soit dans `/Applications` ou `~/Applications`, dans un dossier
-  où tu peux écrire. Sinon, le menu **…** propose d'ouvrir la page de la release.
-- Pour la désactiver : menu **…** › décoche **Mises à jour automatiques**. Les nouvelles versions sont alors
-  seulement signalées dans le menu, avec un bouton **Installer**. **Rechercher les mises à jour** vérifie
-  tout de suite.
-- Une app compilée depuis les sources (`scripts/build.sh`, `scripts/install.sh`) ne se met jamais à jour
-  seule : le menu affiche « Build de développement : mises à jour désactivées ».
-- **Mise à jour depuis la 2.1 ou avant** (quand l'app s'appelait encore Claude Notch) : la mise à jour
-  automatique ne peut pas passer le renommage. Télécharge `Oriel-<version>.dmg` une fois à la main et glisse **Oriel**
-  sur Applications (elle remplace l'ancienne app), puis redonne les accès macOS demandés. Tes réglages, tes notes et
-  tes hooks sont repris au premier lancement (dossier de données, ouverture à la connexion, hooks de Claude Code
-  déplacés vers les nouveaux noms ; les hooks Codex gardent leur approbation). Ensuite, les mises à jour redeviennent automatiques. Si tu avais activé
-  l'autorisation des ventilateurs ou de l'économie d'énergie, refais-le dans les Réglages ; les anciennes règles se
-  retirent avec `sudo rm /etc/sudoers.d/claude-notch-*` et
-  `sudo rm /Library/PrivilegedHelperTools/io.github.slybald.claudenotch.fanctl`.
+Oriel vérifie les nouvelles versions sur GitHub et les installe seul, seulement si leur signature Ed25519 correspond à
+la clé intégrée à l'app. Désactivable depuis le menu **…**. Règles complètes, et
+**mise à jour depuis la 2.1 ou avant** (quand l'app s'appelait Claude Notch) : [Mises à jour](docs/GUIDE.fr.md#mises-à-jour).
 
 ## Confidentialité
 

@@ -275,11 +275,40 @@ utilises l'onglet concerné. Il ne s'affiche qu'une fois, et pas après une mise
 configurée. Pour le refaire : **Réglages › Général › Relancer l'assistant de configuration**. Les hooks peuvent
 aussi s'installer plus tard depuis **Réglages › Claude** ; une session déjà ouverte apparaît à son prochain message.
 
+## Mises à jour
+
+Oriel se met à jour seule depuis la page [Releases](https://github.com/Slybald/oriel/releases).
+
+- 60 secondes après le lancement, puis toutes les 6 heures, l'app demande à GitHub la dernière release
+  (`api.github.com` ; seule la version de l'app part, dans le User-Agent). Brouillons et préversions sont
+  ignorés.
+- Une version plus récente est téléchargée avec sa signature (`Oriel-<version>.dmg.sig`) et n'est
+  installée que si sa signature Ed25519 correspond à la clé publique intégrée à l'app. Un DMG sans signature,
+  ou à la signature invalide, est refusé et rien n'est installé.
+- Au lancement, la nouvelle version s'installe tout de suite ; ensuite, seulement quand aucune session n'est
+  en cours ni ne t'attend (sinon l'app réessaie toutes les 10 minutes). L'app redémarre alors seule et le
+  menu **…** affiche « Mis à jour en X ».
+- L'installation automatique demande que l'app soit dans `/Applications` ou `~/Applications`, dans un dossier
+  où tu peux écrire. Sinon, le menu **…** propose d'ouvrir la page de la release.
+- Pour la désactiver : menu **…** › décoche **Mises à jour automatiques**. Les nouvelles versions sont alors
+  seulement signalées dans le menu, avec un bouton **Installer**. **Rechercher les mises à jour** vérifie
+  tout de suite.
+- Une app compilée depuis les sources (`scripts/build.sh`, `scripts/install.sh`) ne se met jamais à jour
+  seule : le menu affiche « Build de développement : mises à jour désactivées ».
+- **Mise à jour depuis la 2.1 ou avant** (quand l'app s'appelait encore Claude Notch) : la mise à jour
+  automatique ne peut pas passer le renommage. Télécharge `Oriel-<version>.dmg` une fois à la main et glisse **Oriel**
+  sur Applications (elle remplace l'ancienne app), puis redonne les accès macOS demandés. Tes réglages, tes notes et
+  tes hooks sont repris au premier lancement (dossier de données, ouverture à la connexion, hooks de Claude Code
+  déplacés vers les nouveaux noms ; les hooks Codex gardent leur approbation). Ensuite, les mises à jour redeviennent automatiques. Si tu avais activé
+  l'autorisation des ventilateurs ou de l'économie d'énergie, refais-le dans les Réglages ; les anciennes règles se
+  retirent avec `sudo rm /etc/sudoers.d/claude-notch-*` et
+  `sudo rm /Library/PrivilegedHelperTools/io.github.slybald.claudenotch.fanctl`.
+
 ## Confidentialité
 
 - Tout reste sur ton Mac. Oriel n'envoie aucune donnée sur toi ni sur tes sessions : pas de
   statistiques. Ses seules requêtes sortantes sont la recherche de mise à jour sur `api.github.com` et le
-  téléchargement des nouvelles versions depuis GitHub (voir [Mises à jour](../README.fr.md#mises-à-jour)).
+  téléchargement des nouvelles versions depuis GitHub (voir [Mises à jour](#mises-à-jour)).
 - L'app n'écoute que sur `127.0.0.1:47823`, sur l'interface de bouclage : elle est injoignable depuis le réseau.
 - Le script de hook ne parle qu'à cette adresse locale, avec `curl`. Chaque requête porte un jeton que l'app
   génère à chaque lancement et écrit dans `~/Library/Application Support/Oriel/hook-token` (lisible par
@@ -341,8 +370,8 @@ lancement.
 - **Automatisation : Messages** (Apple Events) : pour envoyer une réponse rapide. macOS le demande au premier envoi.
 - **Automatisation : Mail** (Apple Events) : pour lire les derniers mails et envoyer la réponse que tu écris. Demandé
   quand tu cliques sur **Autoriser** dans l'onglet Mail.
-- **Bureau, Documents, Téléchargements** : seulement pour des outils compagnons facultatifs en ligne de commande,
-  qu'Oriel peut lancer en arrière-plan (ils ne font pas partie de ce dépôt).
+- **Bureau, Documents, Téléchargements** : seulement pour vérifier qu'un fichier posé sur l'Étagère ou ouvert depuis les
+  fichiers récents est toujours là. macOS demande la première fois ; avec l'Accès complet au disque, il ne demande pas.
 - Wi-Fi : le nom du réseau n'est pas lu, donc la localisation n'est pas demandée. Si macOS refuse de changer l'état
   du Wi-Fi, la tuile l'indique.
 - L'économie d'énergie exige les droits administrateur (`pmset`). Le premier changement demande ton mot de passe ou
@@ -393,6 +422,13 @@ lancement.
 - Diagnostic : `GET http://127.0.0.1:47823/state` renvoie l'état des sessions et de la notch en JSON
   (lecture seule, local uniquement, avec le jeton :
   `curl -H @"$HOME/Library/Application Support/Oriel/hook-token" http://127.0.0.1:47823/state`).
+
+## Fichiers récents
+
+Dans l'onglet Claude, une carte repliée liste les 5 derniers fichiers distincts touchés par Claude Code (d'après
+`files.jsonl`), sans les dossiers temporaires (`/tmp`, `/var/folders`, espaces de travail jetables). Un fichier supprimé
+est grisé. Un clic : le Finder sélectionne le fichier (ou son dossier parent s'il a disparu). Le fichier n'est lu que
+panneau ouvert (toutes les 15 s, en tâche de fond) ; rien ne tourne panneau replié.
 
 ## Registres partagés
 
