@@ -1,12 +1,12 @@
 import Foundation
 
-/// Une fenêtre de quota (5 h, 7 jours…) : part consommée et heure de remise à zéro. Commune à Claude (`statusLine`) et à
-/// Codex (`account/rateLimits/read`), pour que les deux onglets dessinent la même jauge.
+/// Une fenêtre de quota (5 h, 7 jours…) : part consommée et heure de remise à zéro, lue par Codex
+/// (`account/rateLimits/read`).
 struct QuotaWindow: Equatable {
     /// 0 à 100, arrondi.
     var usedPercent: Int
     var resetsAt: Date
-    /// Durée de la fenêtre en minutes, quand la source la donne (Codex) ou la fixe (Claude : 300 et 10 080).
+    /// Durée de la fenêtre en minutes, quand la source la donne.
     var minutes: Int?
 
     init(usedPercent: Double, resetsAt: Date, minutes: Int?) {

@@ -31,8 +31,7 @@ Tout ce que le [README](../README.fr.md) ne détaille pas : chaque onglet, chaqu
   Jamais de « toujours autoriser » depuis la notch. Entrée envoie, Échap ferme.
 - **Onglet Codex** (optionnel, voir [Onglet Codex](#onglet-codex)) : les sessions de Codex (OpenAI, CLI ou app), qui travaillent,
   attendent une approbation ou ont fini, avec le dernier message ; autoriser ou refuser une commande ou un patch depuis la notch.
-- **Jauges de quota** (optionnelles, voir [Jauges de quota](#jauges-de-quota)) : un anneau fin et le pourcentage utilisé des
-  fenêtres de 5 heures et de 7 jours dans les onglets Claude et Codex, avec l'heure de remise à zéro. Ambre dès 80 %, rouge dès 95 %.
+- **Jauges de quota** : Codex seulement, voir [Jauges de quota](#jauges-de-quota).
 - **Tâches** : barre de progression et tâche en cours de la liste de Claude Code ; le chevron déplie la liste.
 - **Sous-agents** : nombre de sous-agents en cours dans chaque session.
 - **Clic → retour à la session** : un clic sur une carte ramène l'app hôte au premier plan (Terminal, iTerm2,
@@ -194,20 +193,13 @@ Claude ou de Codex. Détails HTTP, limites et modèle de sécurité : [API.md](A
 ## Jauges de quota
 
 Un anneau fin, le pourcentage utilisé et l'heure de la prochaine remise à zéro, pour les fenêtres de 5 heures et de 7 jours,
-sous les sessions de l'onglet **Claude** et de l'onglet **Codex** (et dans le résumé qui se déplie quand tu survoles leur
-intercalaire). Ambre dès 80 %, rouge dès 95 %. Rien n'apparaît quand un onglet est désactivé, ni quand l'agent ne donne aucun
-chiffre.
+sous les sessions de l'onglet **Codex** (et dans le résumé qui se déplie quand tu survoles son intercalaire). Ambre dès
+80 %, rouge dès 95 %. Rien n'apparaît quand l'onglet est désactivé, ni quand Codex ne donne aucun chiffre.
 
-- **Claude** (Réglages › Claude › Afficher le quota, désactivé par défaut). Claude Code donne le quota (`rate_limits`) à sa
-  `statusLine` et nulle part ailleurs, et n'accepte qu'une seule commande de `statusLine`. Le réglage met donc un petit relais à
-  sa place dans `~/.claude/settings.json` (sauvegarde horodatée d'abord). Le relais envoie les données à l'app (127.0.0.1, avec
-  le jeton), puis relance **ta commande précédente** avec les mêmes données : ta ligne d'état ne change pas (sans commande, il
-  affiche `5h 39% · 7d 63%`). Couper le réglage, ou désinstaller Oriel, remet ta commande. Seulement pour les abonnés
-  Pro et Max de claude.ai, et seulement après la première réponse d'une session. Les chiffres sont ceux du compte : n'importe
-  quelle session les met à jour. L'app garde les pourcentages et les heures en mémoire ; le reste de ce que reçoit la ligne
-  d'état (dossier, modèle, session) est jeté. Mesuré avec Claude Code 2.1.304 : rien avant la première réponse, puis les deux fenêtres.
-  Le quota s'affiche quand Claude Code tourne dans un terminal (`claude`). L'app Claude (onglet Code compris) ne le
-  transmet pas : elle n'exécute jamais la `statusLine`.
+- **Claude** : pas de jauge. Claude Code ne donne le quota qu'à sa `statusLine`, qui tourne dans une session de terminal
+  mais jamais dans l'app Claude (onglet Code compris) : le chiffre manquait donc à la plupart des gens. Oriel 3.5.0 l'a
+  retiré ; au lancement, il remet la commande de `statusLine` que tu avais avant, si le relais d'une version précédente
+  est encore en place.
 - **Codex** (Réglages › Codex › Afficher le quota, activé par défaut). Rien à installer : panneau ouvert, l'app interroge
   Codex lui-même (`codex app-server`, requête `account/rateLimits/read`, environ 1 s) au plus une fois par minute, puis toutes
   les 5 minutes. Mesuré avec la commande Codex 0.154 et le Codex de l'app ChatGPT 0.162. Il faut un compte ChatGPT : avec une clé
@@ -331,15 +323,14 @@ Oriel se met à jour seule depuis la page [Releases](https://github.com/Slybald/
 - Ce que l'app lit : les événements de hook, la fin du transcript d'une session en cours (pour détecter
   Esc), les fichiers de tâches de Claude Code, la liste des processus (pour trouver l'app hôte), le morceau en cours
   et sa pochette (Lecteur), les événements des calendriers que tu as choisi d'afficher, l'état du Wi-Fi et du
-  Bluetooth, et le niveau de la batterie, et si un micro ou une caméra est utilisé (l'état seulement, jamais leur flux). Avec le quota activé : les pourcentages et heures de remise à zéro que Claude Code
-  donne à sa ligne d'état (relayés, gardés en mémoire) et que Codex renvoie quand on le lui demande.
+  Bluetooth, et le niveau de la batterie, et si un micro ou une caméra est utilisé (l'état seulement, jamais leur flux). Avec le quota activé : les pourcentages et heures de remise à zéro que Codex
+  renvoie quand on le lui demande.
 - Ce que l'app écrit : les journaux et les fichiers du jeton dans `~/Library/Application Support/Oriel/`
   (voir [Registres partagés](#registres-partagés)), et les données des onglets dans le même dossier :
   `shelf.json` (les références à tes fichiers), `notes.json`, `timer.json`, et `clipboard-history.json` seulement
   si tu gardes l'historique. Ces fichiers ne sont lisibles que par ton compte. Il y a aussi les hooks dans
   `~/.claude` quand tu le demandes, les hooks Codex (`~/.codex/hooks.json` et `~/.codex/hooks/codex-notch-hook.sh`) quand tu
-  le demandes, `oriel-statusline.sh` et une copie de ta commande de ligne d'état précédente (lisible par toi seul) dans
-  `~/.claude/hooks/`, et la `statusLine` de `~/.claude/settings.json`, quand tu actives le quota de Claude (`~/.codex/config.toml` n'est que lu, pour montrer l'état des hooks, jamais écrit par l'app : l'approbation des
+  le demandes (`~/.codex/config.toml` n'est que lu, pour montrer l'état des hooks, jamais écrit par l'app : l'approbation des
   hooks, quand tu cliques sur **Approuver dans Codex**, est écrite par Codex lui-même, que l'app lance un instant avec un
   environnement minimal) et, pendant une mise à jour, le DMG dans
   `~/Library/Caches/io.github.slybald.oriel/updates/` (supprimé ensuite) et la nouvelle app à la place de
@@ -462,9 +453,7 @@ partir de hooks qu'elle reçoit déjà :
   interactif et le moteur de l'app ChatGPT, si (mesuré avec le Codex 0.162 de l'app). La fenêtre de l'app ChatGPT elle-même
   n'a pas été pilotée ; le lien qui ouvre une conversation (`codex://threads/<id>`) vient du routage de l'app. Pas de message libre à une session en cours, pas de réponse aux questions propres de Codex (aucun hook), et
   la carte reste sur « Attend ton approbation » après une approbation donnée dans le terminal, jusqu'à la fin de l'outil.
-- Jauges de quota : le chiffre de Claude n'arrive que quand une session munie du relais répond (Pro et Max, sessions de
-  terminal seulement : l'onglet Code de l'app Claude n'exécute jamais la `statusLine`), et il est perdu au redémarrage de l'app jusqu'à la réponse suivante. Un `settings.json` de projet ou local
-  qui impose sa propre `statusLine` contourne le relais. Le chiffre de Codex est lu à l'ouverture du panneau : il peut avoir
+- Jauges de quota : aucune pour Claude (voir [Jauges de quota](#jauges-de-quota)). Le chiffre de Codex est lu à l'ouverture du panneau : il peut avoir
   quelques minutes.
 - Esc pendant la réflexion, avant le moindre texte : Claude n'écrit rien dans le transcript, la carte reste en
   « Réfléchit » jusqu'au prochain événement.

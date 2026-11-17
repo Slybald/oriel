@@ -8,7 +8,7 @@ CONFIG_DIR=${CLAUDE_CONFIG_DIR:-$HOME/.claude}
 /usr/bin/python3 -I "$ROOT/scripts/hooks_config.py" uninstall
 rm -f "$CONFIG_DIR/hooks/oriel-hook.sh"
 if grep -qs oriel-statusline.sh "$CONFIG_DIR/settings.json"; then
-    echo "Relais de statusLine encore posé dans $CONFIG_DIR/settings.json : retire-le d'abord (Réglages > Claude > Jauges de quota)."
+    echo "Relais de statusLine encore posé dans $CONFIG_DIR/settings.json : lance Oriel une fois pour qu'il remette ta commande d'origine."
 fi
 if grep -qs codex-notch-hook.sh "$HOME/.codex/hooks.json"; then
     echo "Hooks Codex encore posés dans ~/.codex/hooks.json : retire-les d'abord (Réglages > Codex > Retirer les hooks)."

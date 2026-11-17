@@ -60,7 +60,7 @@ struct QuotaGauge: View {
     }
 }
 
-/// Les fenêtres d'un quota sur une ligne, sous la liste des sessions (onglets Claude et Codex) ou dans le résumé compact
+/// Les fenêtres d'un quota sur une ligne, sous la liste des sessions (onglet Codex) ou dans le résumé compact
 /// (plein écran, carte de l'intercalaire), où `title` dit de quel agent il s'agit. Trop large : sans les heures.
 struct QuotaStrip: View {
     let windows: [QuotaWindow]

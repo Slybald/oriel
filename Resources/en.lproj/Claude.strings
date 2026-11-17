@@ -66,23 +66,6 @@
 "Activer" = "Turn On";
 "Plus tard" = "Later";
 
-/* Quota */
-"La « statusLine » de settings.json n'est pas une simple commande : rien n'a été modifié." = "The \"statusLine\" in settings.json is not a plain command: nothing was changed.";
-"Script introuvable dans l'app (Contents/Resources/%@) : rien n'a été modifié." = "Script not found in the app (Contents/Resources/%@): nothing was changed.";
-"Suppression de %@ impossible (%@)." = "Could not delete %@ (%@).";
-"Copie du relais impossible (%@) : settings.json n'a pas été modifié." = "Could not copy the relay (%@): settings.json was not changed.";
-"Relais posé. Sauvegarde : %@" = "Relay installed. Backup: %@";
-"Relais posé." = "Relay installed.";
-"Relais retiré, ta statusLine d'origine est revenue." = "Relay removed, your original statusLine is back.";
-"Rien à retirer." = "Nothing to remove.";
-"Afficher le quota (5 h et 7 jours)" = "Show quota (5 h and 7 days)";
-"Quota" = "Quota";
-"Claude Code ne donne le quota qu'à sa « statusLine » (une seule commande possible, abonnés Pro et Max)." = "Claude Code only gives the quota to its \"statusLine\" (a single command, Pro and Max subscribers).";
-"Le quota s'affiche quand Claude Code tourne dans un terminal (`claude`). L'app Claude ne le transmet pas." = "The quota shows up when Claude Code runs in a terminal (`claude`). The Claude app does not pass it on.";
-"Ta commande de statusLine continue de tourner : le relais la relance avec les mêmes données." = "Your statusLine command keeps running: the relay runs it again with the same data.";
-"Sans statusLine existante, le relais affiche seulement « 5h 39% · 7d 63% »." = "With no existing statusLine, the relay only prints \"5h 39% · 7d 63%\".";
-"Sauvegarde horodatée de settings.json, retrait en un clic. Seuls les pourcentages sont gardés, en mémoire." = "Timestamped backup of settings.json, removed in one click. Only the percentages are kept, in memory.";
-"Le relais de statusLine des jauges de quota sera aussi retiré de ~/.claude/settings.json, et ta commande d'origine remise." = "The quota gauges' statusLine relay will also be removed from ~/.claude/settings.json, and your original command put back.";
 "1 sur %d" = "1 of %d";
 "Approuver au clavier" = "Approve with the keyboard";
 "⌃⌥Y autorise et ⌃⌥N refuse la plus ancienne demande, Claude et Codex ensemble. Une touche ne décide que si sa carte est ouverte dans la notch depuis plus d'une seconde ; sinon le premier appui montre la carte." = "⌃⌥Y allows and ⌃⌥N denies the oldest request, Claude and Codex together. A key only decides if its card has been open in the notch for more than a second; otherwise the first press shows the card.";

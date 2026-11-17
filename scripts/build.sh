@@ -79,8 +79,6 @@ cp "$FANCTL" "$APP/Contents/Helpers/fanctl"
 for arch in arm64 x86_64; do
     lipo "$FANCTL" -verify_arch "$arch" || { echo "Architecture $arch absente de $FANCTL" >&2; exit 1; }
 done
-cp "$ROOT/hooks/oriel-statusline.sh" "$APP/Contents/Resources/oriel-statusline.sh"
-chmod 755 "$APP/Contents/Resources/oriel-statusline.sh"
 
 # Lecture en cours : mediaremote-adapter (Vendor/mediaremote-adapter, BSD-3-Clause, commit noté dans COMMIT).
 # Depuis macOS 15.4, MediaRemote ne répond qu'aux binaires d'Apple : /usr/bin/perl lance le script, qui charge

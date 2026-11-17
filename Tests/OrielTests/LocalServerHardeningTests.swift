@@ -69,7 +69,6 @@ final class LocalServerHardeningTests: XCTestCase {
         XCTAssertEqual(RawHTTP.send(port: fixture.port, fixture.post("/hook", bigWrite))?.status, 204)
         XCTAssertTrue(spin { fixture.receivedEvents.contains { $0.name == "PostToolUse" } }, "gros corps relayé")
 
-        XCTAssertEqual(RawHTTP.send(port: fixture.port, fixture.post("/claude/status", ["model": "x"]))?.status, 204)
         XCTAssertEqual(RawHTTP.send(port: fixture.port, RawHTTP.request("GET", "/health", headers: [fixture.host]))?.status,
                        204)
         XCTAssertEqual(RawHTTP.send(port: fixture.port,
