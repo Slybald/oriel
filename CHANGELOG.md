@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-11-17
+
 ### Added
 
 - Pop-ups: a small pop-up comes down from the notch for a message, an email, Claude or Codex, the end of a timer or an
@@ -23,6 +25,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Pop-ups hide the sender and the text during a meeting with a link, a screen mirror, or while a microphone is in use.
   This is not full protection: a screen share without an open microphone is not detected.
 - Pop-ups: in full screen they wait, and a single summary appears when you leave full screen.
+- Screen without a notch: the setup assistant explains where to find the notch and shows it when it closes.
+
+### Fixed
+
+- An external display placed above the MacBook no longer opens the notch when the pointer is in the middle of that
+  display.
+- The notch gives the keyboard back when you detach it as a bubble.
+- If the hooks port is already taken, an alert explains why Oriel quits.
+
+### Security
+
+- The local server rejects a request without a token before reading its body, closes silent connections and caps the
+  number of connections. The hooks token is removed when the app quits, and the hook script sends nothing when the app
+  is not running.
 
 ## [3.3.3] - 2026-11-09
 
