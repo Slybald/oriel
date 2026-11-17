@@ -46,7 +46,7 @@ Optional, if you use these coding agents:
   list and subagents, and, if you turn it on, answers from the notch: allow or deny a permission, answer a question,
   approve a plan, write to a session.
 - **Codex** (CLI or ChatGPT app): the same tracking, and approvals from the notch.
-- **Quota gauges** for the 5-hour and 7-day windows of both.
+- **Quota gauges** for Codex's 5-hour and 7-day windows.
 
 Every tab and setting in detail: [docs/GUIDE.md](docs/GUIDE.md).
 

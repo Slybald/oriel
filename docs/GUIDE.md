@@ -29,8 +29,7 @@ works and its limits. [Version française](GUIDE.fr.md).
   time: the first answer wins. Never "always allow" from the notch. Return sends, Esc closes.
 - **Codex tab** (optional, see [Codex tab](#codex-tab)): the sessions of OpenAI's Codex (CLI or app), working, waiting for
   an approval or done, with the last message; allow or deny a command or a patch from the notch.
-- **Quota gauges** (optional, see [Quota gauges](#quota-gauges)): a thin ring and the percentage used of the 5-hour and
-  7-day windows in the Claude and Codex tabs, with the time they reset. Amber from 80 %, red from 95 %.
+- **Quota gauges**: Codex only, see [Quota gauges](#quota-gauges).
 - **Tasks**: progress bar and current task of Claude Code's task list; the chevron unfolds the whole list.
 - **Subagents**: number of subagents running in each session.
 - **Click to go back**: clicking a card brings the host app to the front (Terminal, iTerm2, Ghostty, VS Code,
@@ -186,19 +185,12 @@ program sent it and can never pass for a Claude or Codex request. HTTP details, 
 ## Quota gauges
 
 A thin ring, the percentage used and the time of the next reset, for the 5-hour and 7-day windows, under the sessions of
-the **Claude** tab and of the **Codex** tab (and in the summary that unfolds when you hover their collapsed tab). Amber
-from 80 %, red from 95 %. Nothing is shown when a tab is off, or when the agent gives no figure.
+the **Codex** tab (and in the summary that unfolds when you hover its collapsed tab). Amber
+from 80 %, red from 95 %. Nothing is shown when the tab is off, or when Codex gives no figure.
 
-- **Claude** (Settings › Claude › Show quota, off by default). Claude Code gives the quota (`rate_limits`) to its
-  `statusLine` and nowhere else, and allows one `statusLine` command only. So the switch puts a small relay in its place in
-  `~/.claude/settings.json` (timestamped backup first). The relay sends the data to the app (127.0.0.1, with the token),
-  then runs **your previous command** with the same data, so your status line does not change (without one, it prints
-  `5h 39% · 7d 63%`). Turning the switch off, or uninstalling Oriel, puts your command back. Only for claude.ai Pro
-  and Max subscribers, and only after the first answer of a session. The figures belong to the account, so any session
-  updates them. The app keeps the percentages and reset times in memory; the rest of what the status line receives
-  (folder, model, session) is dropped. Measured with Claude Code 2.1.304: nothing before the first answer, then both windows.
-  The quota shows up when Claude Code runs in a terminal (`claude`). The Claude app (its Code tab included) does not
-  pass it on: it never runs the `statusLine`.
+- **Claude**: no gauge. Claude Code only gives the quota to its `statusLine`, which runs in a terminal session but never
+  in the Claude app (its Code tab included), so the figure was missing for most people. Oriel 3.5.0 removed it; at launch
+  it gives back the `statusLine` command you had before, if the relay of an earlier version is still in place.
 - **Codex** (Settings › Codex › Show quota, on by default). Nothing to install: while the panel is open, the app asks Codex
   itself (`codex app-server`, request `account/rateLimits/read`, about 1 s) at most once a minute, then every 5 minutes.
   Measured with the Codex command 0.154 and the ChatGPT app's Codex 0.162. It needs a ChatGPT sign-in: with an API key Codex
@@ -315,15 +307,12 @@ Oriel updates itself from the [Releases](https://github.com/Slybald/oriel/releas
 - What the app reads: the hook events (Claude Code and Codex), the end of the transcript of a running session (to detect Esc),
   Claude Code's task files, the process list (to find the host app), the track playing and its artwork (Player),
   the events of the calendars you chose to show, the state of Wi-Fi and Bluetooth, and the battery level, and whether a microphone or a camera is in use (the state only, never their stream). With the quota on:
-  the percentages and reset times that Claude Code gives to its status line (relayed, kept in memory) and that Codex
-  returns when asked.
+  the percentages and reset times that Codex returns when asked.
 - What the app writes: the logs and token files in `~/Library/Application Support/Oriel/` (see
   [Shared logs](#shared-logs)), and the data of the tabs in the same folder: `shelf.json` (references to your
   files), `notes.json`, `timer.json`, and `clipboard-history.json` only if you keep the history. These files are
   readable by your account only. Also the hooks in `~/.claude` when you ask for it, and the Codex hooks (`~/.codex/hooks.json` and
-  `~/.codex/hooks/codex-notch-hook.sh`) when you ask for it, and, when you turn the Claude quota on, `oriel-statusline.sh`
-  and a copy of your previous status line command (readable by you only) in `~/.claude/hooks/` and the `statusLine` of
-  `~/.claude/settings.json`; `~/.codex/config.toml` is only read (to show the state of the
+  `~/.codex/hooks/codex-notch-hook.sh`) when you ask for it; `~/.codex/config.toml` is only read (to show the state of the
   hooks), never written by the app: the approval of the hooks, when you click **Approve in Codex**, is written by Codex
   itself (the app starts `codex app-server` for a moment, with a minimal environment). During an update the DMG in
   `~/Library/Caches/io.github.slybald.oriel/updates/` (deleted afterwards) and the new app in place of
@@ -440,9 +429,7 @@ hooks it already receives:
   do (measured with the app's own Codex 0.162). The ChatGPT app window itself was not driven; the link that opens a
   conversation (`codex://threads/<id>`) comes from the app's own routing. No free message to a running session, no answer to Codex's own questions (no hook for them), and a card
   stays on "needs your approval" after an approval given in the terminal until the tool ends.
-- Quota gauges: Claude's figure only arrives when a session that has the relay answers (Pro and Max, terminal sessions
-  only: the Code tab of the Claude app never runs the `statusLine`), and is lost when the app restarts until the next answer. A project or local `settings.json` that sets its
-  own `statusLine` bypasses the relay. Codex's figure is read when the panel opens, so it can be a few minutes old.
+- Quota gauges: none for Claude (see [Quota gauges](#quota-gauges)). Codex's figure is read when the panel opens, so it can be a few minutes old.
 - Esc while Claude is thinking, before any text: Claude writes nothing to the transcript, so the card stays on
   "thinking" until the next event.
 - A `claude` session started from a terminal opened inside Claude Desktop is classified as Desktop (Claude.app

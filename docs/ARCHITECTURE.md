@@ -42,7 +42,7 @@ reinstall for people on 2.1 or earlier (see "Rename migration" below).
 - `HookServer`: minimal HTTP server on 127.0.0.1:47823. It resolves the process context *before* replying,
   while the hook process is still alive. Exact `Host`, no `Origin`, token (`HookAccess`) on every route but
   `/health` and `/api/…`; `/permission` and `/inbox` are long requests handed to `ReplyCenter`; `/codex/hook` and `/codex/permission` do the
-  same for Codex (`CodexRelay`); `/claude/status` hands the `statusLine` JSON to `ClaudeUsageStore` (quota gauges);
+  same for Codex (`CodexRelay`);
   `/api/…` goes to `LocalAPI` with its own token. `HookEvent`: tolerant JSON reading, every field optional.
 - `ProcessInspector`: walks the ancestors of the hook's `$PPID` to find the Claude process, the host app
   (outermost `.app` bundle) and the source (CLI or Desktop). `ClaudeMonitor`: is Claude Desktop running,
@@ -69,7 +69,7 @@ reinstall for people on 2.1 or earlier (see "Rename migration" below).
     `ConversationViews` draws the conversation of a session (last lines, message field, or "Answer in *app*" +
     **Open**) and the card that proposes to turn replies on.
   - `Quota/`: not a tab. `QuotaModels` (`QuotaWindow`, `QuotaSnapshot`: percent, reset, 5 h / 7 d labels, expiry) and
-    `QuotaViews` (the ring and the one-line strip shared by the Claude and Codex tabs).
+    `QuotaViews` (the ring and the one-line strip of the Codex tab).
   - `Codex/` (`codex`): `CodexModule` (tab, ears, settings, `CodexRelay` for the server), `CodexStore` (per-session state
     machine fed by Codex's hooks, one `kqueue` per Codex process, one-shot deadlines, no periodic timer),
     `CodexApprovals` (the held `PermissionRequest` requests), `CodexHookInstaller` (`~/.codex/hooks.json`),
@@ -391,32 +391,23 @@ Apple Events and Bluetooth are already there; Messages added the one for Contact
     (`waiting`, `queued`, `headless`, `none`).
 - **CLI, same version** (interactive `claude` in a pty): `PermissionRequest` is called for Bash and AskUserQuestion,
   the terminal dialog stays up ("Allowed by PermissionRequest hook" when the hook answers first).
-- **Quota gauges** (`Modules/Quota/`, `ClaudeUsage`, `StatusLineRelay`, `CodexUsage`; docs in GUIDE › Quota gauges). One ring per window (5 h, 7 d), amber from 80 %, red from 95 %, under the session list of the Claude and
-  Codex tabs and in their compact summary (so also in the unfolded index tab and the full screen summary, where the strip drops
-  the reset times when too narrow and carries the agent's name). Nothing when the tab is off or there is no figure; no ear.
-  - **Claude**: the only source is the `statusLine` JSON (`rate_limits.five_hour` / `seven_day`: `used_percentage`,
-    `resets_at` in epoch seconds; absent without Pro or Max and before the first answer of a session; hooks do not carry it).
-    Measured on Claude Code 2.1.304 by running one short real session with a capture script as `statusLine`: the first call has
-    no `rate_limits`, the one after the first answer has both windows. Claude Code allows ONE `statusLine` command, so
-    `StatusLineInstaller` (Settings › Claude › Show quota, off by default) swaps the `command` for `hooks/oriel-statusline.sh`
-    in place (other keys such as `padding` and the key order stay, timestamped backup, `HookInstaller.loadSettings` / `save`),
-    keeps the old command in `oriel-statusline.previous` (0600, next to the script) and the script runs it again with
-    the same JSON (`sh -c`, as Claude Code does). Not a plain command (`type` other than `command`, no `command`): refused,
-    nothing touched. Uninstall (the switch, or Uninstall Oriel) puts the exact old command back; a `statusLine` the user
-    changed since is left alone. The script POSTs to `/claude/status` only when the JSON has `rate_limits`, never fails the
-    status line (`curl` 1 s at most, app closed = nothing), and `ClaudeUsage.parse` keeps only the percentages and reset times,
-    in memory. `HookServer.isPaused` (Claude tab off) answers 204 without reading. The figure is the account's, so the last one
-    received from any session is the one shown; windows past `resets_at` are dropped, like Claude Code does.
-    The Code tab of the Claude app never runs the `statusLine`, so no figure from it. Ruled out (measured 2026-10-24):
-    reading `GET api.anthropic.com/api/oauth/usage` with the OAuth token of the `Claude Code-credentials` keychain item.
-    Only the `claude` CLI renews that token (it had expired for 3 days while working in the app only), the app's Code tab
-    has its own authentication, and Oriel must never refresh it itself (that would rotate the refresh token and sign
-    Claude Code out).
+- **Quota gauges** (`Modules/Quota/`, `CodexUsage`; docs in GUIDE › Quota gauges). One ring per window (5 h, 7 d), amber
+  from 80 %, red from 95 %, under the session list of the Codex tab and in its compact summary (so also in the unfolded index
+  tab and the full screen summary, where the strip drops the reset times when too narrow and carries the agent's name).
+  Nothing when the tab is off or there is no figure; no ear.
+  - **Claude: removed in 3.5.0, do not bring it back as it was.** The only source is the `statusLine` JSON
+    (`rate_limits`), and the Claude app (Code tab included) never runs the `statusLine`: measured again on 2026-11-17 with
+    a trace in the relay, zero calls in 3 minutes of a Code tab session. Hooks do not carry the figure. Ruled out
+    (2026-10-24): `GET api.anthropic.com/api/oauth/usage` with the OAuth token of the `Claude Code-credentials` keychain
+    item (only the `claude` CLI renews it, and Oriel must never refresh it: that would sign Claude Code out).
+    What is left, `StatusLineInstaller` (`Modules/Claude/StatusLineRelay.swift`): at launch, if `oriel-statusline.sh` or
+    `oriel-statusline.previous` is still in `~/.claude/hooks`, the previous `statusLine` command comes back (or the
+    `statusLine` Oriel created goes), other keys and order kept, timestamped backup; a `statusLine` the user changed
+    since is left alone; unreadable settings.json: files kept so the status line still works.
   - **Codex**: `CodexAppServer.rateLimits()` (`account/rateLimits/read`, one process of about 1 s). `CodexUsageStore` reads only
     between `CodexModule.start()` and `stop()` (panel open): cache of 60 s, one 5-minute timer, an error keeps the last figure and
     waits 15 min, `forget()` (tab or setting off) discards a read still in flight. The intercalaire hides a figure older than 15 min.
-  - Tests: `QuotaTests` (both parsers, store with a double, installer, real relay script against the real server) and
-    `QuotaSnapshotTests` (PNG). `StatusLineInstaller.standard` points at a missing folder under XCTest: a test never touches the
+  - Tests: `QuotaTests` (Codex parser, store with a double, removal of the old relay) and `QuotaSnapshotTests` (PNG). `StatusLineInstaller.standard` points at a missing folder under XCTest: a test never touches the
     real `~/.claude`.
 - **Codex** (measured on Codex CLI 0.154): the tab follows Codex through its own
   hooks (`~/.codex/hooks.json`), never `notify` or `config.toml`, never the compressed rollout files.
